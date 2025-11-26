@@ -1,0 +1,19 @@
+{
+  "welcome": "Witaj,",
+  "welcomeAndConfirm": "aby potwierdzić adres e-mail, kliknij tutaj:",
+  "welcomeAndChange": "aby zmienić hasło, kliknij tutaj:",
+  "allRightsReserved": "Wszelkie prawa zastrzeżone.",
+  "dontAnswer": "Ta wiadomość została wygenerowana automatycznie, nie odpowiadaj na nią.",
+  "confirmRegister": "Potwierdź rejestrację",
+  "changePassword": "Ustaw hasło",
+  "exceptions": {
+    "emailExist": "E-mail już istnieje.",
+    "emailTokenExpired": "Potwierdzenie wygasło",
+    "emailAlreadyConfirmed": "Email potwierdzony wcześniej",
+    "emailNotConfirmed": "Email niepotwierdzony",
+    "emailNotFound": "Email nieznaleziony",
+    "invalidEmail": "Email nie występuje",
+    "invalidPassword": "Błędne hasło",
+    "tokenCooldown": "Link aktywacyjny wysłany. Proszę czekać 10 minut."
+  }
+}

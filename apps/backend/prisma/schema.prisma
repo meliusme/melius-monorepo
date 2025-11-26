@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  doc
+  admin
+}
+
+enum Sex {
+  male
+  female
+  other
+}
+
+enum MeetingStatus {
+  pending
+  archived
+  confirmed
+  active
+  not_confirmed
+}
+
+enum Profession {
+  psychologist
+  psychotherapist
+  sexologist
+}
+
+enum Language {
+  pl
+  en
+}
+
+model User {
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
+  password         String
+  role             Role          @default(user)
+  createdAt        DateTime      @default(now()) @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @db.Timestamptz
+  avatar           Avatar?
+  userProfile      UserProfile?
+  docProfile       DocProfile?
+  adminProfile     AdminProfile?
+  emailConfirmed   Boolean       @default(false)
+  language         Language      @default(pl)
+  tokenActivatedAt DateTime      @default(now()) @db.Timestamptz()
+}
+
+model UserProfile {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int       @unique
+  firstName String?
+  lastName  String?
+  published Boolean   @default(false)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  meetings  Meeting[]
+  problems  Problem[]
+}
+
+model DocProfile {
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId           Int              @unique
+  firstName       String?
+  lastName        String?
+  workStart       Int?
+  workEnd         Int?
+  profession      Profession?
+  rate            Int?
+  ratesLot        Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  published       Boolean          @default(false)
+  meetings        Meeting[]
+  specializations Specialization[]
+}
+
+model AdminProfile {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int     @unique
+  firstName String?
+  lastName  String?
+}
+
+model Avatar {
+  id     Int    @id @default(autoincrement())
+  key    String
+  url    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int    @unique
+}
+
+model Ratings {
+  id    Int @id @default(autoincrement())
+  rate  Int
+  docId Int
+}
+
+model Meeting {
+  id        Int           @id @default(autoincrement())
+  startTime DateTime      @db.Timestamptz
+  endTime   DateTime      @db.Timestamptz
+  status    MeetingStatus
+  user      UserProfile   @relation(fields: [userId], references: [userId])
+  userId    Int
+  doc       DocProfile    @relation(fields: [docId], references: [docId])
+  docId     Int
+}
+
+model Problem {
+  id              Int              @id @default(autoincrement())
+  problemKey      String
+  specializations Specialization[]
+  userProfiles    UserProfile[]
+  matches         Match[]
+}
+
+model Specialization {
+  id                Int          @id @default(autoincrement())
+  specializationKey String
+  problems          Problem[]
+  docProfiles       DocProfile[]
+  matches           Match[]
+}
+
+model Match {
+  id               Int            @id @default(autoincrement())
+  problemId        Int
+  specializationId Int
+  problem          Problem        @relation(fields: [problemId], references: [id])
+  specialization   Specialization @relation(fields: [specializationId], references: [id])
+}

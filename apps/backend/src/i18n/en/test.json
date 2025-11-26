@@ -1,0 +1,19 @@
+{
+  "welcome": "Welcome,",
+  "welcomeAndConfirm": "to confirm the email address, click here:",
+  "welcomeAndChange": "to change password, click here:",
+  "allRightsReserved": "All rights reserved.",
+  "dontAnswer": "This message was automatically generated, do not respond to it.",
+  "confirmRegister": "Confirm registration",
+  "changePassword": "Set password",
+  "exceptions": {
+    "emailExist": "E-mail already exist",
+    "emailTokenExpired": "Confirmation expired",
+    "emailAlreadyConfirmed": "Email already confirmed",
+    "emailNotConfirmed": "Email not confirmed",
+    "emailNotFound": "Email not found",
+    "invalidEmail": "No user found for this email",
+    "invalidPassword": "Invalid password",
+    "tokenCooldown": "Activation link already sent. Please wait 10 minutes."
+  }
+}

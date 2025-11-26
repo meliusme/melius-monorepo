@@ -1,0 +1,14 @@
+<html lang='{{lang}}'>
+  {{> head}}
+  <body>
+    <div class='container'>
+    {{> header}}
+      <div class='content'>
+        <h3>{{header}}</h3>
+        <p>{{text}}</p>
+        <a href='{{url}}' class='button'>{{confirm}}</a>
+      </div>
+      {{> footer year=year dontAnswer=dontAnswer rights=rights}}
+    </div>
+  </body>
+</html>

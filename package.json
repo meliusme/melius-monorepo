@@ -1,0 +1,18 @@
+{
+  "name": "melius-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/backend",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "pnpm dev:backend",
+    "dev:backend": "pnpm --filter @melius/backend start:dev",
+    "dev:web": "pnpm --filter @melius/web dev",
+    "build": "pnpm --filter @melius/backend build && pnpm --filter @melius/web build",
+    "lint": "pnpm --filter @melius/backend lint && pnpm --filter @melius/web lint",
+    "test": "pnpm --filter @melius/backend test"
+  }
+}

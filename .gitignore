@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+pnpm-debug.log
+.pnpm-store
+/apps/**/node_modules
+/apps/backend/dist
+/apps/backend/coverage
+/apps/web/.next
+/apps/web/out
+/coverage
+/pgdata
+.env
