@@ -7,6 +7,11 @@ export class CreateDocRateDto {
   docId: number;
 
   @IsNumber()
+  @IsNotEmpty()
+  @IsPositive()
+  meetingId: number;
+
+  @IsNumber()
   @Min(1)
   @Max(5)
   rate: number;

@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Post,
   Put,
   UseGuards,
+  Param,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { CurrentUser } from '../decorators/user.decorator';
@@ -103,15 +105,33 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard)
   @UseGuards(RolesGuard)
   @Post('rate')
-  async addDocRate(@Body() createDocRateDto: CreateDocRateDto) {
-    const docProfile = await this.profilesService.getDocProfile(
-      createDocRateDto.docId,
+  async addDocRate(
+    @CurrentUser() user: User,
+    @Body() createDocRateDto: CreateDocRateDto,
+  ) {
+    const updatedDocProfile = await this.ratingService.addDocRate(
+      user,
+      createDocRateDto,
     );
-    if (!docProfile) {
-      throw new NotFoundException();
-    }
-    return new DocProfileEntity(
-      await this.ratingService.addDocRate(createDocRateDto),
+
+    return new DocProfileEntity(updatedDocProfile);
+  }
+
+  @Get('doc/:docId/ratings')
+  async getDocRatings(
+    @Param('docId', ParseIntPipe) docId: number,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+
+    const result = await this.ratingService.getDocRatings(
+      docId,
+      pageNumber,
+      limitNumber,
     );
+
+    return result;
   }
 }
