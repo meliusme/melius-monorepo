@@ -10,7 +10,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -82,9 +81,9 @@ model UserProfile {
 }
 
 model DocProfile {
-  id                Int              @id @default(autoincrement())
-  user              User             @relation(fields: [docId], references: [id], onDelete: Cascade)
-  docId             Int              @unique
+  id                Int                @id @default(autoincrement())
+  user              User               @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId             Int                @unique
   firstName         String?
   lastName          String?
   workStart         Int?
@@ -92,9 +91,9 @@ model DocProfile {
   profession        Profession?
   rate              Int?
   ratesLot          Int?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  published         Boolean          @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  published         Boolean            @default(false)
   meetings          Meeting[]
   specializations   Specialization[]
   availabilitySlots AvailabilitySlot[]
@@ -131,13 +130,13 @@ model Rating {
 }
 
 model Meeting {
-  id        Int           @id @default(autoincrement())
-  startTime DateTime      @db.Timestamptz
-  endTime   DateTime      @db.Timestamptz
+  id        Int               @id @default(autoincrement())
+  startTime DateTime          @db.Timestamptz
+  endTime   DateTime          @db.Timestamptz
   status    MeetingStatus
-  user      UserProfile   @relation(fields: [userId], references: [userId])
+  user      UserProfile       @relation(fields: [userId], references: [userId])
   userId    Int
-  doc       DocProfile    @relation(fields: [docId], references: [id])
+  doc       DocProfile        @relation(fields: [docId], references: [id])
   docId     Int
   slot      AvailabilitySlot? @relation(fields: [slotId], references: [id])
   slotId    Int?
@@ -146,15 +145,15 @@ model Meeting {
 }
 
 model AvailabilitySlot {
-  id        Int         @id @default(autoincrement())
-  doc       DocProfile  @relation(fields: [docId], references: [id], onDelete: Cascade)
+  id        Int        @id @default(autoincrement())
+  doc       DocProfile @relation(fields: [docId], references: [id], onDelete: Cascade)
   docId     Int
-  startTime DateTime    @db.Timestamptz
-  endTime   DateTime    @db.Timestamptz
-  booked    Boolean     @default(false)
+  startTime DateTime   @db.Timestamptz
+  endTime   DateTime   @db.Timestamptz
+  booked    Boolean    @default(false)
 
   // potencjalne powiązane spotkania
-  meetings  Meeting[]
+  meetings Meeting[]
 }
 
 model Payment {
@@ -162,7 +161,7 @@ model Payment {
   meeting               Meeting       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   meetingId             Int
   amountCents           Int
-  currency              String        // np. "PLN"
+  currency              String // np. "PLN"
   status                PaymentStatus @default(pending)
   stripePaymentIntentId String?       @unique
   stripeCheckoutId      String?       @unique
