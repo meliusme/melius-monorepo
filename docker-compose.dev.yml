@@ -20,10 +20,9 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: ./apps/backend/Dockerfile
-    container_name: melius-backend
+    image: node:22-alpine
+    container_name: melius-backend-dev
+    working_dir: /app/apps/backend
     restart: always
     ports:
       - "3000:3000"
@@ -45,28 +44,37 @@ services:
       - CLIENT_URL=${CLIENT_URL}
       - GOOGLE_AUTH_CLIENT_ID=${GOOGLE_AUTH_CLIENT_ID}
       - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/backend/node_modules
     depends_on:
       db:
         condition: service_healthy
     networks:
       - melius-network
-    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+    command: sh -c "apk add --no-cache openssl libc6-compat && npm install -g pnpm && cd /app && pnpm install && cd /app/apps/backend && pnpm exec prisma generate && pnpm start:dev"
 
   web:
-    build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
-    container_name: melius-web
+    image: node:22-alpine
+    container_name: melius-web-dev
+    working_dir: /app/apps/web
     restart: always
     ports:
       - "3001:3001"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:3000
       - PORT=3001
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
     depends_on:
       - backend
     networks:
       - melius-network
+    command: sh -c "npm install -g pnpm && cd /app && pnpm install && cd /app/apps/web && pnpm dev"
 
   pgadmin:
     image: dpage/pgadmin4
