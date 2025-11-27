@@ -12,6 +12,7 @@ import { MatchesModule } from './matches/matches.module';
 import { join } from 'path';
 import { CleanupService } from './cleanup/cleanup.service';
 import { PrismaService } from './prisma/prisma.service';
+import { AvailabilityModule } from './availability/availability.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PrismaService } from './prisma/prisma.service';
       resolvers: [{ use: QueryResolver, options: ['lang'] }],
       typesOutputPath: join('./src/generated/i18n.generated.ts'),
     }),
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService, CleanupService, PrismaService],
