@@ -33,6 +33,13 @@ enum MeetingStatus {
   not_confirmed
 }
 
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
 enum Profession {
   psychologist
   psychotherapist
@@ -71,24 +78,27 @@ model UserProfile {
   updatedAt DateTime  @updatedAt @db.Timestamptz
   meetings  Meeting[]
   problems  Problem[]
+  ratings   Rating[]
 }
 
 model DocProfile {
-  id              Int              @id @default(autoincrement())
-  user            User             @relation(fields: [docId], references: [id], onDelete: Cascade)
-  docId           Int              @unique
-  firstName       String?
-  lastName        String?
-  workStart       Int?
-  workEnd         Int?
-  profession      Profession?
-  rate            Int?
-  ratesLot        Int?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  published       Boolean          @default(false)
-  meetings        Meeting[]
-  specializations Specialization[]
+  id                Int              @id @default(autoincrement())
+  user              User             @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId             Int              @unique
+  firstName         String?
+  lastName          String?
+  workStart         Int?
+  workEnd           Int?
+  profession        Profession?
+  rate              Int?
+  ratesLot          Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  published         Boolean          @default(false)
+  meetings          Meeting[]
+  specializations   Specialization[]
+  availabilitySlots AvailabilitySlot[]
+  ratings           Rating[]
 }
 
 model AdminProfile {
@@ -107,10 +117,17 @@ model Avatar {
   userId Int    @unique
 }
 
-model Ratings {
-  id    Int @id @default(autoincrement())
-  rate  Int
-  docId Int
+model Rating {
+  id        Int         @id @default(autoincrement())
+  rate      Int
+  comment   String?
+  createdAt DateTime    @default(now()) @db.Timestamptz
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  doc       DocProfile  @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId     Int
+  meeting   Meeting?    @relation(fields: [meetingId], references: [id])
+  meetingId Int?
 }
 
 model Meeting {
@@ -120,8 +137,37 @@ model Meeting {
   status    MeetingStatus
   user      UserProfile   @relation(fields: [userId], references: [userId])
   userId    Int
-  doc       DocProfile    @relation(fields: [docId], references: [docId])
+  doc       DocProfile    @relation(fields: [docId], references: [id])
   docId     Int
+  slot      AvailabilitySlot? @relation(fields: [slotId], references: [id])
+  slotId    Int?
+  payments  Payment[]
+  ratings   Rating[]
+}
+
+model AvailabilitySlot {
+  id        Int         @id @default(autoincrement())
+  doc       DocProfile  @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId     Int
+  startTime DateTime    @db.Timestamptz
+  endTime   DateTime    @db.Timestamptz
+  booked    Boolean     @default(false)
+
+  // potencjalne powiązane spotkania
+  meetings  Meeting[]
+}
+
+model Payment {
+  id                    Int           @id @default(autoincrement())
+  meeting               Meeting       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meetingId             Int
+  amountCents           Int
+  currency              String        // np. "PLN"
+  status                PaymentStatus @default(pending)
+  stripePaymentIntentId String?       @unique
+  stripeCheckoutId      String?       @unique
+  createdAt             DateTime      @default(now()) @db.Timestamptz
+  updatedAt             DateTime      @updatedAt @db.Timestamptz
 }
 
 model Problem {
