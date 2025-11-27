@@ -7,7 +7,6 @@ import {
   UseGuards,
   Controller,
   ParseIntPipe,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { MeetingsService } from './meetings.service';
 import { RolesGuard } from 'src/guards/roles.guard';
@@ -31,27 +30,31 @@ export class MeetingsController {
     @CurrentUser() user: User,
     @Body() createMeetingDto: CreateMeetingDto,
   ) {
-    if (user.id !== createMeetingDto.userId) {
-      throw new UnauthorizedException();
-    }
     return new MeetingEntity(
-      await this.meetingsService.createMeeting(createMeetingDto),
+      await this.meetingsService.createMeeting(user.id, createMeetingDto),
     );
   }
 
-  // temp solution
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async changeStatus(
+    @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
     @Body() changeStatusDto: ChangeStatusDto,
   ) {
     return new MeetingEntity(
-      await this.meetingsService.changeStatus(id, changeStatusDto.status),
+      await this.meetingsService.changeStatus(id, changeStatusDto.status, user),
     );
   }
 
   @Delete(':id')
-  async deleteMeeting(@Param('id', ParseIntPipe) id: number) {
-    return new MeetingEntity(await this.meetingsService.deleteMeeting(id));
+  @UseGuards(JwtAuthGuard)
+  async deleteMeeting(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return new MeetingEntity(
+      await this.meetingsService.deleteMeeting(id, user),
+    );
   }
 }
