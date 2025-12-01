@@ -50,14 +50,8 @@ export class RatingService {
       );
     }
 
-    // 6) Optionally: allow rating only for completed/active sessions
-    if (
-      meeting.status === MeetingStatus.pending ||
-      meeting.status === MeetingStatus.not_confirmed
-    ) {
-      throw new BadRequestException(
-        'You can only rate confirmed or completed sessions',
-      );
+    if (meeting.status !== MeetingStatus.completed) {
+      throw new BadRequestException('You can only rate completed sessions');
     }
 
     // 7) Check if there is already a rating for this meeting from this user

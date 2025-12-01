@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { MeetingStatus, Role, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMeetingDto } from './dtos/create-meeting.dto';
@@ -39,82 +44,6 @@ export class MeetingsService {
     return meeting;
   }
 
-  async changeStatus(id: number, status: MeetingStatus, user: User) {
-    const meeting = await this.prisma.meeting.findUnique({
-      where: { id },
-    });
-
-    if (!meeting) {
-      throw new BadRequestException('Meeting not found');
-    }
-
-    if (user.role === Role.admin) {
-      return this.prisma.meeting.update({
-        where: { id },
-        data: { status },
-      });
-    }
-
-    if (user.role === Role.user && meeting.userId !== user.id) {
-      throw new BadRequestException('Cannot change a meeting you don’t own');
-    }
-
-    if (user.role === Role.doc && meeting.docId !== user.id) {
-      throw new BadRequestException('Cannot change status of foreign meeting');
-    }
-
-    return this.prisma.meeting.update({
-      where: { id },
-      data: { status },
-    });
-  }
-
-  async deleteMeeting(id: number, user: User) {
-    const meeting = await this.prisma.meeting.findUnique({
-      where: { id },
-    });
-
-    if (!meeting) {
-      throw new BadRequestException('Meeting not found');
-    }
-
-    if (user.role === Role.admin) {
-      return this.prisma.$transaction(async (tx) => {
-        if (meeting.slotId) {
-          await tx.availabilitySlot.update({
-            where: { id: meeting.slotId },
-            data: { booked: false },
-          });
-        }
-        return tx.meeting.delete({ where: { id } });
-      });
-    }
-
-    if (user.role === Role.user && meeting.userId !== user.id) {
-      throw new BadRequestException('Cannot delete a meeting you don’t own');
-    }
-
-    if (user.role === Role.doc && meeting.docId !== user.id) {
-      throw new BadRequestException('Cannot delete meeting of foreign doc');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      if (meeting.slotId) {
-        await tx.availabilitySlot.update({
-          where: { id: meeting.slotId },
-          data: { booked: false },
-        });
-      }
-      return tx.meeting.delete({ where: { id } });
-    });
-  }
-
-  async getDocProfileForUser(userId: number) {
-    return this.prisma.docProfile.findUnique({
-      where: { docId: userId },
-    });
-  }
-
   async getUserMeetings(
     userId: number,
     scope: 'upcoming' | 'past' | 'all' = 'upcoming',
@@ -140,7 +69,6 @@ export class MeetingsService {
         slot: true,
         doc: {
           include: {
-            // DocProfile.user -> User (doc)
             user: {
               include: {
                 avatar: true,
@@ -178,17 +106,123 @@ export class MeetingsService {
         slot: true,
         user: {
           include: {
-            // UserProfile.user -> User (ma avatar)
             user: {
               include: {
                 avatar: true,
               },
             },
-            // jeśli chcesz mieć problemy klienta w odpowiedzi
             problems: true,
           },
         },
       },
+    });
+  }
+
+  async getDocMeetingsForUser(
+    userId: number,
+    scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+  ) {
+    const docProfile = await this.prisma.docProfile.findUnique({
+      where: { docId: userId },
+    });
+
+    if (!docProfile) {
+      throw new NotFoundException('Doc profile not found');
+    }
+
+    return this.getDocMeetings(docProfile.id, scope);
+  }
+
+  async cancelMeetingByDocUser(meetingId: number, userId: number) {
+    const docProfile = await this.prisma.docProfile.findUnique({
+      where: { docId: userId },
+    });
+
+    if (!docProfile) {
+      throw new NotFoundException('Doc profile not found');
+    }
+
+    return this.cancelMeetingByDoc(meetingId, docProfile.id);
+  }
+
+  async cancelMeetingByUser(meetingId: number, userId: number) {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+    });
+
+    if (!meeting) {
+      throw new NotFoundException('Meeting not found');
+    }
+
+    if (meeting.userId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to cancel this meeting',
+      );
+    }
+
+    return this.cancelMeeting(meeting, 'cancelled_by_user');
+  }
+
+  async cancelMeetingByDoc(meetingId: number, docProfileId: number) {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+    });
+
+    if (!meeting) {
+      throw new NotFoundException('Meeting not found');
+    }
+
+    if (meeting.docId !== docProfileId) {
+      throw new ForbiddenException(
+        'You do not have permission to cancel this meeting',
+      );
+    }
+
+    return this.cancelMeeting(meeting, 'cancelled_by_doc');
+  }
+
+  private async cancelMeeting(
+    meeting: any,
+    cancelStatus: 'cancelled_by_user' | 'cancelled_by_doc',
+  ) {
+    // Check if meeting status allows cancellation
+    if (
+      meeting.status !== MeetingStatus.pending &&
+      meeting.status !== MeetingStatus.confirmed
+    ) {
+      throw new BadRequestException(
+        'Meeting cannot be cancelled - invalid status',
+      );
+    }
+
+    // Check if meeting has already started or passed
+    const now = new Date();
+    if (meeting.startTime <= now) {
+      throw new BadRequestException(
+        'Cannot cancel a meeting that has already started or passed',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedMeeting = await tx.meeting.update({
+        where: { id: meeting.id },
+        data: { status: cancelStatus as MeetingStatus },
+      });
+
+      if (meeting.slotId) {
+        await tx.availabilitySlot.update({
+          where: { id: meeting.slotId },
+          data: { booked: false },
+        });
+      }
+
+      return updatedMeeting;
+    });
+  }
+
+  async getDocProfileForUser(userId: number) {
+    return this.prisma.docProfile.findUnique({
+      where: { docId: userId },
     });
   }
 }

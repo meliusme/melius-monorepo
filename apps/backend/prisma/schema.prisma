@@ -26,10 +26,10 @@ enum Sex {
 
 enum MeetingStatus {
   pending
-  archived
   confirmed
-  active
-  not_confirmed
+  cancelled_by_user
+  cancelled_by_doc
+  completed
 }
 
 enum PaymentStatus {

@@ -4,8 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Patch,
-  Delete,
   UseGuards,
   Controller,
   ParseIntPipe,
@@ -14,10 +12,10 @@ import { MeetingsService } from './meetings.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Role, User } from '@prisma/client';
 import { CreateMeetingDto } from './dtos/create-meeting.dto';
+import { GetMeetingsQueryDto } from './dtos/get-meetings-query.dto';
 import { Roles } from '../decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/user.decorator';
-import { ChangeStatusDto } from './dtos/change-status.dto';
 import { MeetingEntity } from './entity/meeting.entity';
 
 @Controller('meetings')
@@ -26,8 +24,7 @@ export class MeetingsController {
 
   @Post()
   @Roles(Role.user)
-  @UseGuards(RolesGuard)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async createMeeting(
     @CurrentUser() user: User,
     @Body() createMeetingDto: CreateMeetingDto,
@@ -42,9 +39,12 @@ export class MeetingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getMyMeetings(
     @CurrentUser() user: User,
-    @Query('scope') scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+    @Query() query: GetMeetingsQueryDto,
   ) {
-    const meetings = await this.meetingsService.getUserMeetings(user.id, scope);
+    const meetings = await this.meetingsService.getUserMeetings(
+      user.id,
+      query.scope,
+    );
 
     return meetings.map((m) => new MeetingEntity(m));
   }
@@ -54,42 +54,38 @@ export class MeetingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getMyDocMeetings(
     @CurrentUser() user: User,
-    @Query('scope') scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+    @Query() query: GetMeetingsQueryDto,
   ) {
-    const docProfile = await this.meetingsService.getDocProfileForUser(user.id);
-
-    if (!docProfile) {
-      throw new Error('Doc profile not found');
-    }
-
-    const meetings = await this.meetingsService.getDocMeetings(
-      docProfile.id,
-      scope,
+    const meetings = await this.meetingsService.getDocMeetingsForUser(
+      user.id,
+      query.scope,
     );
 
     return meetings.map((m) => new MeetingEntity(m));
   }
 
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async changeStatus(
+  @Post(':id/cancel')
+  @Roles(Role.user)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async cancelMyMeeting(
     @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
-    @Body() changeStatusDto: ChangeStatusDto,
   ) {
-    return new MeetingEntity(
-      await this.meetingsService.changeStatus(id, changeStatusDto.status, user),
-    );
+    const meeting = await this.meetingsService.cancelMeetingByUser(id, user.id);
+    return new MeetingEntity(meeting);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async deleteMeeting(
+  @Post('doc/:id/cancel')
+  @Roles(Role.doc)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async cancelAsDoc(
     @CurrentUser() user: User,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return new MeetingEntity(
-      await this.meetingsService.deleteMeeting(id, user),
+    const meeting = await this.meetingsService.cancelMeetingByDocUser(
+      id,
+      user.id,
     );
+    return new MeetingEntity(meeting);
   }
 }
