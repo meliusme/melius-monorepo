@@ -13,7 +13,7 @@ COPY apps/backend/package.json ./apps/backend/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
+# Copy source code and prisma config
 COPY apps/backend ./apps/backend
 
 # Generate Prisma Client
@@ -37,12 +37,13 @@ WORKDIR /app
 # Copy workspace files and source
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend ./apps/backend
+COPY .env ./.env
 
 # Install all dependencies
 WORKDIR /app/apps/backend
 RUN cd /app && pnpm install --frozen-lockfile
 
-# Generate Prisma Client
+# Generate Prisma Client (Prisma 7 will read from prisma.config.ts)
 RUN npx prisma generate
 
 # Copy built application from builder
