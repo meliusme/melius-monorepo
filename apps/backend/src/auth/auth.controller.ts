@@ -43,8 +43,9 @@ export class AuthController {
   ): Promise<void> {
     const { access_token, user } = await this.authService.registerLight(
       dto.email,
+      dto.firstName,
+      dto.lastName,
     );
-
     res.cookie('isAuth', true, {
       sameSite: 'lax',
       expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),

@@ -45,15 +45,56 @@ export class AuthService {
     };
   }
 
-  async registerLight(email: string): Promise<AuthEntity> {
+  async registerLight(
+    email: string,
+    firstName?: string,
+    lastName?: string,
+  ): Promise<AuthEntity> {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        userProfile: true,
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException(this.i18n.t('test.exceptions.emailExist'));
+      // Jeśli to "pełne" konto (ma potwierdzony email) → nie logujemy po samym mailu
+      if (existingUser.emailConfirmed) {
+        throw new ConflictException(this.i18n.t('test.exceptions.emailExist'));
+      }
+
+      // Jeśli to "lekki" user z poprzedniego register-light:
+      // możemy uzupełnić mu profil (o ile przyszły dane)
+      if (existingUser.userProfile) {
+        const dataToUpdate: {
+          firstName?: string | null;
+          lastName?: string | null;
+        } = {};
+
+        if (firstName) {
+          dataToUpdate.firstName = firstName.trim();
+        }
+
+        if (lastName) {
+          dataToUpdate.lastName = lastName.trim();
+        }
+
+        if (Object.keys(dataToUpdate).length > 0) {
+          await this.prisma.userProfile.update({
+            where: { userId: existingUser.id },
+            data: dataToUpdate,
+          });
+        }
+      }
+
+      // I tak go logujemy – to dalej "light" konto, bez hasła
+      return {
+        access_token: this.jwtService.sign({ userId: existingUser.id }),
+        user: existingUser,
+      };
     }
 
+    // Nowy email → tworzymy "light" usera
     const tempPassword = await bcrypt.hash(
       Math.random().toString(36).slice(-8),
       10,
@@ -69,6 +110,8 @@ export class AuthService {
     await this.prisma.userProfile.create({
       data: {
         userId: user.id,
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
       },
     });
 
