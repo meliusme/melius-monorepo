@@ -2,7 +2,7 @@ import { Meeting, MeetingStatus } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 import { IsEnum } from 'class-validator';
 
-export class MeetingEntity implements Meeting {
+export class MeetingEntity {
   constructor(partial: Partial<MeetingEntity>) {
     Object.assign(this, partial);
   }
@@ -23,4 +23,6 @@ export class MeetingEntity implements Meeting {
 
   @IsEnum(MeetingStatus)
   status: MeetingStatus;
+
+  clientMessage: string | null;
 }

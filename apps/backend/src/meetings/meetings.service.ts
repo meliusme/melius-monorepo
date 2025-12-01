@@ -6,7 +6,7 @@ import { CreateMeetingDto } from './dtos/create-meeting.dto';
 export class MeetingsService {
   constructor(private prisma: PrismaService) {}
 
-  async createMeeting(userId: number, { slotId }: CreateMeetingDto) {
+  async createMeeting(userId: number, { slotId, message }: CreateMeetingDto) {
     const slot = await this.prisma.availabilitySlot.findUnique({
       where: { id: slotId },
     });
@@ -27,6 +27,7 @@ export class MeetingsService {
         startTime: slot.startTime,
         endTime: slot.endTime,
         status: MeetingStatus.pending,
+        clientMessage: message,
       },
     });
 
