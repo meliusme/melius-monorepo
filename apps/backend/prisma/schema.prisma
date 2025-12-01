@@ -130,18 +130,19 @@ model Rating {
 }
 
 model Meeting {
-  id        Int               @id @default(autoincrement())
-  startTime DateTime          @db.Timestamptz
-  endTime   DateTime          @db.Timestamptz
-  status    MeetingStatus
-  user      UserProfile       @relation(fields: [userId], references: [userId])
-  userId    Int
-  doc       DocProfile        @relation(fields: [docId], references: [id])
-  docId     Int
-  slot      AvailabilitySlot? @relation(fields: [slotId], references: [id])
-  slotId    Int?
-  payments  Payment[]
-  ratings   Rating[]
+  id            Int               @id @default(autoincrement())
+  startTime     DateTime          @db.Timestamptz
+  endTime       DateTime          @db.Timestamptz
+  status        MeetingStatus
+  user          UserProfile       @relation(fields: [userId], references: [userId])
+  userId        Int
+  doc           DocProfile        @relation(fields: [docId], references: [id])
+  docId         Int
+  slot          AvailabilitySlot? @relation(fields: [slotId], references: [id])
+  slotId        Int?
+  payments      Payment[]
+  ratings       Rating[]
+  clientMessage String?
 }
 
 model AvailabilitySlot {
