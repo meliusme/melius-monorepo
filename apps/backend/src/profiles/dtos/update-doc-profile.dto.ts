@@ -18,15 +18,6 @@ export class UpdateDocProfileDto {
   @IsNotEmpty()
   lastName: string;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  workStart: number;
-
-  @IsNumber()
-  @IsPositive()
-  workEnd: number;
-
   @IsEnum(Profession)
   @IsNotEmpty()
   profession: Profession;

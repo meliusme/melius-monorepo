@@ -86,8 +86,6 @@ model DocProfile {
   docId             Int                @unique
   firstName         String?
   lastName          String?
-  workStart         Int?
-  workEnd           Int?
   profession        Profession?
   rate              Int?
   ratesLot          Int?

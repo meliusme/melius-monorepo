@@ -1,4 +1,6 @@
 import {
+  Get,
+  Query,
   Post,
   Body,
   Param,
@@ -33,6 +35,39 @@ export class MeetingsController {
     return new MeetingEntity(
       await this.meetingsService.createMeeting(user.id, createMeetingDto),
     );
+  }
+
+  @Get('me')
+  @Roles(Role.user)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getMyMeetings(
+    @CurrentUser() user: User,
+    @Query('scope') scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+  ) {
+    const meetings = await this.meetingsService.getUserMeetings(user.id, scope);
+
+    return meetings.map((m) => new MeetingEntity(m));
+  }
+
+  @Get('doc/me')
+  @Roles(Role.doc)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getMyDocMeetings(
+    @CurrentUser() user: User,
+    @Query('scope') scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+  ) {
+    const docProfile = await this.meetingsService.getDocProfileForUser(user.id);
+
+    if (!docProfile) {
+      throw new Error('Doc profile not found');
+    }
+
+    const meetings = await this.meetingsService.getDocMeetings(
+      docProfile.id,
+      scope,
+    );
+
+    return meetings.map((m) => new MeetingEntity(m));
   }
 
   @Patch(':id')

@@ -1,7 +1,7 @@
-import { DocProfile, Profession, Specialization } from '@prisma/client';
+import { Profession, Specialization } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 
-export class DocProfileEntity implements DocProfile {
+export class DocProfileEntity {
   constructor(partial: Partial<DocProfileEntity>) {
     Object.assign(this, partial);
   }
@@ -11,26 +11,24 @@ export class DocProfileEntity implements DocProfile {
 
   docId: number;
 
-  firstName: string;
+  firstName: string | null;
 
-  lastName: string;
+  lastName: string | null;
 
-  workStart: number;
+  profession: Profession | null;
 
-  workEnd: number;
+  rate: number | null;
 
-  profession: Profession;
-
-  rate: number;
-
-  ratesLot: number;
+  ratesLot: number | null;
 
   specializations: Specialization[];
 
   @Exclude()
   createdAt: Date;
+
   @Exclude()
   updatedAt: Date;
+
   @Exclude()
   published: boolean;
 }

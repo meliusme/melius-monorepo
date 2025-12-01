@@ -108,4 +108,87 @@ export class MeetingsService {
       return tx.meeting.delete({ where: { id } });
     });
   }
+
+  async getDocProfileForUser(userId: number) {
+    return this.prisma.docProfile.findUnique({
+      where: { docId: userId },
+    });
+  }
+
+  async getUserMeetings(
+    userId: number,
+    scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+  ) {
+    const now = new Date();
+
+    const where: any = {
+      userId,
+    };
+
+    if (scope === 'upcoming') {
+      where.startTime = { gte: now };
+    } else if (scope === 'past') {
+      where.startTime = { lt: now };
+    }
+
+    return this.prisma.meeting.findMany({
+      where,
+      orderBy: {
+        startTime: scope === 'past' ? 'desc' : 'asc',
+      },
+      include: {
+        slot: true,
+        doc: {
+          include: {
+            // DocProfile.user -> User (doc)
+            user: {
+              include: {
+                avatar: true,
+                docProfile: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getDocMeetings(
+    docProfileId: number,
+    scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+  ) {
+    const now = new Date();
+
+    const where: any = {
+      docId: docProfileId,
+    };
+
+    if (scope === 'upcoming') {
+      where.startTime = { gte: now };
+    } else if (scope === 'past') {
+      where.startTime = { lt: now };
+    }
+
+    return this.prisma.meeting.findMany({
+      where,
+      orderBy: {
+        startTime: scope === 'past' ? 'desc' : 'asc',
+      },
+      include: {
+        slot: true,
+        user: {
+          include: {
+            // UserProfile.user -> User (ma avatar)
+            user: {
+              include: {
+                avatar: true,
+              },
+            },
+            // jeśli chcesz mieć problemy klienta w odpowiedzi
+            problems: true,
+          },
+        },
+      },
+    });
+  }
 }
