@@ -13,6 +13,7 @@ import { join } from 'path';
 import { CleanupService } from './cleanup/cleanup.service';
 import { PrismaService } from './prisma/prisma.service';
 import { AvailabilityModule } from './availability/availability.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AvailabilityModule } from './availability/availability.module';
       typesOutputPath: join('./src/generated/i18n.generated.ts'),
     }),
     AvailabilityModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService, CleanupService, PrismaService],

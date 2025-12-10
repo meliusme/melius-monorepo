@@ -3,10 +3,13 @@ import {
   IsString,
   IsNumber,
   IsEnum,
-  IsPositive,
   IsNotEmpty,
   IsArray,
   ArrayNotEmpty,
+  IsOptional,
+  IsInt,
+  Max,
+  Min,
 } from 'class-validator';
 
 export class UpdateDocProfileDto {
@@ -21,6 +24,12 @@ export class UpdateDocProfileDto {
   @IsEnum(Profession)
   @IsNotEmpty()
   profession: Profession;
+
+  @IsOptional()
+  @IsInt()
+  @Min(50)
+  @Max(1000)
+  sessionPricePln?: number;
 
   @IsArray()
   @ArrayNotEmpty()

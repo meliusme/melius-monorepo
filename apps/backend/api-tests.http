@@ -1,0 +1,68 @@
+@baseUrl = http://localhost:3000
+@email = user@example.com
+@password = password123
+
+### ============================================
+### AUTH ENDPOINTS
+### ============================================
+
+### Login (sets httpOnly cookie automatically)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Register Light
+POST {{baseUrl}}/auth/register-light
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+### ============================================
+### MEETINGS ENDPOINTS (USER)
+### ============================================
+
+### Get My Meetings (upcoming by default)
+GET {{baseUrl}}/meetings/me
+
+### Get My Meetings - Past
+GET {{baseUrl}}/meetings/me?scope=past
+
+### Get My Meetings - All
+GET {{baseUrl}}/meetings/me?scope=all
+
+### Create Meeting
+POST {{baseUrl}}/meetings
+Content-Type: application/json
+
+{
+  "slotId": 1,
+  "message": "Looking forward to our meeting"
+}
+
+### Cancel My Meeting (replace :id with actual meeting id)
+POST {{baseUrl}}/meetings/1/cancel
+
+### ============================================
+### MEETINGS ENDPOINTS (DOC)
+### ============================================
+
+### Get My Doc Meetings (upcoming)
+GET {{baseUrl}}/meetings/doc/me
+
+### Get My Doc Meetings - Past
+GET {{baseUrl}}/meetings/doc/me?scope=past
+
+### Get My Doc Meetings - All
+GET {{baseUrl}}/meetings/doc/me?scope=all
+
+### Cancel Meeting as Doc (replace :id with actual meeting id)
+POST {{baseUrl}}/meetings/doc/1/cancel

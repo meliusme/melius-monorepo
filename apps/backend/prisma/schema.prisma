@@ -89,6 +89,7 @@ model DocProfile {
   profession        Profession?
   rate              Int?
   ratesLot          Int?
+  sessionPricePln   Int?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   published         Boolean            @default(false)

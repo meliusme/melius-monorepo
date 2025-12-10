@@ -21,6 +21,8 @@ export class DocProfileEntity {
 
   ratesLot: number | null;
 
+  sessionPricePln: number | null;
+
   specializations: Specialization[];
 
   @Exclude()

@@ -43,11 +43,11 @@ COPY .env ./.env
 WORKDIR /app/apps/backend
 RUN cd /app && pnpm install --frozen-lockfile
 
-# Generate Prisma Client (Prisma 7 will read from prisma.config.ts)
-RUN npx prisma generate
-
 # Copy built application from builder
 COPY --from=builder /app/apps/backend/dist ./dist
+
+# Generate Prisma Client AFTER copying dist (Prisma 7 will read from prisma.config.ts)
+RUN npx prisma generate
 
 # Expose port
 EXPOSE 3000
