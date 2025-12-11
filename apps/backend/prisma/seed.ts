@@ -44,7 +44,6 @@ const specializations = [
   { specializationKey: 'career_coaching' },
   { specializationKey: 'applied_behavior_analysis' },
   { specializationKey: 'gestalt_therapy' },
-  { specializationKey: 'solution_focused_therapy' },
   { specializationKey: 'humanistic_therapy' },
   { specializationKey: 'integrative_therapy' },
 ];
