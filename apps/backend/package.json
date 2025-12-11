@@ -18,8 +18,12 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "ts-node prisma/seed.ts",
-    "seed2": "ts-node prisma/seed2.ts"
+    "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed.ts'",
+    "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed2.ts'",
+    "prisma:generate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma generate'",
+    "prisma:studio": "./prisma-studio.sh",
+    "prisma:push": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma db push'",
+    "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.554.0",
@@ -35,13 +39,13 @@
     "@nestjs/schedule": "^6.0.1",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
+    "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^5.1.1",
     "body-parser": "^2.2.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.6",
     "dotenv": "^17.2.3",
-    "handlebars": "^4.7.8",
     "hbs": "^4.2.0",
     "nestjs-i18n": "^10.4.5",
     "nodemailer": "^6.9.13",
@@ -50,6 +54,7 @@
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.0",
+    "resend": "^6.6.0",
     "rxjs": "^7.8.1",
     "stripe": "^20.0.0",
     "uuid": "^9.0.1"

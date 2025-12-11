@@ -26,28 +26,32 @@ RUN pnpm build
 # Production stage
 FROM node:22-alpine
 
-# Install OpenSSL and other required dependencies
-RUN apk add --no-cache openssl libc6-compat
+# Install OpenSSL, Python, make, g++ and other required dependencies for native modules
+RUN apk add --no-cache openssl libc6-compat python3 make g++
 
 # Install pnpm
 RUN npm install -g pnpm
 
 WORKDIR /app
 
-# Copy workspace files and source
+# Copy workspace configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/backend ./apps/backend
-COPY .env ./.env
 
-# Install all dependencies
+# Copy backend package.json and prisma files
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/backend/prisma ./apps/backend/prisma
+
+# Install ALL dependencies (including devDependencies for Prisma CLI)
+# This will properly build bcrypt for Alpine Linux
+RUN pnpm install --frozen-lockfile
+
+# Generate Prisma Client
 WORKDIR /app/apps/backend
-RUN cd /app && pnpm install --frozen-lockfile
+RUN pnpm exec prisma generate
 
 # Copy built application from builder
+WORKDIR /app/apps/backend
 COPY --from=builder /app/apps/backend/dist ./dist
-
-# Generate Prisma Client AFTER copying dist (Prisma 7 will read from prisma.config.ts)
-RUN npx prisma generate
 
 # Expose port
 EXPOSE 3000

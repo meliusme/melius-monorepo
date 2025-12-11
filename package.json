@@ -13,6 +13,12 @@
     "dev:web": "pnpm --filter @melius/web dev",
     "build": "pnpm --filter @melius/backend build && pnpm --filter @melius/web build",
     "lint": "pnpm --filter @melius/backend lint && pnpm --filter @melius/web lint",
-    "test": "pnpm --filter @melius/backend test"
+    "test": "pnpm --filter @melius/backend test",
+    "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed.ts'",
+    "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed2.ts'",
+    "prisma:generate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma generate'",
+    "prisma:studio": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma studio'",
+    "prisma:push": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma db push'",
+    "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'"
   }
 }

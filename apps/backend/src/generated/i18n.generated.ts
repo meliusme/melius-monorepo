@@ -13,6 +13,10 @@ export type I18nTranslations = {
         "dontAnswer": string;
         "confirmRegister": string;
         "changePassword": string;
+        "subjectConfirm": string;
+        "previewConfirm": string;
+        "subjectChange": string;
+        "previewChange": string;
         "exceptions": {
             "emailExist": string;
             "emailTokenExpired": string;

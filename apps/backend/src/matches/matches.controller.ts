@@ -13,8 +13,7 @@ export class MatchesController {
   constructor(private readonly matchesService: MatchesService) {}
 
   @Roles(Role.user)
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesGuard, JwtAuthGuard)
   @Get()
   async getMatchedDocs(@CurrentUser() user: User) {
     const profiles = await this.matchesService.getMatchedDocs(user.id);

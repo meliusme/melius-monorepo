@@ -39,7 +39,6 @@ export class AvailabilityController {
 
   // client gets free slots of a doc
   @Get('doc/:docId')
-  @UseGuards(JwtAuthGuard)
   freeSlots(@Param('docId', ParseIntPipe) docId: number) {
     return this.availabilityService.findFreeSlotsForDoc(docId);
   }

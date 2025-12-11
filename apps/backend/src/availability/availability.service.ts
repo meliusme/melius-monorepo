@@ -39,10 +39,10 @@ export class AvailabilityService {
     });
   }
 
-  async findFreeSlotsForDoc(docId: number) {
+  async findFreeSlotsForDoc(docProfileId: number) {
     return this.prisma.availabilitySlot.findMany({
       where: {
-        docId,
+        docId: docProfileId,
         booked: false,
       },
       orderBy: { startTime: 'asc' },

@@ -6,6 +6,10 @@
   "dontAnswer": "Ta wiadomość została wygenerowana automatycznie, nie odpowiadaj na nią.",
   "confirmRegister": "Potwierdź rejestrację",
   "changePassword": "Ustaw hasło",
+  "subjectConfirm": "Melius – potwierdzenie adresu e-mail",
+  "previewConfirm": "Potwierdź swój adres e-mail, aby dokończyć rejestrację w Melius.",
+  "subjectChange": "Melius – ustawienie hasła",
+  "previewChange": "Ustaw lub zmień swoje hasło do konta Melius.",
   "exceptions": {
     "emailExist": "E-mail już istnieje.",
     "emailTokenExpired": "Potwierdzenie wygasło",

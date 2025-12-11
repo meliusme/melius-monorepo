@@ -218,8 +218,9 @@ export class MeetingsService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const updatedMeeting = await tx.meeting.update({
+    // 🔹 1. Transakcja: tylko DB (status + slot)
+    const updatedMeeting = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.meeting.update({
         where: { id: meeting.id },
         data: { status: cancelStatus as MeetingStatus },
       });
@@ -231,18 +232,16 @@ export class MeetingsService {
         });
       }
 
-      await this.paymentsService.refundPaymentForMeeting(
-        meeting.id,
-        cancelStatus,
-      );
-
-      return updatedMeeting;
+      return updated;
     });
-  }
 
-  async getDocProfileForUser(userId: number) {
-    return this.prisma.docProfile.findUnique({
-      where: { docId: userId },
-    });
+    // 🔹 2. Refund PO transakcji
+    await this.paymentsService.refundPaymentForMeeting(
+      meeting.id,
+      cancelStatus,
+    );
+
+    // 🔹 3. Zwracamy zaktualizowany meeting
+    return updatedMeeting;
   }
 }

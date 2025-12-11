@@ -19,7 +19,7 @@ export class ImageService {
         Body: dataBuffer,
       };
       const parallelUploads3 = new Upload({
-        client: new S3(this.config) || new S3Client(this.config),
+        client: new S3Client(this.config),
         params: uploadParams,
       });
 

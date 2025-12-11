@@ -6,6 +6,10 @@
   "dontAnswer": "This message was automatically generated, do not respond to it.",
   "confirmRegister": "Confirm registration",
   "changePassword": "Set password",
+  "subjectConfirm": "Melius – potwierdzenie adresu e-mail",
+  "previewConfirm": "Potwierdź swój adres e-mail, aby dokończyć rejestrację w Melius.",
+  "subjectChange": "Melius – ustawienie hasła",
+  "previewChange": "Ustaw lub zmień swoje hasło do konta Melius.",
   "exceptions": {
     "emailExist": "E-mail already exist",
     "emailTokenExpired": "Confirmation expired",

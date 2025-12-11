@@ -32,9 +32,8 @@ export class ProfilesController {
     private ratingService: RatingService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Roles(Role.user)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('user')
   async updateUserProfile(
     @CurrentUser() user: User,
@@ -45,9 +44,8 @@ export class ProfilesController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Roles(Role.doc)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Put('doc')
   async updateDocProfile(
     @CurrentUser() user: User,
@@ -58,9 +56,8 @@ export class ProfilesController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Roles(Role.admin)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('admin')
   async updateAdminProfile(
     @CurrentUser() user: User,
@@ -70,8 +67,7 @@ export class ProfilesController {
   }
 
   @Roles(Role.user)
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('user')
   async getUserProfile(@CurrentUser() user: User) {
     return new UserWithProfileEntity(
@@ -80,8 +76,7 @@ export class ProfilesController {
   }
 
   @Roles(Role.doc)
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('doc')
   async getDocProfile(@CurrentUser() user: User) {
     return new DocWithProfileEntity(
@@ -102,8 +97,7 @@ export class ProfilesController {
   }
 
   @Roles(Role.user)
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('rate')
   async addDocRate(
     @CurrentUser() user: User,
@@ -131,7 +125,5 @@ export class ProfilesController {
       pageNumber,
       limitNumber,
     );
-
-    return result;
   }
 }

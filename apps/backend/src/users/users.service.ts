@@ -1,5 +1,10 @@
 import * as bcrypt from 'bcrypt';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -41,7 +46,7 @@ export class UsersService {
           },
         });
       default:
-        throw new Error('Invalid role provided');
+        throw new BadRequestException('Invalid role provided');
     }
   }
 
@@ -84,10 +89,11 @@ export class UsersService {
       roundsOfHashing,
     );
 
-    createUserDto.password = hashedPassword;
-
     const user = await this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        ...createUserDto,
+        password: hashedPassword,
+      },
     });
 
     await this.createProfile(user.id, user.role);
@@ -126,7 +132,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
     await this.deleteAvatar(id);
     await this.deleteProfile(id, user.role);

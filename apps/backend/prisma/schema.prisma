@@ -63,7 +63,7 @@ model User {
   adminProfile     AdminProfile?
   emailConfirmed   Boolean       @default(false)
   language         Language      @default(pl)
-  tokenActivatedAt DateTime      @default(now()) @db.Timestamptz()
+  tokenActivatedAt DateTime?     @db.Timestamptz()
 }
 
 model UserProfile {

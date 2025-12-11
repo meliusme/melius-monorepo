@@ -1,6 +1,20 @@
 @baseUrl = http://localhost:3000
-@email = user@example.com
+@email = lukasik.szymon@gmail.com
 @password = password123
+
+### ============================================
+### FULL REGISTER (with confirm email)
+### ============================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "role": "user",
+  "language": "pl"
+}
 
 ### ============================================
 ### AUTH ENDPOINTS
@@ -66,3 +80,101 @@ GET {{baseUrl}}/meetings/doc/me?scope=all
 
 ### Cancel Meeting as Doc (replace :id with actual meeting id)
 POST {{baseUrl}}/meetings/doc/1/cancel
+
+### ============================================
+### AVAILABILITY (DOC)
+### ============================================
+
+### Create Availability Slot
+POST {{baseUrl}}/availability
+Content-Type: application/json
+
+{
+  "startTime": "2025-12-15T10:00:00.000Z",
+  "endTime": "2025-12-15T10:50:00.000Z"
+}
+
+### Get My Availability Slots (Doc)
+GET {{baseUrl}}/availability/my
+
+### Delete Slot (replace :id)
+DELETE {{baseUrl}}/availability/1
+
+### Get Free Slots for Doc (public)
+GET {{baseUrl}}/availability/doc/1
+
+### ============================================
+### MATCHES
+### ============================================
+
+### Get Problems
+GET {{baseUrl}}/matches/problems
+
+### Search Docs with Free Slots
+POST {{baseUrl}}/matches/search-with-slots
+Content-Type: application/json
+
+{
+  "problemId": 1,
+  "from": "2025-12-15T00:00:00.000Z",
+  "to": "2025-12-20T23:59:59.999Z"
+}
+
+### ============================================
+### PAYMENTS
+### ============================================
+
+### Create Checkout Session for Meeting
+POST {{baseUrl}}/payments/checkout
+Content-Type: application/json
+
+{
+  "meetingId": 1,
+  "currency": "PLN"
+}
+
+### ============================================
+### PROFILES & RATINGS
+### ============================================
+
+### Get My User Profile
+GET {{baseUrl}}/profiles/user
+
+### Update My User Profile (problems)
+POST {{baseUrl}}/profiles/user
+Content-Type: application/json
+
+{
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "problemIds": [1, 2]
+}
+
+### Get My Doc Profile
+GET {{baseUrl}}/profiles/doc
+
+### Update My Doc Profile (specs + price)
+PUT {{baseUrl}}/profiles/doc
+Content-Type: application/json
+
+{
+  "firstName": "Dr",
+  "lastName": "Psycholog",
+  "profession": "psychologist",
+  "specializationIds": [1, 2],
+  "sessionPricePln": 220
+}
+
+### Rate Doc after Completed Meeting
+POST {{baseUrl}}/profiles/rate
+Content-Type: application/json
+
+{
+  "docId": 1,
+  "meetingId": 1,
+  "rate": 5,
+  "comment": "Bardzo dobra sesja!"
+}
+
+### Get Doc Ratings
+GET {{baseUrl}}/profiles/doc/1/ratings?page=1&limit=10

@@ -58,7 +58,6 @@ export class ProfilesService {
         specializations: {
           set: updateDocProfileDto.specializations.map((id) => ({ id })),
         },
-        published: true,
       },
     });
   }

@@ -101,6 +101,8 @@ export class MatchesService {
       lastName: doc.lastName,
       profession: doc.profession,
       rate: doc.rate,
+      ratesLot: doc.ratesLot,
+      sessionPricePln: doc.sessionPricePln,
       published: doc.published,
       user: {
         id: doc.user.id,

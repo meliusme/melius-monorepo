@@ -1,0 +1,60 @@
+RZECZY NA PÓŹNIEJ (NIE BLOKUJĄ MVP)
+
+3.1. Availability — walidacja czasu
+- Sprawdzanie, że startTime < endTime przy tworzeniu slotu.
+- Walidacja, że nowe sloty nie nakładają się na istniejące sloty danego terapeuty.
+- Filtrowanie tylko przyszłych slotów (startTime > now) w findFreeSlotsForDoc.
+
+3.2. Meetings — doprecyzowanie scope po statusie
+- Dla "upcoming" filtrować tylko statusy: pending, confirmed.
+- Dla "past" filtrować tylko statusy: completed, cancelled_by_user, cancelled_by_doc.
+- Opcjonalnie dodać dodatkowe scope'y (np. tylko cancelled, tylko completed) po potrzebach frontu.
+
+3.3. Payments — sanity checks i dodatkowe eventy
+- Jeśli istnieje Payment w statusie pending/succeeded dla danego meetingId, nie tworzyć kolejnego przy ponownym wywołaniu checkout.
+- Obsłużyć dodatkowe eventy Stripe w webhooku:
+  - checkout.session.expired → sprzątanie starych pendingów (opcjonalnie).
+  - payment_intent.payment_failed → ustawienie Payment.status = failed.
+- Rozróżnienie powodu refundu w zależności od cancelStatus (user/doc) – np. metadata, inne reason.
+
+3.4. Email (po migracji na SendGrid)
+- Osobny template w SendGridzie dla resetu hasła (inne copy niż rejestracja).
+- Rate limit na endpointy emailowe (np. 5 prób / 15 minut / IP / email).
+- Flow zmiany emaila:
+  - wysłanie maila z potwierdzeniem nowego adresu,
+  - dopiero po kliknięciu — update email w bazie.
+- Mail do terapeuty po akceptacji konta przez admina.
+
+3.5. Images / avatar
+- Walidacja rozmiaru uploadowanego pliku (np. max 2MB).
+- Walidacja MIME type (image/jpeg, image/png).
+- Automatyczny resize (np. Sharp) do rozsądnego rozmiaru (np. 512x512).
+- Opcjonalnie generowanie miniaturek.
+
+3.6. Profiles / DocProfile
+- Publiczny endpoint GET /profiles/doc/:id do pobierania publicznych informacji o terapeucie (karta profilu).
+- Zmiana flow publikacji:
+  - terapeuta uzupełnia profil → published = false,
+  - admin weryfikuje dokumenty → dopiero wtedy ustawia published = true.
+- Możliwe dodatkowe pola pod AI match (np. język pracy, forma pracy, typ klienta).
+
+3.7. Matches
+- Walidacja pól from/to w SearchMatchesDto:
+  - poprawny format dat,
+  - from <= to,
+  - maksymalny zakres (np. 30 dni).
+- Ujednolicenie shape response getMatchedDocs z innymi endpointami (albo oparcie się głównie na search-with-slots).
+- Później: punktowanie terapeutów (skoring) przy matchowaniu.
+
+3.8. Rating
+- Opcjonalne spięcie createRating + update średniej w jednej transakcji Prisma.
+- Możliwość dodatkowych reguł:
+  - np. wymagany komentarz przy ocenie <= 3.
+  - flagowanie / zgłaszanie komentarzy do moderacji.
+
+3.9. Admin / rozliczenia (późniejszy etap)
+- Panel admina do:
+  - akceptowania terapeutów,
+  - podglądu płatności i refundów,
+  - prostego raportowania (ile sesji, ile przychodu).
+- Przygotowanie tabeli/relacji na rozliczenia z terapeutami (np. payouts, prowizje).
