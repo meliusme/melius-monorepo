@@ -10,7 +10,6 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { MatchesModule } from './matches/matches.module';
 import { join } from 'path';
-import { CleanupService } from './cleanup/cleanup.service';
 import { PrismaService } from './prisma/prisma.service';
 import { AvailabilityModule } from './availability/availability.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -41,6 +40,6 @@ import { PaymentsModule } from './payments/payments.module';
     PaymentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, CleanupService, PrismaService],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}

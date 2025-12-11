@@ -4,13 +4,16 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { MeetingStatus, Role, User } from '@prisma/client';
+import { MeetingStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMeetingDto } from './dtos/create-meeting.dto';
+import { PaymentsService } from 'src/payments/payments.service';
 @Injectable()
 export class MeetingsService {
-  constructor(private prisma: PrismaService) {}
-
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
   async createMeeting(userId: number, { slotId, message }: CreateMeetingDto) {
     const slot = await this.prisma.availabilitySlot.findUnique({
       where: { id: slotId },
@@ -160,6 +163,18 @@ export class MeetingsService {
       );
     }
 
+    // 🔹 Limit czasowy dla klienta – min. 12h do startu
+
+    const now = new Date();
+    const diffMs = meeting.startTime.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 12) {
+      throw new BadRequestException(
+        'Cannot cancel a meeting less than 12 hours before it starts',
+      );
+    }
+
     return this.cancelMeeting(meeting, 'cancelled_by_user');
   }
 
@@ -215,6 +230,11 @@ export class MeetingsService {
           data: { booked: false },
         });
       }
+
+      await this.paymentsService.refundPaymentForMeeting(
+        meeting.id,
+        cancelStatus,
+      );
 
       return updatedMeeting;
     });

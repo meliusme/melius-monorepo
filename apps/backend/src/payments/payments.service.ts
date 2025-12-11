@@ -14,9 +14,7 @@ export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(private prisma: PrismaService) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-      apiVersion: '2025-11-17.clover',
-    });
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
   }
 
   async createCheckoutSessionForMeeting(userId: number, meetingId: number) {
@@ -30,6 +28,7 @@ export class PaymentsService {
             user: true, // UserProfile.user -> User (email)
           },
         },
+        slot: true,
       },
     });
 
@@ -59,6 +58,19 @@ export class PaymentsService {
 
     if (pricePln == null || pricePln <= 0) {
       throw new BadRequestException('Session price is not set');
+    }
+
+    if (!meeting.slot) {
+      throw new BadRequestException('Meeting has no assigned slot');
+    }
+
+    const now = new Date();
+    const slotStart = meeting.slot.startTime;
+
+    if (slotStart <= now) {
+      throw new BadRequestException(
+        'You cannot pay for a meeting that has already started or finished',
+      );
     }
 
     const amountCents = Math.round(pricePln * 100);
@@ -226,5 +238,52 @@ export class PaymentsService {
       );
       throw error;
     }
+  }
+
+  async refundPaymentForMeeting(meetingId: number, reason: string) {
+    // 1. Znajdź udaną płatność dla tego meetingu
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        meetingId,
+        status: PaymentStatus.succeeded,
+      },
+    });
+
+    if (!payment) {
+      this.logger.warn(
+        `No succeeded payment found for meeting ${meetingId}, skipping refund`,
+      );
+      return;
+    }
+
+    if (payment.status === PaymentStatus.refunded) {
+      this.logger.log(`Payment ${payment.id} already refunded, skipping`);
+      return;
+    }
+
+    if (!payment.stripePaymentIntentId) {
+      this.logger.error(
+        `Payment ${payment.id} has no payment_intent id, cannot refund`,
+      );
+      return;
+    }
+
+    // 2. Refund w Stripe
+    await this.stripe.refunds.create({
+      payment_intent: payment.stripePaymentIntentId,
+      reason: 'requested_by_customer',
+    });
+
+    // 3. Update statusu w bazie
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.refunded,
+      },
+    });
+
+    this.logger.log(
+      `Refunded payment ${payment.id} for meeting ${meetingId} (${reason})`,
+    );
   }
 }
