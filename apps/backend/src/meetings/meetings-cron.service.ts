@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { MeetingStatus } from '@prisma/client';
+import { MeetingStatus, PaymentProvider, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class MeetingsCronService {
@@ -58,9 +58,7 @@ export class MeetingsCronService {
     const meetingsToCancel = await this.prisma.meeting.findMany({
       where: {
         status: MeetingStatus.pending,
-        slot: {
-          startTime: { lt: cutoff },
-        },
+        createdAt: { lte: cutoff },
       },
       select: {
         id: true,
@@ -81,7 +79,18 @@ export class MeetingsCronService {
       await tx.meeting.updateMany({
         where: { id: { in: ids } },
         data: {
-          status: MeetingStatus.cancelled_by_user, // na razie technicznie, można potem dodać cancelled_by_system
+          status: MeetingStatus.cancelled_by_system,
+        },
+      });
+
+      await tx.payment.updateMany({
+        where: {
+          meetingId: { in: ids },
+          provider: PaymentProvider.p24,
+          status: PaymentStatus.pending,
+        },
+        data: {
+          status: PaymentStatus.failed,
         },
       });
 
@@ -94,7 +103,7 @@ export class MeetingsCronService {
     });
 
     this.logger.log(
-      `Auto-cancelled ${meetingsToCancel.length} pending meeting(s) older than 15 minutes`,
+      `Auto-cancelled ${meetingsToCancel.length} pending meeting(s) not paid within 15 minutes`,
     );
   }
 }

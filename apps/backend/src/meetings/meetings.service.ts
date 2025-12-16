@@ -14,37 +14,51 @@ export class MeetingsService {
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
   ) {}
-  async createMeeting(userId: number, { slotId, message }: CreateMeetingDto) {
-    const slot = await this.prisma.availabilitySlot.findUnique({
-      where: { id: slotId },
+  async createMeeting(
+    userId: number,
+    { slotId, clientMessage }: CreateMeetingDto,
+  ) {
+    // Atomic booking to prevent race conditions: book slot and create meeting in a single transaction.
+    return this.prisma.$transaction(async (tx) => {
+      const slot = await tx.availabilitySlot.findUnique({
+        where: { id: slotId },
+        select: {
+          id: true,
+          docId: true,
+          startTime: true,
+          endTime: true,
+          booked: true,
+        },
+      });
+
+      if (!slot) {
+        throw new BadRequestException('Slot not found');
+      }
+
+      // Try to book the slot only if it is still free.
+      const bookedResult = await tx.availabilitySlot.updateMany({
+        where: { id: slot.id, booked: false },
+        data: { booked: true },
+      });
+
+      if (bookedResult.count === 0) {
+        throw new BadRequestException('Slot already booked');
+      }
+
+      const meeting = await tx.meeting.create({
+        data: {
+          userId,
+          docId: slot.docId,
+          slotId: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          status: MeetingStatus.pending,
+          clientMessage,
+        },
+      });
+
+      return meeting;
     });
-
-    if (!slot) {
-      throw new BadRequestException('Slot not found');
-    }
-
-    if (slot.booked) {
-      throw new BadRequestException('Slot already booked');
-    }
-
-    const meeting = await this.prisma.meeting.create({
-      data: {
-        userId,
-        docId: slot.docId,
-        slotId: slot.id,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        status: MeetingStatus.pending,
-        clientMessage: message,
-      },
-    });
-
-    await this.prisma.availabilitySlot.update({
-      where: { id: slot.id },
-      data: { booked: true },
-    });
-
-    return meeting;
   }
 
   async getUserMeetings(
@@ -58,9 +72,16 @@ export class MeetingsService {
     };
 
     if (scope === 'upcoming') {
-      where.startTime = { gte: now };
+      where.status = { in: [MeetingStatus.pending, MeetingStatus.confirmed] };
     } else if (scope === 'past') {
-      where.startTime = { lt: now };
+      where.status = {
+        in: [
+          MeetingStatus.completed,
+          MeetingStatus.cancelled_by_user,
+          MeetingStatus.cancelled_by_doc,
+          MeetingStatus.cancelled_by_system,
+        ],
+      };
     }
 
     return this.prisma.meeting.findMany({
@@ -95,9 +116,16 @@ export class MeetingsService {
     };
 
     if (scope === 'upcoming') {
-      where.startTime = { gte: now };
+      where.status = { in: [MeetingStatus.pending, MeetingStatus.confirmed] };
     } else if (scope === 'past') {
-      where.startTime = { lt: now };
+      where.status = {
+        in: [
+          MeetingStatus.completed,
+          MeetingStatus.cancelled_by_user,
+          MeetingStatus.cancelled_by_doc,
+          MeetingStatus.cancelled_by_system,
+        ],
+      };
     }
 
     return this.prisma.meeting.findMany({
@@ -163,16 +191,18 @@ export class MeetingsService {
       );
     }
 
-    // 🔹 Limit czasowy dla klienta – min. 12h do startu
+    // 🔹 Limit czasowy dla klienta – tylko dla opłaconych (confirmed)
+    // Policy: cancellation (and refund) allowed only up to 24h before start.
+    if (meeting.status === MeetingStatus.confirmed) {
+      const now = new Date();
+      const diffMs = meeting.startTime.getTime() - now.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
 
-    const now = new Date();
-    const diffMs = meeting.startTime.getTime() - now.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
-    if (diffHours < 12) {
-      throw new BadRequestException(
-        'Cannot cancel a meeting less than 12 hours before it starts',
-      );
+      if (diffHours < 24) {
+        throw new BadRequestException(
+          'Cannot cancel a confirmed meeting less than 24 hours before it starts',
+        );
+      }
     }
 
     return this.cancelMeeting(meeting, 'cancelled_by_user');
@@ -235,11 +265,8 @@ export class MeetingsService {
       return updated;
     });
 
-    // 🔹 2. Refund PO transakcji
-    await this.paymentsService.refundPaymentForMeeting(
-      meeting.id,
-      cancelStatus,
-    );
+    // 🔹 2. Refund
+    // MVP: refunds are disabled (manual process outside the system).
 
     // 🔹 3. Zwracamy zaktualizowany meeting
     return updatedMeeting;

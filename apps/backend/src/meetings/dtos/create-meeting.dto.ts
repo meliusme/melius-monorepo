@@ -7,5 +7,5 @@ export class CreateMeetingDto {
   @IsOptional()
   @IsString()
   @MaxLength(1000)
-  message?: string;
+  clientMessage?: string;
 }

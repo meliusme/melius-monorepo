@@ -29,6 +29,7 @@ enum MeetingStatus {
   confirmed
   cancelled_by_user
   cancelled_by_doc
+  cancelled_by_system
   completed
 }
 
@@ -37,6 +38,11 @@ enum PaymentStatus {
   succeeded
   failed
   refunded
+}
+
+enum PaymentProvider {
+  stripe
+  p24
 }
 
 enum Profession {
@@ -130,6 +136,8 @@ model Rating {
 
 model Meeting {
   id            Int               @id @default(autoincrement())
+  createdAt     DateTime          @default(now()) @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @db.Timestamptz
   startTime     DateTime          @db.Timestamptz
   endTime       DateTime          @db.Timestamptz
   status        MeetingStatus
@@ -138,7 +146,7 @@ model Meeting {
   doc           DocProfile        @relation(fields: [docId], references: [id])
   docId         Int
   slot          AvailabilitySlot? @relation(fields: [slotId], references: [id])
-  slotId        Int?
+  slotId        Int?              @unique
   payments      Payment[]
   ratings       Rating[]
   clientMessage String?
@@ -157,16 +165,26 @@ model AvailabilitySlot {
 }
 
 model Payment {
-  id                    Int           @id @default(autoincrement())
-  meeting               Meeting       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  meetingId             Int
-  amountCents           Int
-  currency              String // np. "PLN"
-  status                PaymentStatus @default(pending)
-  stripePaymentIntentId String?       @unique
-  stripeCheckoutId      String?       @unique
-  createdAt             DateTime      @default(now()) @db.Timestamptz
-  updatedAt             DateTime      @updatedAt @db.Timestamptz
+  id        Int     @id @default(autoincrement())
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meetingId Int
+
+  amountCents Int
+  currency    String
+  status      PaymentStatus   @default(pending)
+  provider    PaymentProvider @default(stripe)
+
+  // Stripe
+  stripePaymentIntentId String? @unique
+  stripeCheckoutId      String? @unique
+
+  // P24
+  p24SessionId String? @unique
+  p24OrderId   Int?
+  p24Token     String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 }
 
 model Problem {

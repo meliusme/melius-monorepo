@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import {
   Injectable,
   BadRequestException,
@@ -6,18 +7,500 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import Stripe from 'stripe';
-import { MeetingStatus, PaymentStatus } from '@prisma/client';
+import { MeetingStatus, PaymentStatus, PaymentProvider } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
-  private stripe: Stripe;
+  private stripe?: Stripe;
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(private prisma: PrismaService) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+    if (stripeKey) {
+      this.stripe = new Stripe(stripeKey);
+    } else {
+      this.logger.warn(
+        'Stripe is disabled (STRIPE_SECRET_KEY not set). P24 is used for MVP.',
+      );
+      this.stripe = undefined;
+    }
+  }
+
+  private getP24BaseUrl() {
+    return process.env.P24_BASE_URL ?? 'https://sandbox.przelewy24.pl/api/v1';
+  }
+
+  private getP24GatewayUrl() {
+    return (
+      process.env.P24_GATEWAY_URL ?? 'https://sandbox.przelewy24.pl/trnRequest'
+    );
+  }
+
+  private getP24AuthHeader() {
+    const merchantId = process.env.P24_MERCHANT_ID;
+    const apiKey = process.env.P24_API_KEY;
+
+    if (!merchantId || !apiKey) {
+      throw new Error('P24 envs missing: P24_MERCHANT_ID/P24_API_KEY');
+    }
+
+    const token = Buffer.from(`${merchantId}:${apiKey}`, 'utf8').toString(
+      'base64',
+    );
+    return `Basic ${token}`;
+  }
+
+  private p24SignRegister(params: {
+    sessionId: string;
+    merchantId: number;
+    amount: number;
+    currency: string;
+    crc: string;
+  }) {
+    // Najczęściej: JSON stringify z tymi polami + sha384.
+    // Jeśli będziesz miał mismatch, podepniemy to 1:1 pod kalkulator P24.
+    const payload = JSON.stringify({
+      sessionId: params.sessionId,
+      merchantId: params.merchantId,
+      amount: params.amount,
+      currency: params.currency,
+      crc: params.crc,
+    });
+
+    return crypto.createHash('sha384').update(payload, 'utf8').digest('hex');
+  }
+
+  private async p24Post<T>(path: string, body: unknown): Promise<T> {
+    const url = `${this.getP24BaseUrl()}${path}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: this.getP24AuthHeader(),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      this.logger.error(
+        `P24 request failed ${res.status} ${res.statusText}: ${text}`,
+      );
+      throw new Error(`P24 request failed: ${res.status} ${res.statusText}`);
+    }
+
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error(`P24 returned non-JSON response: ${text}`);
+    }
+  }
+
+  private async p24RegisterTransaction(payload: {
+    merchantId: number;
+    posId: number;
+    sessionId: string;
+    amount: number;
+    currency: string;
+    description: string;
+    email: string;
+    country: string;
+    language: string;
+    urlReturn: string;
+    urlStatus: string;
+    sign: string;
+  }): Promise<string> {
+    const response = await this.p24Post<{
+      data?: { token?: string };
+      responseCode?: number;
+    }>('/transaction/register', payload);
+
+    const token = response?.data?.token;
+
+    if (!token) {
+      this.logger.error(
+        `P24 register response invalid: ${JSON.stringify(response)}`,
+      );
+      throw new Error('P24 register response missing token');
+    }
+
+    return token;
+  }
+
+  private p24SignVerify(params: {
+    sessionId: string;
+    orderId: number;
+    amount: number;
+    currency: string;
+    crc: string;
+  }) {
+    const payload = JSON.stringify({
+      sessionId: params.sessionId,
+      orderId: params.orderId,
+      amount: params.amount,
+      currency: params.currency,
+      crc: params.crc,
+    });
+
+    return crypto.createHash('sha384').update(payload, 'utf8').digest('hex');
+  }
+
+  private async verifyP24Transaction(params: {
+    sessionId: string;
+    orderId: number;
+    amount: number;
+    currency: string;
+  }): Promise<'success' | 'failed'> {
+    const merchantId = Number(process.env.P24_MERCHANT_ID);
+    const posId = Number(process.env.P24_POS_ID);
+    const crc = process.env.P24_CRC ?? '';
+
+    if (!merchantId || !posId || !crc) {
+      throw new Error('P24 envs missing: P24_MERCHANT_ID/P24_POS_ID/P24_CRC');
+    }
+
+    const sign = this.p24SignVerify({
+      sessionId: params.sessionId,
+      orderId: params.orderId,
+      amount: params.amount,
+      currency: params.currency,
+      crc,
+    });
+
+    const payload = {
+      merchantId,
+      posId,
+      sessionId: params.sessionId,
+      amount: params.amount,
+      currency: params.currency,
+      orderId: params.orderId,
+      sign,
+    };
+
+    const resp = await this.p24Post<{ data?: { status?: string } }>(
+      '/transaction/verify',
+      payload,
+    );
+
+    return resp?.data?.status === 'success' ? 'success' : 'failed';
+  }
+
+  async handleP24Webhook(body: any) {
+    // P24 potrafi wysłać różne pola – dlatego defensywnie:
+    const sessionId = String(body?.sessionId ?? body?.SessionId ?? '');
+    const orderIdRaw = body?.orderId ?? body?.OrderId;
+    const amountRaw = body?.amount ?? body?.Amount;
+
+    // sessionId + orderId are required to match and verify a payment
+    if (!sessionId || orderIdRaw == null) {
+      this.logger.warn(`P24 webhook missing fields: ${JSON.stringify(body)}`);
+      return;
+    }
+
+    const orderId = Number(orderIdRaw);
+    if (!Number.isFinite(orderId)) {
+      this.logger.warn(`P24 webhook invalid orderId: ${JSON.stringify(body)}`);
+      return;
+    }
+
+    // amount may be missing or malformed in some callbacks; we treat DB as source of truth
+    const amount = amountRaw == null ? NaN : Number(amountRaw);
+    const currency = 'PLN';
+
+    // 1) znajdź payment po sessionId (provider=p24)
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        provider: PaymentProvider.p24,
+        p24SessionId: sessionId,
+      },
+    });
+
+    if (!payment) {
+      this.logger.warn(
+        `P24 webhook: payment not found for sessionId=${sessionId}`,
+      );
+      return;
+    }
+
+    // 1) Idempotency: webhook may be delivered multiple times
+    if (payment.status === PaymentStatus.succeeded) {
+      this.logger.log(
+        `P24 webhook ignored (already succeeded): payment=${payment.id} sessionId=${sessionId}`,
+      );
+      return;
+    }
+
+    if (payment.status === PaymentStatus.failed) {
+      this.logger.log(
+        `P24 webhook ignored (already failed): payment=${payment.id} sessionId=${sessionId}`,
+      );
+      return;
+    }
+
+    // 2) Amount guard:
+    // - We ALWAYS verify using the amount stored in DB (source of truth).
+    // - If webhook provides an amount and it doesn't match DB, we fail fast (spoofing / mismatch).
+    const dbAmount = payment.amountCents;
+
+    if (!Number.isFinite(amount)) {
+      this.logger.warn(
+        `P24 webhook missing/invalid amount for payment=${payment.id}; using dbAmount=${dbAmount} sessionId=${sessionId}`,
+      );
+    } else if (amount !== dbAmount) {
+      this.logger.warn(
+        `P24 webhook amount mismatch for payment=${payment.id}: webhookAmount=${amount} dbAmount=${dbAmount} sessionId=${sessionId}`,
+      );
+
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.failed,
+          p24OrderId: orderId,
+        },
+      });
+
+      return;
+    }
+
+    // 3) verify w P24 (źródło prawdy) using DB amount
+    const verified = await this.verifyP24Transaction({
+      sessionId,
+      orderId,
+      amount: dbAmount,
+      currency,
+    });
+
+    if (verified !== 'success') {
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.failed,
+          p24OrderId: orderId,
+        },
+      });
+
+      this.logger.warn(
+        `P24 verify failed for payment=${payment.id} sessionId=${sessionId}`,
+      );
+      return;
+    }
+
+    // 3) success -> transaction: payment succeeded + meeting confirmed (only if meeting is still pending)
+    await this.prisma.$transaction(async (tx) => {
+      // Always mark payment as succeeded once verified
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.succeeded,
+          p24OrderId: orderId,
+        },
+      });
+
+      // Do not resurrect cancelled/completed meetings
+      const currentMeeting = await tx.meeting.findUnique({
+        where: { id: payment.meetingId },
+        select: { id: true, status: true },
+      });
+
+      if (!currentMeeting) {
+        this.logger.warn(
+          `P24 webhook: meeting not found for payment=${payment.id} meetingId=${payment.meetingId}`,
+        );
+        return;
+      }
+
+      if (currentMeeting.status !== MeetingStatus.pending) {
+        this.logger.warn(
+          `P24 webhook: meeting status is ${currentMeeting.status}, skipping confirm (payment=${payment.id}, meeting=${currentMeeting.id})`,
+        );
+        return;
+      }
+
+      await tx.meeting.update({
+        where: { id: payment.meetingId },
+        data: { status: MeetingStatus.confirmed },
+      });
+    });
+
+    this.logger.log(
+      `P24 payment succeeded: payment=${payment.id} meeting=${payment.meetingId}`,
+    );
+  }
+
+  async startP24PaymentForMeeting(userId: number, meetingId: number) {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+      include: {
+        doc: true,
+        user: { include: { user: true } },
+        slot: true,
+      },
+    });
+
+    if (!meeting) throw new NotFoundException(`Meeting ${meetingId} not found`);
+    if (meeting.userId !== userId)
+      throw new BadRequestException(
+        'You are not allowed to pay for this meeting',
+      );
+    if (!meeting.doc)
+      throw new BadRequestException('Meeting has no assigned therapist');
+    if (meeting.status !== MeetingStatus.pending)
+      throw new BadRequestException('You can only pay for pending meetings');
+    // Pending TTL guard: do not allow payment for an expired hold (cron might not have run yet)
+    // Default: 15 minutes
+    const ttlMinutes = Number(process.env.MEETING_PENDING_TTL_MINUTES ?? 15);
+    const ttlMs = (Number.isFinite(ttlMinutes) ? ttlMinutes : 15) * 60 * 1000;
+    const expiresAt = new Date(meeting.createdAt.getTime() + ttlMs);
+
+    if (expiresAt <= new Date()) {
+      throw new BadRequestException(
+        'This booking has expired. Please pick a slot again.',
+      );
+    }
+    // Extra guard: if a succeeded payment already exists for this meeting, do not start another one
+    const alreadyPaid = await this.prisma.payment.findFirst({
+      where: {
+        meetingId: meeting.id,
+        provider: PaymentProvider.p24,
+        status: PaymentStatus.succeeded,
+      },
+      select: { id: true },
+    });
+
+    if (alreadyPaid) {
+      throw new BadRequestException('This meeting is already paid');
+    }
+    if (!meeting.doc.published)
+      throw new BadRequestException('This therapist profile is not published');
+
+    const pricePln = meeting.doc.sessionPricePln;
+    if (pricePln == null || pricePln <= 0)
+      throw new BadRequestException('Session price is not set');
+
+    if (!meeting.slot)
+      throw new BadRequestException('Meeting has no assigned slot');
+
+    const now = new Date();
+    if (meeting.slot.startTime <= now)
+      throw new BadRequestException(
+        'You cannot pay for a meeting that has already started or finished',
+      );
+
+    if (!meeting.user?.user?.email)
+      throw new BadRequestException('User email is missing');
+
+    const amount = Math.round(pricePln * 100); // grosze
+    const currency = 'PLN';
+
+    // Simple protection: reuse existing pending P24 payment for this meeting
+    const existing = await this.prisma.payment.findFirst({
+      where: {
+        meetingId: meeting.id,
+        provider: PaymentProvider.p24,
+        status: PaymentStatus.pending,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // If we already registered in P24, just return the same redirect URL
+    if (existing?.p24Token && existing?.p24SessionId) {
+      const redirectUrl = `${this.getP24GatewayUrl()}/${existing.p24Token}`;
+      return {
+        url: redirectUrl,
+        token: existing.p24Token,
+        sessionId: existing.p24SessionId,
+      };
+    }
+
+    const payment = existing
+      ? existing
+      : await this.prisma.payment.create({
+          data: {
+            meetingId: meeting.id,
+            amountCents: amount,
+            currency,
+            status: PaymentStatus.pending,
+            provider: PaymentProvider.p24,
+          },
+        });
+
+    let sessionId = payment.p24SessionId;
+
+    if (!sessionId) {
+      sessionId = `melius-meeting-${meeting.id}-pay-${payment.id}`;
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { p24SessionId: sessionId },
+      });
+    }
+
+    // 3) register w P24
+    const merchantId = Number(process.env.P24_MERCHANT_ID);
+    const posId = Number(process.env.P24_POS_ID);
+    const crc = process.env.P24_CRC ?? '';
+    const apiKey = process.env.P24_API_KEY ?? '';
+
+    if (!merchantId || !posId || !crc || !apiKey) {
+      throw new Error(
+        'P24 envs missing: P24_MERCHANT_ID/P24_POS_ID/P24_CRC/P24_API_KEY',
+      );
+    }
+
+    const urlReturn =
+      process.env.P24_RETURN_URL ??
+      (process.env.CLIENT_URL ?? 'http://localhost:3001') + '/payment-success';
+    const urlStatus =
+      process.env.P24_STATUS_URL ??
+      'http://localhost:3000/payments/p24/webhook';
+
+    const sign = this.p24SignRegister({
+      sessionId,
+      merchantId,
+      amount,
+      currency,
+      crc,
+    });
+
+    const body = {
+      merchantId,
+      posId,
+      sessionId,
+      amount,
+      currency,
+      description: 'Sesja terapeutyczna',
+      email: meeting.user.user.email,
+      country: 'PL',
+      language: 'pl',
+      urlReturn,
+      urlStatus,
+      sign,
+      // MVP: pomijamy resztę pól
+    };
+
+    const token = await this.p24RegisterTransaction(body);
+
+    // zapisz token w Payment (debug + przyszłe retry)
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: { p24Token: token },
+    });
+
+    const redirectUrl = `${this.getP24GatewayUrl()}/${token}`;
+
+    return {
+      url: redirectUrl,
+      token,
+      sessionId,
+    };
   }
 
   async createCheckoutSessionForMeeting(userId: number, meetingId: number) {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe is disabled');
+    }
     // 1. Pobierz meeting razem z docProfile i użytkownikiem (żeby mieć email)
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
@@ -93,7 +576,7 @@ export class PaymentsService {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3001';
 
     // 3. Utwórz Stripe Checkout Session
-    const session = await this.stripe.checkout.sessions.create({
+    const session = await this.stripe!.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: [
@@ -140,6 +623,9 @@ export class PaymentsService {
   }
 
   async handleStripeWebhook(rawBody: Buffer, signature: string) {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe is disabled');
+    }
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!endpointSecret) {
@@ -149,7 +635,7 @@ export class PaymentsService {
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(
+      event = this.stripe!.webhooks.constructEvent(
         rawBody,
         signature,
         endpointSecret,
@@ -241,49 +727,10 @@ export class PaymentsService {
   }
 
   async refundPaymentForMeeting(meetingId: number, reason: string) {
-    // 1. Znajdź udaną płatność dla tego meetingu
-    const payment = await this.prisma.payment.findFirst({
-      where: {
-        meetingId,
-        status: PaymentStatus.succeeded,
-      },
-    });
-
-    if (!payment) {
-      this.logger.warn(
-        `No succeeded payment found for meeting ${meetingId}, skipping refund`,
-      );
-      return;
-    }
-
-    if (payment.status === PaymentStatus.refunded) {
-      this.logger.log(`Payment ${payment.id} already refunded, skipping`);
-      return;
-    }
-
-    if (!payment.stripePaymentIntentId) {
-      this.logger.error(
-        `Payment ${payment.id} has no payment_intent id, cannot refund`,
-      );
-      return;
-    }
-
-    // 2. Refund w Stripe
-    await this.stripe.refunds.create({
-      payment_intent: payment.stripePaymentIntentId,
-      reason: 'requested_by_customer',
-    });
-
-    // 3. Update statusu w bazie
-    await this.prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: PaymentStatus.refunded,
-      },
-    });
-
-    this.logger.log(
-      `Refunded payment ${payment.id} for meeting ${meetingId} (${reason})`,
+    // MVP: refunds are disabled (manual process outside the system)
+    this.logger.warn(
+      `Refund requested for meeting ${meetingId} (${reason}) but refunds are disabled in MVP`,
     );
+    return;
   }
 }

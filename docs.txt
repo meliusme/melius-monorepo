@@ -1,0 +1,830 @@
+===========================================
+MELIUS BACKEND - DOKUMENTACJA TECHNICZNA
+===========================================
+
+OPIS OGÓLNY:
+------------
+Melius to platforma do łączenia pacjentów z terapeutami online. Backend oparty jest na NestJS, TypeScript, PostgreSQL i Prisma ORM. 
+Aplikacja obsługuje trzy role użytkowników: user (pacjent), doc (terapeuta), admin (administrator).
+
+STACK TECHNOLOGICZNY:
+---------------------
+- Framework: NestJS
+- Język: TypeScript
+- Baza danych: PostgreSQL
+- ORM: Prisma 7
+- Autentykacja: JWT + cookies
+- Płatności: Stripe, Przelewy24
+- Email: Resend
+- Storage: AWS S3 (awatary)
+- Harmonogramowanie: @nestjs/schedule (cron jobs)
+
+STRUKTURA BAZY DANYCH:
+----------------------
+
+ENUM TYPES:
+- Role: user, doc, admin
+- Sex: male, female, other
+- MeetingStatus: pending, confirmed, cancelled_by_user, cancelled_by_doc, completed
+- PaymentStatus: pending, succeeded, failed, refunded
+- PaymentProvider: stripe, p24
+- Profession: psychologist, psychotherapist, sexologist
+- Language: pl, en
+
+GŁÓWNE MODELE:
+
+1. User (Użytkownik)
+   - id, email, password, role
+   - emailConfirmed (weryfikacja emaila)
+   - language (preferowany język)
+   - tokenActivatedAt (ostatnia aktywacja tokenu)
+   - Relacje: avatar, userProfile, docProfile, adminProfile
+
+2. UserProfile (Profil pacjenta)
+   - firstName, lastName, published
+   - Relacje: user, meetings, problems, ratings
+
+3. DocProfile (Profil terapeuty)
+   - firstName, lastName, profession
+   - rate (średnia ocena), ratesLot (liczba ocen)
+   - sessionPricePln (cena sesji w PLN)
+   - published (czy profil jest widoczny)
+   - Relacje: user, meetings, specializations, availabilitySlots, ratings
+
+4. Meeting (Spotkanie)
+   - startTime, endTime, status
+   - clientMessage (wiadomość od klienta)
+   - Relacje: user, doc, slot, payments, ratings
+
+5. AvailabilitySlot (Slot dostępności terapeuty)
+   - startTime, endTime, booked
+   - Relacje: doc, meetings
+
+6. Payment (Płatność)
+   - amountCents, currency, status, provider
+   - stripePaymentIntentId, stripeCheckoutId (Stripe)
+   - p24SessionId, p24OrderId, p24Token (Przelewy24)
+   - Relacje: meeting
+
+7. Rating (Ocena)
+   - rate (1-5), comment
+   - Relacje: user, doc, meeting
+
+8. Problem (Problem pacjenta)
+   - problemKey (unikalny klucz)
+   - Relacje: specializations, userProfiles, matches
+
+9. Specialization (Specjalizacja terapeuty)
+   - specializationKey (unikalny klucz)
+   - Relacje: problems, docProfiles, matches
+
+10. Match (Dopasowanie problem-specjalizacja)
+    - problemId, specializationId
+
+===========================================
+MODUŁY I ENDPOINTY API
+===========================================
+
+1. AUTH MODULE (/auth)
+----------------------
+Obsługuje rejestrację, logowanie, wylogowanie i ustawianie hasła.
+
+ENDPOINTY:
+----------
+
+POST /auth/login
+- Body: { email, password }
+- Zwraca: JWT token w cookie + role i userId
+- Logika: Weryfikuje email i hasło, sprawdza czy email jest potwierdzony
+- Cookie: access_token (httpOnly), isAuth
+
+POST /auth/register-light
+- Body: { email, firstName?, lastName? }
+- Zwraca: JWT token w cookie + role i userId
+- Logika: "Lekka" rejestracja bez hasła - pozwala użytkownikowi rozpocząć proces
+  bez pełnej rejestracji. Jeśli użytkownik już istnieje z niepotwierdzonym emailem,
+  aktualizuje jego dane i loguje go.
+- Cookie: access_token (httpOnly), isAuth
+
+POST /auth/set-password (wymaga JWT)
+- Body: { password }
+- Zwraca: Zaktualizowany JWT token
+- Logika: Ustawia hasło dla użytkownika z "lekkiej" rejestracji i potwierdza email
+
+GET /auth/logout
+- Zwraca: "Logout success"
+- Logika: Czyści cookies (access_token, isAuth)
+
+AUTH SERVICE - METODY:
+----------------------
+- login(email, password): Weryfikuje dane i zwraca JWT token
+- registerLight(email, firstName?, lastName?): Tworzy "lekkiego" użytkownika bez hasła
+- setPassword(userId, password): Ustawia hasło i potwierdza email
+- validateUser(userId): Sprawdza czy użytkownik istnieje (używane przez JWT strategy)
+
+2. USERS MODULE (/users)
+-------------------------
+Zarządzanie użytkownikami - CRUD operations, awatary.
+
+ENDPOINTY:
+----------
+
+POST /users
+- Body: CreateUserDto (email, password, role, firstName, lastName)
+- Zwraca: Utworzonego użytkownika (bez hasła)
+- Logika: Tworzy nowego użytkownika z profilem odpowiednim dla roli
+
+GET /users/me (wymaga JWT)
+- Zwraca: Dane zalogowanego użytkownika
+- Guard: JwtAuthGuard
+
+GET /users (wymaga JWT + admin role)
+- Zwraca: Lista wszystkich użytkowników
+- Guard: JwtAuthGuard, RolesGuard
+
+GET /users/:id (wymaga JWT + admin role)
+- Zwraca: Dane konkretnego użytkownika
+- Guard: JwtAuthGuard, RolesGuard
+
+PATCH /users/:id (wymaga JWT, tylko własne dane)
+- Body: UpdateUserDto (email?, password?, language?)
+- Zwraca: Zaktualizowanego użytkownika
+- Logika: Użytkownik może aktualizować tylko swoje dane
+
+DELETE /users/:id (wymaga JWT, tylko własne konto)
+- Zwraca: Usunięty użytkownik
+- Logika: Usuwa użytkownika i czyści cookie, kaskadowo usuwa powiązane dane
+
+POST /users/:id/avatar (wymaga JWT)
+- Body: Multipart form-data z plikiem
+- Zwraca: URL awatara
+- Logika: Upload do S3, aktualizuje rekord Avatar w bazie
+
+DELETE /users/:id/avatar (wymaga JWT)
+- Zwraca: Status usunięcia
+- Logika: Usuwa plik z S3 i rekord z bazy
+
+USERS SERVICE - METODY:
+------------------------
+- create(dto): Tworzy użytkownika z odpowiednim profilem
+- findAll(): Zwraca wszystkich użytkowników
+- findOne(id): Zwraca użytkownika po ID
+- update(id, dto): Aktualizuje dane użytkownika (email, hasło, język)
+- remove(id): Usuwa użytkownika
+- uploadAvatar(userId, file): Upload awatara do S3
+- deleteAvatar(userId): Usuwa awatar z S3 i bazy
+
+3. PROFILES MODULE (/profiles)
+-------------------------------
+Zarządzanie profilami użytkowników, terapeutów i adminów.
+
+ENDPOINTY:
+----------
+
+POST /profiles/user (wymaga JWT + user role)
+- Body: UpdateUserProfileDto (firstName, lastName, problems[])
+- Zwraca: Zaktualizowany profil użytkownika
+- Logika: Aktualizuje dane pacjenta i przypisuje problemy
+
+PUT /profiles/doc (wymaga JWT + doc role)
+- Body: UpdateDocProfileDto (firstName, lastName, profession, sessionPricePln, 
+        specializations[], published)
+- Zwraca: Zaktualizowany profil terapeuty
+- Logika: Aktualizuje dane terapeuty, specjalizacje i cenę sesji
+
+POST /profiles/admin (wymaga JWT + admin role)
+- Body: UpdateAdminProfileDto (firstName, lastName)
+- Zwraca: Zaktualizowany profil admina
+
+GET /profiles/user (wymaga JWT + user role)
+- Zwraca: Profil zalogowanego pacjenta z problemami
+
+GET /profiles/doc (wymaga JWT + doc role)
+- Zwraca: Profil zalogowanego terapeuty ze specjalizacjami
+
+GET /profiles/new
+- Zwraca: Lista nowych terapeutów (ostatnie 10, published=true)
+- Sortowanie: Po dacie utworzenia (malejąco)
+
+GET /profiles/best
+- Zwraca: Lista najlepszych terapeutów (wysoka ocena, min 3 opinie)
+- Sortowanie: Po rate (malejąco)
+- Filtr: ratesLot >= 3, published=true
+
+POST /profiles/doc/:docId/rate (wymaga JWT + user role)
+- Body: CreateDocRateDto (rate, comment?)
+- Zwraca: Utworzona ocena
+- Logika: Tworzy ocenę, aktualizuje średnią ocenę terapeuty
+
+GET /profiles/doc/:docId
+- Zwraca: Publiczny profil terapeuty
+- Logika: Zwraca dane tylko jeśli published=true
+
+PROFILES SERVICE - METODY:
+---------------------------
+- updateUserProfile(userId, dto): Aktualizuje profil pacjenta
+- updateDocProfile(userId, dto): Aktualizuje profil terapeuty
+- updateAdminProfile(userId, dto): Aktualizuje profil admina
+- getUserProfile(userId): Pobiera profil pacjenta
+- getDocProfile(userId): Pobiera profil terapeuty
+- getNewDocsProfiles(): Pobiera nowych terapeutów
+- getBestDocsProfiles(): Pobiera najlepiej ocenianych terapeutów
+- getDocProfileById(docId): Pobiera profil terapeuty po ID
+
+RATING SERVICE - METODY:
+-------------------------
+- create(userId, docId, dto): Tworzy ocenę i aktualizuje średnią
+- updateDocRating(docId): Przelicza średnią ocenę terapeuty
+
+4. MATCHES MODULE (/matches)
+-----------------------------
+System dopasowywania pacjentów do terapeutów na podstawie problemów i specjalizacji.
+
+ENDPOINTY:
+----------
+
+GET /matches (wymaga JWT + user role)
+- Zwraca: Lista dopasowanych terapeutów
+- Logika: Znajduje terapeutów, których specjalizacje pasują do problemów użytkownika
+- Sortowanie: Po rate (malejąco)
+
+GET /matches/problems
+- Zwraca: Lista wszystkich problemów z bazy
+- Publiczny endpoint
+
+POST /matches/search-with-slots
+- Body: SearchMatchesDto (problemKeys[], startDate?, endDate?)
+- Zwraca: Lista terapeutów z wolnymi slotami
+- Logika: Znajduje terapeutów pasujących do problemów, którzy mają wolne sloty
+  w podanym okresie
+
+MATCHES SERVICE - METODY:
+--------------------------
+- getMatchedDocs(userId): Dopasowuje terapeutów do problemów użytkownika
+- getProblems(): Zwraca wszystkie problemy
+- searchDocsWithSlots(dto): Wyszukuje terapeutów z wolnymi slotami
+
+5. AVAILABILITY MODULE (/availability)
+---------------------------------------
+Zarządzanie dostępnością terapeutów (sloty czasowe).
+
+ENDPOINTY:
+----------
+
+POST /availability (wymaga JWT + doc role)
+- Body: CreateAvailabilityDto (startTime, endTime)
+- Zwraca: Utworzony slot
+- Logika: Tworzy nowy slot dostępności dla terapeuty
+- Walidacja: Sprawdza czy slot nie koliduje z istniejącymi
+
+GET /availability/my (wymaga JWT + doc role)
+- Zwraca: Wszystkie sloty zalogowanego terapeuty
+- Sortowanie: Po startTime
+
+GET /availability/doc/:docId
+- Zwraca: Wolne sloty konkretnego terapeuty
+- Logika: Zwraca tylko sloty z booked=false i startTime > now
+
+DELETE /availability/:slotId (wymaga JWT + doc role)
+- Zwraca: Status usunięcia
+- Logika: Usuwa slot, tylko jeśli nie jest zarezerwowany (booked=false)
+
+AVAILABILITY SERVICE - METODY:
+-------------------------------
+- create(docId, dto): Tworzy nowy slot
+- findForDoc(docId): Pobiera wszystkie sloty terapeuty
+- findFreeSlotsForDoc(docId): Pobiera wolne sloty terapeuty
+- remove(docId, slotId): Usuwa slot (jeśli niezarezerwowany)
+
+6. MEETINGS MODULE (/meetings)
+-------------------------------
+Zarządzanie spotkaniami między pacjentami a terapeutami.
+
+ENDPOINTY:
+----------
+
+POST /meetings (wymaga JWT + user role)
+- Body: CreateMeetingDto (docId, slotId, clientMessage?)
+- Zwraca: Utworzone spotkanie
+- Logika: 
+  1. Sprawdza czy slot jest wolny
+  2. Tworzy spotkanie ze statusem 'pending'
+  3. Oznacza slot jako booked=true
+  4. Kopiuje czasy ze slotu do spotkania
+
+GET /meetings/me (wymaga JWT + user role)
+- Query: scope? (upcoming | past | all)
+- Zwraca: Lista spotkań pacjenta
+- Filtracja: 
+  - upcoming: status != completed AND endTime > now
+  - past: status = completed OR endTime <= now
+  - all: wszystkie
+
+GET /meetings/doc/me (wymaga JWT + doc role)
+- Query: scope? (upcoming | past | all)
+- Zwraca: Lista spotkań terapeuty
+- Filtracja: jak wyżej
+
+POST /meetings/:id/cancel (wymaga JWT + user role)
+- Zwraca: Anulowane spotkanie
+- Logika:
+  1. Zmienia status na cancelled_by_user
+  2. Zwalnia slot (booked=false)
+  3. Jeśli płatność succeeded -> zwraca pieniądze
+
+POST /meetings/doc/:id/cancel (wymaga JWT + doc role)
+- Zwraca: Anulowane spotkanie
+- Logika:
+  1. Zmienia status na cancelled_by_doc
+  2. Zwalnia slot (booked=false)
+  3. Jeśli płatność succeeded -> zwraca pieniądze
+
+MEETINGS SERVICE - METODY:
+---------------------------
+- createMeeting(userId, dto): Tworzy nowe spotkanie
+- getUserMeetings(userId, scope): Pobiera spotkania pacjenta
+- getDocMeetingsForUser(docUserId, scope): Pobiera spotkania terapeuty
+- cancelMeetingByUser(meetingId, userId): Anuluje spotkanie (pacjent)
+- cancelMeetingByDocUser(meetingId, docUserId): Anuluje spotkanie (terapeuta)
+
+MEETINGS CRON SERVICE:
+----------------------
+- @Cron('0 */5 * * * *') - Co 5 minut
+- completePastMeetings(): Automatycznie zmienia status spotkań które się zakończyły
+  (endTime < now AND status = confirmed) na 'completed'
+
+7. PAYMENTS MODULE (/payments)
+-------------------------------
+Obsługa płatności przez Stripe i Przelewy24.
+
+ENDPOINTY:
+----------
+
+POST /payments/checkout (wymaga JWT + user role)
+- Body: CreateCheckoutSessionDto (meetingId)
+- Zwraca: { url, sessionId }
+- Logika (Stripe):
+  1. Weryfikuje spotkanie i cenę
+  2. Tworzy Payment w bazie (status=pending, provider=stripe)
+  3. Tworzy Stripe Checkout Session
+  4. Zapisuje stripeCheckoutId w bazie
+  5. Zwraca URL do płatności
+
+POST /payments/p24/start (wymaga JWT + user role)
+- Body: CreateCheckoutSessionDto (meetingId)
+- Zwraca: { paymentId, sessionId, registerPayload, redirectBase }
+- Logika (Przelewy24):
+  1. Weryfikuje spotkanie i cenę
+  2. Tworzy Payment w bazie (status=pending, provider=p24)
+  3. Generuje unikalny sessionId
+  4. Przygotowuje dane do rejestracji w P24
+  5. Zwraca dane potrzebne do przekierowania
+
+POST /payments/webhook (Stripe webhook)
+- Body: Stripe event
+- Header: stripe-signature
+- Logika:
+  1. Weryfikuje signature webhoka
+  2. Obsługuje event 'checkout.session.completed':
+     - Aktualizuje Payment (status=succeeded)
+     - Aktualizuje Meeting (status=confirmed)
+     - Zapisuje paymentIntentId
+
+POST /payments/p24/webhook (P24 webhook)
+- Body: P24 notification
+- Logika:
+  1. Weryfikuje dane od P24
+  2. Aktualizuje Payment (status=succeeded/failed)
+  3. Aktualizuje Meeting (status=confirmed)
+
+PAYMENTS SERVICE - METODY:
+---------------------------
+- createCheckoutSessionForMeeting(userId, meetingId): Stripe checkout
+- startP24PaymentForMeeting(userId, meetingId): Inicjalizacja P24
+- handleStripeWebhook(rawBody, signature): Obsługa webhook Stripe
+- handleP24Webhook(body): Obsługa webhook P24
+- refundPaymentForMeeting(meetingId, reason): Zwrot pieniędzy
+- p24SignRegister(params): Generuje podpis dla P24
+
+8. EMAIL MODULE (/email)
+-------------------------
+Wysyłka emaili weryfikacyjnych i resetowania hasła przez Resend.
+
+ENDPOINTY:
+----------
+
+POST /email/send-confirmation
+- Body: { email }
+- Zwraca: Status wysyłki
+- Logika:
+  1. Sprawdza czy token nie był wysłany ostatnio (cooldown 10 sek)
+  2. Generuje JWT token z emailem
+  3. Wysyła email z linkiem potwierdzającym
+  4. Zapisuje tokenActivatedAt
+
+GET /email/confirm/:token
+- Zwraca: Komunikat o potwierdzeniu
+- Logika:
+  1. Weryfikuje JWT token
+  2. Ustawia emailConfirmed=true
+
+POST /email/send-reset-password
+- Body: { email }
+- Zwraca: Status wysyłki
+- Logika:
+  1. Sprawdza cooldown
+  2. Generuje token
+  3. Wysyła email z linkiem do resetowania hasła
+
+POST /email/reset-password
+- Body: { token, newPassword }
+- Zwraca: Status zmiany
+- Logika:
+  1. Weryfikuje token
+  2. Hashuje nowe hasło
+  3. Aktualizuje w bazie
+
+POST /email/change-password (wymaga JWT)
+- Body: { oldPassword, newPassword }
+- Zwraca: Status zmiany
+- Logika: Zmienia hasło dla zalogowanego użytkownika
+
+EMAIL SERVICE - METODY:
+------------------------
+- sendConfirmationEmail(email): Wysyła email potwierdzający
+- confirmEmail(token): Potwierdza email
+- sendResetPasswordEmail(email): Wysyła link do resetu hasła
+- resetPassword(token, newPassword): Resetuje hasło
+- changePassword(userId, oldPassword, newPassword): Zmienia hasło
+- createToken(email): Tworzy JWT token
+- getCommonContext(lang): Przygotowuje wspólny kontekst dla emaili
+
+9. IMAGE MODULE
+---------------
+Upload zdjęć do AWS S3.
+
+IMAGE SERVICE - METODY:
+-----------------------
+- uploadImage(file, path): Upload pliku do S3
+- deleteImage(key): Usuwa plik z S3
+
+10. CLEANUP MODULE
+------------------
+Cron job czyszczący nieaktywne konta.
+
+CLEANUP SERVICE:
+----------------
+- @Cron('0 0 * * *') - Codziennie o północy
+- cleanupUnconfirmedUsers(): Usuwa użytkowników z emailConfirmed=false
+  starszych niż 7 dni
+
+===========================================
+FLOW UŻYTKOWANIA APLIKACJI
+===========================================
+
+FLOW REJESTRACJI I LOGOWANIA:
+------------------------------
+
+1. LEKKA REJESTRACJA (pacjent):
+   POST /auth/register-light { email }
+   -> Tworzy User (emailConfirmed=false) + UserProfile
+   -> Zwraca JWT token
+   -> Użytkownik może przeglądać i rezerwować spotkania
+
+2. POTWIERDZENIE EMAIL:
+   POST /email/send-confirmation { email }
+   -> Wysyła email z tokenem
+   GET /email/confirm/:token
+   -> Ustawia emailConfirmed=true
+
+3. USTAWIENIE HASŁA:
+   POST /auth/set-password { password } (z JWT)
+   -> Hashuje i zapisuje hasło
+   -> Ustawia emailConfirmed=true
+
+4. LOGOWANIE:
+   POST /auth/login { email, password }
+   -> Weryfikuje dane
+   -> Zwraca JWT token w cookie
+
+FLOW PACJENTA (USER):
+---------------------
+
+1. Rejestracja + uzupełnienie profilu:
+   POST /auth/register-light
+   POST /profiles/user { firstName, lastName, problems }
+
+2. Wyszukiwanie terapeutów:
+   GET /matches -> dopasowani terapeuci
+   GET /profiles/new -> nowi terapeuci
+   GET /profiles/best -> najlepiej oceniani
+   POST /matches/search-with-slots -> z wolnymi terminami
+
+3. Sprawdzanie dostępności:
+   GET /availability/doc/:docId -> wolne sloty
+
+4. Rezerwacja spotkania:
+   POST /meetings { docId, slotId, clientMessage? }
+   -> Tworzy Meeting (status=pending)
+   -> Rezerwuje slot (booked=true)
+
+5. Płatność:
+   POST /payments/checkout { meetingId }
+   -> Przekierowanie do Stripe
+   -> Po płatności webhook -> Meeting (status=confirmed)
+
+   LUB
+
+   POST /payments/p24/start { meetingId }
+   -> Przekierowanie do Przelewy24
+   -> Po płatności webhook -> Meeting (status=confirmed)
+
+6. Zarządzanie spotkaniami:
+   GET /meetings/me?scope=upcoming -> nadchodzące
+   GET /meetings/me?scope=past -> przeszłe
+   POST /meetings/:id/cancel -> anulowanie (zwrot pieniędzy jeśli opłacone)
+
+7. Ocena terapeuty (po spotkaniu):
+   POST /profiles/doc/:docId/rate { rate, comment? }
+
+FLOW TERAPEUTY (DOC):
+----------------------
+
+1. Rejestracja jako terapeuta (admin musi ustawić role):
+   POST /users { email, password, role: "doc" }
+
+2. Uzupełnienie profilu:
+   PUT /profiles/doc { 
+     firstName, lastName, profession,
+     sessionPricePln, specializations[],
+     published: true 
+   }
+
+3. Zarządzanie dostępnością:
+   POST /availability { startTime, endTime }
+   GET /availability/my -> wszystkie sloty
+   DELETE /availability/:slotId -> usuwanie (jeśli niezarezerwowane)
+
+4. Zarządzanie spotkaniami:
+   GET /meetings/doc/me?scope=upcoming
+   GET /meetings/doc/me?scope=past
+   POST /meetings/doc/:id/cancel -> anulowanie
+
+5. Monitorowanie opinii:
+   GET /profiles/doc -> sprawdzanie swojej oceny (rate, ratesLot)
+
+FLOW PŁATNOŚCI:
+---------------
+
+STRIPE:
+1. Użytkownik rezerwuje spotkanie (status=pending)
+2. POST /payments/checkout -> tworzy Payment + Stripe session
+3. Użytkownik płaci w Stripe
+4. Stripe wysyła webhook -> /payments/webhook
+5. Backend:
+   - Weryfikuje webhook
+   - Aktualizuje Payment (status=succeeded)
+   - Aktualizuje Meeting (status=confirmed)
+
+PRZELEWY24:
+1. Użytkownik rezerwuje spotkanie (status=pending)
+2. POST /payments/p24/start -> tworzy Payment + dane do P24
+3. Frontend przekierowuje do P24 z sessionId
+4. Użytkownik płaci w P24
+5. P24 wysyła webhook -> /payments/p24/webhook
+6. Backend:
+   - Weryfikuje dane P24
+   - Aktualizuje Payment (status=succeeded)
+   - Aktualizuje Meeting (status=confirmed)
+
+FLOW ANULOWANIA ZE ZWROTEM:
+----------------------------
+1. Użytkownik/terapeuta anuluje spotkanie:
+   POST /meetings/:id/cancel
+2. Backend:
+   - Zmienia status Meeting (cancelled_by_user/cancelled_by_doc)
+   - Zwalnia slot (booked=false)
+   - Jeśli Payment.status=succeeded:
+     * Tworzy refund w Stripe/P24
+     * Aktualizuje Payment (status=refunded)
+
+===========================================
+AUTOMATYZACJE (CRON JOBS)
+===========================================
+
+1. Meetings Cron (co 5 minut):
+   - Znajduje spotkania z endTime < now i status=confirmed
+   - Zmienia status na 'completed'
+
+2. Cleanup Cron (codziennie o północy):
+   - Usuwa użytkowników z emailConfirmed=false starszych niż 7 dni
+
+===========================================
+ZABEZPIECZENIA
+===========================================
+
+GUARDS:
+-------
+1. JwtAuthGuard: Weryfikuje JWT token z cookie
+2. RolesGuard: Sprawdza rolę użytkownika (@Roles decorator)
+
+AUTENTYKACJA:
+-------------
+- JWT token przechowywany w httpOnly cookie (bezpieczniejsze niż localStorage)
+- Token zawiera userId
+- Ważność: 24 godziny
+
+AUTORYZACJA:
+------------
+- Dekoratory @Roles([Role.user]) określają wymagane role
+- Guards sprawdzają czy użytkownik ma odpowiednią rolę
+- Użytkownik może modyfikować tylko swoje dane
+
+HASŁA:
+------
+- Hashowanie bcrypt (10 rounds)
+- Walidacja siły hasła w DTO
+
+WEBHOOKS:
+---------
+- Stripe: Weryfikacja podpisu webhoka
+- P24: Weryfikacja CRC/signature
+
+WALIDACJA:
+----------
+- ValidationPipe (class-validator) na wszystkich endpointach
+- DTO z dekoratora mi walidacyjnymi
+- Whitelist: true (usuwa nieznane pola)
+
+CORS:
+-----
+- Origin: process.env.CLIENT_URL
+- Credentials: true (cookies)
+
+===========================================
+ZMIENNE ŚRODOWISKOWE
+===========================================
+
+DATABASE:
+---------
+DATABASE_URL=postgresql://user:password@host:port/database
+
+JWT:
+----
+JWT_SECRET=your-secret-key
+
+RESEND (Email):
+---------------
+RESEND_API_KEY=re_xxxxx
+FROM_EMAIL=noreply@yourdomain.com
+
+AWS S3:
+-------
+AWS_REGION=eu-central-1
+AWS_ACCESS_KEY_ID=xxxxx
+AWS_SECRET_ACCESS_KEY=xxxxx
+AWS_S3_BUCKET_NAME=your-bucket
+
+STRIPE:
+-------
+STRIPE_SECRET_KEY=sk_test_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+
+PRZELEWY24:
+-----------
+P24_MERCHANT_ID=xxxxx
+P24_POS_ID=xxxxx
+P24_CRC=xxxxx
+P24_API_KEY=xxxxx
+P24_BASE_URL=https://sandbox.przelewy24.pl/api/v1
+P24_GATEWAY_URL=https://sandbox.przelewy24.pl/trnRequest
+P24_RETURN_URL=http://localhost:3001/payment-success
+P24_STATUS_URL=http://localhost:3000/payments/p24/webhook
+
+APP:
+----
+PORT=3000
+CLIENT_URL=http://localhost:3001
+
+===========================================
+URUCHOMIENIE I DEVELOPMENT
+===========================================
+
+DOCKER:
+-------
+docker-compose up -d
+-> Uruchamia PostgreSQL i backend w kontenerach
+
+MIGRACJE PRISMA:
+----------------
+pnpm prisma:migrate
+-> Tworzy nową migrację (zarówno w Docker jak i lokalnie)
+
+pnpm prisma:generate
+-> Regeneruje Prisma Client (Docker + local)
+
+pnpm prisma:studio
+-> Otwiera Prisma Studio (GUI bazy danych)
+
+pnpm prisma:push
+-> Pushuje schemat bez tworzenia migracji
+
+SEEDOWANIE:
+-----------
+pnpm seed -> Uruchamia seed.ts
+pnpm seed2 -> Uruchamia seed2.ts
+
+CZYSZCZENIE BAZY:
+-----------------
+pnpm db:clean -> Truncate wszystkich tabel
+
+DEVELOPMENT:
+------------
+pnpm dev:backend -> Start backend w trybie watch
+
+===========================================
+PRZYKŁADOWE FLOW KODU
+===========================================
+
+PRZYKŁAD: Tworzenie spotkania
+------------------------------
+
+1. Request: POST /meetings
+   Body: { docId: 5, slotId: 42, clientMessage: "Witam" }
+
+2. MeetingsController.createMeeting()
+   - Weryfikuje JWT (JwtAuthGuard)
+   - Sprawdza rolę (RolesGuard - Role.user)
+   - Wywołuje MeetingsService.createMeeting()
+
+3. MeetingsService.createMeeting()
+   - Pobiera slot z bazy
+   - Sprawdza czy slot jest wolny (booked=false)
+   - Sprawdza czy slot nie jest w przeszłości
+   - Tworzy Meeting w transakcji:
+     * Tworzy rekord Meeting
+     * Aktualizuje slot (booked=true)
+   - Zwraca utworzone spotkanie
+
+4. Response: MeetingEntity (serializowany)
+
+PRZYKŁAD: Webhook Stripe
+-------------------------
+
+1. Request: POST /payments/webhook
+   Header: stripe-signature: xxx
+   Body: Stripe event JSON (raw)
+
+2. PaymentsController.handleStripeWebhook()
+   - Pobiera raw body i signature
+   - Wywołuje PaymentsService.handleStripeWebhook()
+
+3. PaymentsService.handleStripeWebhook()
+   - Weryfikuje signature (stripe.webhooks.constructEvent)
+   - Jeśli event.type === 'checkout.session.completed':
+     * Pobiera paymentId i meetingId z metadata
+     * W transakcji:
+       - Aktualizuje Payment (status=succeeded)
+       - Aktualizuje Meeting (status=confirmed)
+     * Loguje sukces
+
+4. Response: { received: true }
+
+===========================================
+NAJWAŻNIEJSZE PLIKI
+===========================================
+
+/apps/backend/src/
+  ├── main.ts                    # Entry point, konfiguracja app
+  ├── app.module.ts              # Root module
+  ├── auth/                      # Autentykacja
+  │   ├── auth.controller.ts
+  │   ├── auth.service.ts
+  │   └── guards/
+  │       └── jwt-auth.guard.ts
+  ├── users/                     # Zarządzanie użytkownikami
+  ├── profiles/                  # Profile (user, doc, admin)
+  ├── matches/                   # Dopasowywanie
+  ├── availability/              # Dostępność terapeutów
+  ├── meetings/                  # Spotkania
+  │   ├── meetings.service.ts
+  │   └── meetings-cron.service.ts
+  ├── payments/                  # Płatności
+  ├── email/                     # Wysyłka emaili
+  ├── rating/                    # Oceny
+  ├── image/                     # Upload do S3
+  ├── cleanup/                   # Cron czyszczący
+  ├── prisma/                    # Prisma service
+  ├── guards/                    # Globalne guardy
+  └── decorators/                # Custom decoratory
+
+/apps/backend/prisma/
+  ├── schema.prisma              # Schemat bazy danych
+  ├── prisma.config.ts           # Konfiguracja Prisma 7
+  ├── seed.ts                    # Seed 1
+  ├── seed2.ts                   # Seed 2
+  └── migrations/                # Historia migracji
+
+===========================================
+KONIEC DOKUMENTACJI
+===========================================

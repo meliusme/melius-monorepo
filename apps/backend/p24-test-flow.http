@@ -1,0 +1,70 @@
+### ============================================
+### P24 PAYMENT FLOW TEST - HAPPY PATH
+### ============================================
+
+@baseUrl = http://localhost:3000
+
+### Step 1: Register Light (creates user + cookie)
+# @name registerLight
+POST {{baseUrl}}/auth/register-light
+Content-Type: application/json
+
+{
+  "email": "patient-p24-test@example.com",
+  "firstName": "Test",
+  "lastName": "Patient"
+}
+
+### Step 2: Create Doc with Profile and Slot (MANUALLY IN DB OR SEED)
+# You need:
+# - A doc user with docProfile (sessionPricePln set, published=true)
+# - An availability slot (booked=false, startTime in future)
+# Use seed script or prisma studio
+
+### Step 3: Create Meeting (replace docId and slotId with real values)
+# @name createMeeting
+POST {{baseUrl}}/meetings
+Content-Type: application/json
+
+{
+  "docId": 1,
+  "slotId": 1,
+  "clientMessage": "Looking forward to P24 payment test"
+}
+
+### Step 4: Start P24 Payment (use meetingId from step 3)
+# @name startP24
+POST {{baseUrl}}/payments/p24/start
+Content-Type: application/json
+
+{
+  "meetingId": 1
+}
+
+### Expected response:
+# {
+#   "url": "https://sandbox.przelewy24.pl/trnRequest/TOKEN",
+#   "token": "TOKEN_FROM_P24",
+#   "sessionId": "melius-meeting-1-pay-1"
+# }
+
+### Step 5: Simulate P24 Webhook (use sessionId from step 4)
+POST {{baseUrl}}/payments/p24/webhook
+Content-Type: application/json
+
+{
+  "sessionId": "melius-meeting-1-pay-1",
+  "orderId": 999999,
+  "amount": 22000
+}
+
+### Expected behavior:
+# - Backend calls P24 /transaction/verify
+# - If verify succeeds: Payment status -> succeeded, Meeting status -> confirmed
+# - If verify fails: Payment status -> failed
+# - Check logs for verification result
+
+### Step 6: Verify Meeting Status
+GET {{baseUrl}}/meetings/me
+
+### Expected: Meeting should have status "confirmed" if P24 verify succeeded

@@ -51,4 +51,26 @@ export class PaymentsController {
 
     return result; // { url, sessionId }
   }
+
+  @Post('p24/start')
+  @Roles(Role.user)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async startP24(
+    @CurrentUser() user: User,
+    @Body() dto: CreateCheckoutSessionDto,
+  ) {
+    return this.paymentsService.startP24PaymentForMeeting(
+      user.id,
+      dto.meetingId,
+    );
+    // -> { url, token, sessionId }
+  }
+
+  @Post('p24/webhook')
+  @HttpCode(200)
+  async handleP24Webhook(@Body() body: any) {
+    // P24 nie będzie miał stripe-signature, więc normalny JSON body jest OK
+    await this.paymentsService.handleP24Webhook(body);
+    return { received: true };
+  }
 }
