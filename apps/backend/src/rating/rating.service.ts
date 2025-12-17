@@ -1,7 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDocRateDto } from './dto/create-doc-rate.dto';
 import { User, MeetingStatus } from '@prisma/client';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 @Injectable()
 export class RatingService {
   constructor(private prisma: PrismaService) {}
@@ -15,7 +17,11 @@ export class RatingService {
     });
 
     if (!docProfile) {
-      throw new BadRequestException('Therapist profile not found');
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Therapist profile not found',
+      );
     }
 
     // 2) Check if the user profile exists
@@ -24,7 +30,11 @@ export class RatingService {
     });
 
     if (!userProfile) {
-      throw new BadRequestException('User profile not found');
+      throwAppError(
+        ErrorCode.USER_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'User profile not found',
+      );
     }
 
     // 3) Check if the meeting exists
@@ -33,25 +43,37 @@ export class RatingService {
     });
 
     if (!meeting) {
-      throw new BadRequestException('Meeting not found');
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Meeting not found',
+      );
     }
 
     // 4) Check if the meeting belongs to this user
     if (meeting.userId !== user.id) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_OWNED,
+        HttpStatus.FORBIDDEN,
         'You can only rate sessions that belong to you',
       );
     }
 
     // 5) Check if the meeting is with the selected therapist
     if (meeting.docId !== docProfile.id) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.RATING_MEETING_MISMATCH,
+        HttpStatus.BAD_REQUEST,
         'You can only rate sessions with the selected therapist',
       );
     }
     // 6) Check if the meeting is completed
     if (meeting.status !== MeetingStatus.completed) {
-      throw new BadRequestException('You can only rate completed sessions');
+      throwAppError(
+        ErrorCode.RATING_MEETING_NOT_COMPLETED,
+        HttpStatus.BAD_REQUEST,
+        'You can only rate completed sessions',
+      );
     }
 
     // 7) Check if there is already a rating for this meeting from this user
@@ -61,7 +83,11 @@ export class RatingService {
         where: { meetingId, userId: userProfile.id },
       });
       if (existingRating)
-        throw new BadRequestException('You have already rated this session');
+        throwAppError(
+          ErrorCode.RATING_ALREADY_EXISTS,
+          HttpStatus.CONFLICT,
+          'You have already rated this session',
+        );
 
       // 8) create rating
       await tx.rating.create({

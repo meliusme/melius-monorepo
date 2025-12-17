@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Resend } from 'resend';
 import ConfirmationTokenPayload from './interfaces/confirmation-token-payload.interface';
@@ -8,6 +8,8 @@ import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { I18nTranslations } from '../generated/i18n.generated';
 import { ChangePasswordDto } from './dtos/change-password.dto';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 
 export const roundsOfHashing = 10;
 // const TOKEN_COOLDOWN_PERIOD = 10 * 60 * 1000; // 10 minutes
@@ -86,8 +88,10 @@ export class EmailService {
 
   async sendConfirmationEmail(email: string, lang: Language) {
     if (!(await this.canSendNewToken(email))) {
-      throw new BadRequestException(
-        this.i18n.t('test.exceptions.tokenCooldown'),
+      throwAppError(
+        ErrorCode.TOKEN_COOLDOWN,
+        HttpStatus.BAD_REQUEST,
+        'Token cooldown active',
       );
     }
 
@@ -150,8 +154,10 @@ export class EmailService {
 
   async sendPasswordLink(email: string) {
     if (!(await this.canSendNewToken(email))) {
-      throw new BadRequestException(
-        this.i18n.t('test.exceptions.tokenCooldown'),
+      throwAppError(
+        ErrorCode.TOKEN_COOLDOWN,
+        HttpStatus.BAD_REQUEST,
+        'Token cooldown active',
       );
     }
 
@@ -226,8 +232,10 @@ export class EmailService {
     });
 
     if (user.emailConfirmed)
-      throw new BadRequestException(
-        this.i18n.t('test.exceptions.emailAlreadyConfirmed'),
+      throwAppError(
+        ErrorCode.EMAIL_ALREADY_CONFIRMED,
+        HttpStatus.BAD_REQUEST,
+        'Email already confirmed',
       );
 
     await this.prisma.user.update({
@@ -246,14 +254,24 @@ export class EmailService {
       if (typeof payload === 'object' && 'email' in payload) {
         return payload.email;
       }
-      throw new BadRequestException();
+      throwAppError(
+        ErrorCode.EMAIL_TOKEN_EXPIRED,
+        HttpStatus.BAD_REQUEST,
+        'Invalid token',
+      );
     } catch (error) {
       if (error?.name === 'TokenExpiredError') {
-        throw new BadRequestException(
-          this.i18n.t('test.exceptions.emailTokenExpired'),
+        throwAppError(
+          ErrorCode.EMAIL_TOKEN_EXPIRED,
+          HttpStatus.BAD_REQUEST,
+          'Token expired',
         );
       }
-      throw new BadRequestException('Bad confirmation token');
+      throwAppError(
+        ErrorCode.EMAIL_TOKEN_EXPIRED,
+        HttpStatus.BAD_REQUEST,
+        'Bad confirmation token',
+      );
     }
   }
 
@@ -263,14 +281,18 @@ export class EmailService {
     });
 
     if (!user) {
-      throw new BadRequestException(
-        this.i18n.t('test.exceptions.emailNotFound'),
+      throwAppError(
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Email not found',
       );
     }
 
     if (user.emailConfirmed) {
-      throw new BadRequestException(
-        this.i18n.t('test.exceptions.emailAlreadyConfirmed'),
+      throwAppError(
+        ErrorCode.EMAIL_ALREADY_CONFIRMED,
+        HttpStatus.BAD_REQUEST,
+        'Email already confirmed',
       );
     }
     await this.sendConfirmationEmail(user.email, user.language);

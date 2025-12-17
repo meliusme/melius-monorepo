@@ -34,16 +34,6 @@ export type I18nTranslations = {
         "meetingCancelledByUser": string;
         "meetingCancelledByDoc": string;
         "meetingCancelledBySystem": string;
-        "exceptions": {
-            "emailExist": string;
-            "emailTokenExpired": string;
-            "emailAlreadyConfirmed": string;
-            "emailNotConfirmed": string;
-            "emailNotFound": string;
-            "invalidEmail": string;
-            "invalidPassword": string;
-            "tokenCooldown": string;
-        };
     };
 };
 /* prettier-ignore */

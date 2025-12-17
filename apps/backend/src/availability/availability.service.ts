@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class AvailabilityService {
@@ -12,7 +14,11 @@ export class AvailabilityService {
     });
 
     if (!docProfile) {
-      throw new BadRequestException('Therapist profile not found');
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Therapist profile not found',
+      );
     }
 
     return this.prisma.availabilitySlot.create({
@@ -30,7 +36,11 @@ export class AvailabilityService {
     });
 
     if (!docProfile) {
-      throw new BadRequestException('Therapist profile not found');
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Therapist profile not found',
+      );
     }
 
     return this.prisma.availabilitySlot.findMany({
@@ -55,7 +65,11 @@ export class AvailabilityService {
     });
 
     if (!slot) {
-      throw new BadRequestException('Slot not found');
+      throwAppError(
+        ErrorCode.SLOT_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Slot not found',
+      );
     }
 
     const docProfile = await this.prisma.docProfile.findUnique({
@@ -63,11 +77,17 @@ export class AvailabilityService {
     });
 
     if (!docProfile || slot.docId !== docProfile.id) {
-      throw new BadRequestException('Cannot delete a slot you do not own');
+      throwAppError(
+        ErrorCode.SLOT_NOT_OWNED,
+        HttpStatus.FORBIDDEN,
+        'Cannot delete a slot you do not own',
+      );
     }
 
     if (slot.booked) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.SLOT_ALREADY_BOOKED,
+        HttpStatus.CONFLICT,
         'Cannot delete a slot that is already booked',
       );
     }

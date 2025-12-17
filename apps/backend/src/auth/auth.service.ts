@@ -1,15 +1,12 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { I18nService } from 'nestjs-i18n';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from './../prisma/prisma.service';
 import { AuthEntity } from './entity/auth.entity';
 import { I18nTranslations } from '../generated/i18n.generated';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class AuthService {
@@ -23,19 +20,27 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email: email } });
 
     if (user && !user.emailConfirmed)
-      throw new ConflictException(
-        this.i18n.t('test.exceptions.emailNotConfirmed'),
+      throwAppError(
+        ErrorCode.EMAIL_NOT_CONFIRMED,
+        HttpStatus.FORBIDDEN,
+        'Email not confirmed',
       );
 
     if (!user) {
-      throw new NotFoundException(this.i18n.t('test.exceptions.invalidEmail'));
+      throwAppError(
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Invalid email',
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        this.i18n.t('test.exceptions.invalidPassword'),
+      throwAppError(
+        ErrorCode.INVALID_PASSWORD,
+        HttpStatus.UNAUTHORIZED,
+        'Invalid password',
       );
     }
 
@@ -60,7 +65,11 @@ export class AuthService {
     if (existingUser) {
       // Jeśli to "pełne" konto (ma potwierdzony email) → nie logujemy po samym mailu
       if (existingUser.emailConfirmed) {
-        throw new ConflictException(this.i18n.t('test.exceptions.emailExist'));
+        throwAppError(
+          ErrorCode.EMAIL_EXISTS,
+          HttpStatus.CONFLICT,
+          'Email already exists',
+        );
       }
 
       // Jeśli to "lekki" user z poprzedniego register-light:

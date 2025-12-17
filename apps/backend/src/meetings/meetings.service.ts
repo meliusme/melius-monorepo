@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { MeetingStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMeetingDto } from './dtos/create-meeting.dto';
 import { PaymentsService } from 'src/payments/payments.service';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 @Injectable()
 export class MeetingsService {
   constructor(
@@ -32,7 +29,11 @@ export class MeetingsService {
       });
 
       if (!slot) {
-        throw new BadRequestException('Slot not found');
+        throwAppError(
+          ErrorCode.SLOT_NOT_FOUND,
+          HttpStatus.NOT_FOUND,
+          'Slot not found',
+        );
       }
 
       // Try to book the slot only if it is still free.
@@ -42,7 +43,11 @@ export class MeetingsService {
       });
 
       if (bookedResult.count === 0) {
-        throw new BadRequestException('Slot already booked');
+        throwAppError(
+          ErrorCode.SLOT_ALREADY_BOOKED,
+          HttpStatus.CONFLICT,
+          'Slot already booked',
+        );
       }
 
       const meeting = await tx.meeting.create({
@@ -158,9 +163,12 @@ export class MeetingsService {
     });
 
     if (!docProfile) {
-      throw new NotFoundException('Doc profile not found');
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Doc profile not found',
+      );
     }
-
     return this.getDocMeetings(docProfile.id, scope);
   }
 
@@ -170,7 +178,11 @@ export class MeetingsService {
     });
 
     if (!docProfile) {
-      throw new NotFoundException('Doc profile not found');
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Doc profile not found',
+      );
     }
 
     return this.cancelMeetingByDoc(meetingId, docProfile.id);
@@ -182,11 +194,17 @@ export class MeetingsService {
     });
 
     if (!meeting) {
-      throw new NotFoundException('Meeting not found');
+      throwAppError(
+        ErrorCode.MEETING_NOT_OWNED,
+        HttpStatus.NOT_FOUND,
+        'Meeting not found',
+      );
     }
 
     if (meeting.userId !== userId) {
-      throw new ForbiddenException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.FORBIDDEN,
         'You do not have permission to cancel this meeting',
       );
     }
@@ -199,7 +217,9 @@ export class MeetingsService {
       const diffHours = diffMs / (1000 * 60 * 60);
 
       if (diffHours < 24) {
-        throw new BadRequestException(
+        throwAppError(
+          ErrorCode.CANCEL_NOT_ALLOWED_TOO_LATE,
+          HttpStatus.BAD_REQUEST,
           'Cannot cancel a confirmed meeting less than 24 hours before it starts',
         );
       }
@@ -214,11 +234,17 @@ export class MeetingsService {
     });
 
     if (!meeting) {
-      throw new NotFoundException('Meeting not found');
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Meeting not found',
+      );
     }
 
     if (meeting.docId !== docProfileId) {
-      throw new ForbiddenException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_OWNED,
+        HttpStatus.FORBIDDEN,
         'You do not have permission to cancel this meeting',
       );
     }
@@ -235,7 +261,9 @@ export class MeetingsService {
       meeting.status !== MeetingStatus.pending &&
       meeting.status !== MeetingStatus.confirmed
     ) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_PENDING,
+        HttpStatus.BAD_REQUEST,
         'Meeting cannot be cancelled - invalid status',
       );
     }
@@ -243,7 +271,9 @@ export class MeetingsService {
     // Check if meeting has already started or passed
     const now = new Date();
     if (meeting.startTime <= now) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_EXPIRED,
+        HttpStatus.BAD_REQUEST,
         'Cannot cancel a meeting that has already started or passed',
       );
     }

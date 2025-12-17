@@ -26,15 +26,5 @@
   "meetingCancelledDetails": "Spotkanie z {otherPartyName} zaplanowane na {startTime} zostało odwołane.",
   "meetingCancelledByUser": "Odwołane przez użytkownika.",
   "meetingCancelledByDoc": "Odwołane przez terapeutę.",
-  "meetingCancelledBySystem": "Odwołane przez system.",
-  "exceptions": {
-    "emailExist": "E-mail już istnieje.",
-    "emailTokenExpired": "Potwierdzenie wygasło",
-    "emailAlreadyConfirmed": "Email potwierdzony wcześniej",
-    "emailNotConfirmed": "Email niepotwierdzony",
-    "emailNotFound": "Email nieznaleziony",
-    "invalidEmail": "Email nie występuje",
-    "invalidPassword": "Błędne hasło",
-    "tokenCooldown": "Link aktywacyjny wysłany. Proszę czekać 10 minut."
-  }
+  "meetingCancelledBySystem": "Odwołane przez system."
 }

@@ -316,3 +316,54 @@ Content-Type: application/json
 
 ### Get Doc Ratings (public)
 GET {{baseUrl}}/profiles/doc/{{docId}}/ratings?page=1&limit=10
+
+### ============================================
+### NEGATIVE CASES (UX codes)
+### ============================================
+
+### Create Meeting - slot not found (expect code: SLOT_NOT_FOUND)
+POST {{baseUrl}}/meetings
+Content-Type: application/json
+
+{
+  "docId": {{docId}},
+  "slotId": 999999,
+  "clientMessage": "test"
+}
+
+### Create Meeting - slot already booked (expect code: SLOT_ALREADY_BOOKED)
+# (uruchom createMeeting 2x z tym samym slotId)
+POST {{baseUrl}}/meetings
+Content-Type: application/json
+
+{
+  "docId": {{docId}},
+  "slotId": {{slotId}},
+  "clientMessage": "test"
+}
+
+### Start P24 payment - meeting not owned (expect code: MEETING_NOT_OWNED)
+POST {{baseUrl}}/payments/p24/start
+Content-Type: application/json
+
+{
+  "meetingId": 999999
+}
+
+### Start P24 payment - therapist not published (expect code: THERAPIST_NOT_PUBLISHED)
+# (ustaw published=false dla doca)
+POST {{baseUrl}}/payments/p24/start
+Content-Type: application/json
+
+{
+  "meetingId": {{meetingId}}
+}
+
+### Start P24 payment - session price missing (expect code: SESSION_PRICE_NOT_SET)
+# (usuń sessionPricePln w docProfile)
+POST {{baseUrl}}/payments/p24/start
+Content-Type: application/json
+
+{
+  "meetingId": {{meetingId}}
+}

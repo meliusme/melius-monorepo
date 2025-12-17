@@ -1,13 +1,10 @@
 import * as crypto from 'crypto';
-import {
-  Injectable,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import Stripe from 'stripe';
 import { MeetingStatus, PaymentStatus, PaymentProvider } from '@prisma/client';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 
 @Injectable()
 export class PaymentsService {
@@ -42,7 +39,11 @@ export class PaymentsService {
     const apiKey = process.env.P24_API_KEY;
 
     if (!merchantId || !apiKey) {
-      throw new Error('P24 envs missing: P24_MERCHANT_ID/P24_API_KEY');
+      throwAppError(
+        ErrorCode.P24_CONFIG_MISSING,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Payment configuration missing',
+      );
     }
 
     const token = Buffer.from(`${merchantId}:${apiKey}`, 'utf8').toString(
@@ -159,7 +160,11 @@ export class PaymentsService {
     const crc = process.env.P24_CRC ?? '';
 
     if (!merchantId || !posId || !crc) {
-      throw new Error('P24 envs missing: P24_MERCHANT_ID/P24_POS_ID/P24_CRC');
+      throwAppError(
+        ErrorCode.P24_CONFIG_MISSING,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Payment configuration missing',
+      );
     }
 
     const sign = this.p24SignVerify({
@@ -340,15 +345,30 @@ export class PaymentsService {
       },
     });
 
-    if (!meeting) throw new NotFoundException(`Meeting ${meetingId} not found`);
+    if (!meeting)
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        `Meeting ${meetingId} not found`,
+      );
     if (meeting.userId !== userId)
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_OWNED,
+        HttpStatus.FORBIDDEN,
         'You are not allowed to pay for this meeting',
       );
     if (!meeting.doc)
-      throw new BadRequestException('Meeting has no assigned therapist');
+      throwAppError(
+        ErrorCode.MEETING_NO_THERAPIST,
+        HttpStatus.BAD_REQUEST,
+        'Meeting has no assigned therapist',
+      );
     if (meeting.status !== MeetingStatus.pending)
-      throw new BadRequestException('You can only pay for pending meetings');
+      throwAppError(
+        ErrorCode.MEETING_NOT_PENDING,
+        HttpStatus.BAD_REQUEST,
+        'You can only pay for pending meetings',
+      );
     // Pending TTL guard: do not allow payment for an expired hold (cron might not have run yet)
     // Default: 15 minutes
     const ttlMinutes = Number(process.env.MEETING_PENDING_TTL_MINUTES ?? 15);
@@ -356,7 +376,9 @@ export class PaymentsService {
     const expiresAt = new Date(meeting.createdAt.getTime() + ttlMs);
 
     if (expiresAt <= new Date()) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_EXPIRED,
+        HttpStatus.BAD_REQUEST,
         'This booking has expired. Please pick a slot again.',
       );
     }
@@ -371,26 +393,48 @@ export class PaymentsService {
     });
 
     if (alreadyPaid) {
-      throw new BadRequestException('This meeting is already paid');
+      throwAppError(
+        ErrorCode.PAYMENT_ALREADY_SUCCEEDED,
+        HttpStatus.CONFLICT,
+        'This meeting is already paid',
+      );
     }
     if (!meeting.doc.published)
-      throw new BadRequestException('This therapist profile is not published');
+      throwAppError(
+        ErrorCode.THERAPIST_NOT_PUBLISHED,
+        HttpStatus.BAD_REQUEST,
+        'This therapist profile is not published',
+      );
 
     const pricePln = meeting.doc.sessionPricePln;
     if (pricePln == null || pricePln <= 0)
-      throw new BadRequestException('Session price is not set');
+      throwAppError(
+        ErrorCode.SESSION_PRICE_NOT_SET,
+        HttpStatus.BAD_REQUEST,
+        'Session price is not set',
+      );
 
     if (!meeting.slot)
-      throw new BadRequestException('Meeting has no assigned slot');
+      throwAppError(
+        ErrorCode.SLOT_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'Meeting has no assigned slot',
+      );
 
     const now = new Date();
     if (meeting.slot.startTime <= now)
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_EXPIRED,
+        HttpStatus.BAD_REQUEST,
         'You cannot pay for a meeting that has already started or finished',
       );
 
     if (!meeting.user?.user?.email)
-      throw new BadRequestException('User email is missing');
+      throwAppError(
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'User email is missing',
+      );
 
     const amount = Math.round(pricePln * 100); // grosze
     const currency = 'PLN';
@@ -444,8 +488,10 @@ export class PaymentsService {
     const apiKey = process.env.P24_API_KEY ?? '';
 
     if (!merchantId || !posId || !crc || !apiKey) {
-      throw new Error(
-        'P24 envs missing: P24_MERCHANT_ID/P24_POS_ID/P24_CRC/P24_API_KEY',
+      throwAppError(
+        ErrorCode.P24_CONFIG_MISSING,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Payment configuration missing',
       );
     }
 
@@ -499,7 +545,11 @@ export class PaymentsService {
 
   async createCheckoutSessionForMeeting(userId: number, meetingId: number) {
     if (!this.stripe) {
-      throw new BadRequestException('Stripe is disabled');
+      throwAppError(
+        ErrorCode.PAYMENT_PROVIDER_DISABLED,
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Stripe is disabled',
+      );
     }
     // 1. Pobierz meeting razem z docProfile i użytkownikiem (żeby mieć email)
     const meeting = await this.prisma.meeting.findUnique({
@@ -516,42 +566,70 @@ export class PaymentsService {
     });
 
     if (!meeting) {
-      throw new NotFoundException(`Meeting ${meetingId} not found`);
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        `Meeting ${meetingId} not found`,
+      );
     }
 
     if (meeting.userId !== userId) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.FORBIDDEN,
         'You are not allowed to pay for this meeting',
       );
     }
 
     if (!meeting.doc) {
-      throw new BadRequestException('Meeting has no assigned therapist');
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'Meeting has no assigned therapist',
+      );
     }
 
     if (meeting.status !== MeetingStatus.pending) {
-      throw new BadRequestException('You can only pay for pending meetings');
+      throwAppError(
+        ErrorCode.MEETING_NOT_PENDING,
+        HttpStatus.BAD_REQUEST,
+        'You can only pay for pending meetings',
+      );
     }
 
     if (!meeting.doc.published) {
-      throw new BadRequestException('This therapist profile is not published');
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'This therapist profile is not published',
+      );
     }
 
     const pricePln = meeting.doc.sessionPricePln;
 
     if (pricePln == null || pricePln <= 0) {
-      throw new BadRequestException('Session price is not set');
+      throwAppError(
+        ErrorCode.MEETING_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'Session price is not set',
+      );
     }
 
     if (!meeting.slot) {
-      throw new BadRequestException('Meeting has no assigned slot');
+      throwAppError(
+        ErrorCode.SLOT_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'Meeting has no assigned slot',
+      );
     }
 
     const now = new Date();
     const slotStart = meeting.slot.startTime;
 
     if (slotStart <= now) {
-      throw new BadRequestException(
+      throwAppError(
+        ErrorCode.MEETING_EXPIRED,
+        HttpStatus.BAD_REQUEST,
         'You cannot pay for a meeting that has already started or finished',
       );
     }
@@ -560,7 +638,11 @@ export class PaymentsService {
     const currency = 'pln';
 
     if (!meeting.user?.user?.email) {
-      throw new BadRequestException('User email is missing');
+      throwAppError(
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
+        'User email is missing',
+      );
     }
 
     // 2. Utwórz Payment w bazie
@@ -624,7 +706,11 @@ export class PaymentsService {
 
   async handleStripeWebhook(rawBody: Buffer, signature: string) {
     if (!this.stripe) {
-      throw new BadRequestException('Stripe is disabled');
+      throwAppError(
+        ErrorCode.PAYMENT_PROVIDER_DISABLED,
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Stripe is disabled',
+      );
     }
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -644,7 +730,11 @@ export class PaymentsService {
       this.logger.error(
         `Webhook signature verification failed: ${err.message}`,
       );
-      throw new BadRequestException(`Webhook Error: ${err.message}`);
+      throwAppError(
+        ErrorCode.PAYMENT_VERIFY_FAILED,
+        HttpStatus.BAD_REQUEST,
+        `Webhook Error: ${err.message}`,
+      );
     }
 
     this.logger.log(`Received webhook event: ${event.type}`);
@@ -686,7 +776,11 @@ export class PaymentsService {
         });
 
         if (!payment) {
-          throw new NotFoundException(`Payment ${paymentId} not found`);
+          throwAppError(
+            ErrorCode.MEETING_NOT_FOUND,
+            HttpStatus.NOT_FOUND,
+            `Payment ${paymentId} not found`,
+          );
         }
 
         // Verify meeting exists
@@ -695,7 +789,11 @@ export class PaymentsService {
         });
 
         if (!meeting) {
-          throw new NotFoundException(`Meeting ${meetingId} not found`);
+          throwAppError(
+            ErrorCode.MEETING_NOT_FOUND,
+            HttpStatus.NOT_FOUND,
+            `Meeting ${meetingId} not found`,
+          );
         }
 
         await tx.payment.update({

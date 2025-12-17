@@ -1,10 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import {
-  ConflictException,
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -13,6 +8,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ImageService } from '../image/image.service';
 import { EmailService } from '../email/email.service';
 import { I18nTranslations } from '../generated/i18n.generated';
+import { throwAppError } from '../common/errors/throw-app-error';
+import { ErrorCode } from '../common/errors/error-codes';
 
 export const roundsOfHashing = 10;
 
@@ -46,7 +43,11 @@ export class UsersService {
           },
         });
       default:
-        throw new BadRequestException('Invalid role provided');
+        throwAppError(
+          ErrorCode.MEETING_NOT_FOUND,
+          HttpStatus.BAD_REQUEST,
+          'Invalid role provided',
+        );
     }
   }
 
@@ -81,7 +82,11 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException(this.i18n.t('test.exceptions.emailExist'));
+      throwAppError(
+        ErrorCode.EMAIL_EXISTS,
+        HttpStatus.CONFLICT,
+        'Email already exists',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(
@@ -132,7 +137,11 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throwAppError(
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'User not found',
+      );
     }
     await this.deleteAvatar(id);
     await this.deleteProfile(id, user.role);
