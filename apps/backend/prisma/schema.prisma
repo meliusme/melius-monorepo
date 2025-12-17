@@ -132,9 +132,10 @@ model Rating {
   userId    Int
   doc       DocProfile  @relation(fields: [docId], references: [id], onDelete: Cascade)
   docId     Int
-  meeting   Meeting?    @relation(fields: [meetingId], references: [id])
-  meetingId Int?
+  meeting   Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meetingId Int
 
+  @@unique([meetingId, userId])
   @@index([docId])
   @@index([userId])
   @@index([meetingId])
@@ -175,7 +176,7 @@ model Payment {
   meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   meetingId Int
 
-  unitAmount Int
+  unitAmount  Int
   currency    String
   status      PaymentStatus   @default(pending)
   provider    PaymentProvider @default(stripe)

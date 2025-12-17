@@ -2,12 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { MeetingStatus, PaymentProvider, PaymentStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class MeetingsCronService {
   private readonly logger = new Logger(MeetingsCronService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   // Runs every 5 minutes
   @Cron('*/5 * * * *')
@@ -20,11 +24,21 @@ export class MeetingsCronService {
     const meetingsToComplete = await this.prisma.meeting.findMany({
       where: {
         status: MeetingStatus.confirmed,
-        slot: {
-          endTime: {
-            lte: now,
+        OR: [
+          {
+            slot: {
+              endTime: {
+                lte: now,
+              },
+            },
           },
-        },
+          {
+            // fallback for edge-cases where meeting has no slot relation
+            endTime: {
+              lte: now,
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -101,6 +115,14 @@ export class MeetingsCronService {
         });
       }
     });
+
+    // Emit events for email notifications (system cancellation)
+    for (const meetingId of ids) {
+      this.eventEmitter.emit('meeting.cancelled', {
+        meetingId,
+        cancelledBy: 'system',
+      });
+    }
 
     this.logger.log(
       `Auto-cancelled ${meetingsToCancel.length} pending meeting(s) not paid within 15 minutes`,

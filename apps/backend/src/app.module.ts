@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { I18nModule, QueryResolver } from 'nestjs-i18n';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -26,6 +27,11 @@ import { PaymentsModule } from './payments/payments.module';
     MeetingsModule,
     MatchesModule,
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 20,
+    }),
     I18nModule.forRoot({
       fallbackLanguage: 'pl',
       viewEngine: 'hbs',

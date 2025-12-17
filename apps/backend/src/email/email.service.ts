@@ -109,6 +109,16 @@ export class EmailService {
     const fromName = process.env.RESEND_FROM_NAME ?? 'Melius';
     const templateId = process.env.RESEND_REGISTER_TEMPLATE_ALIAS;
 
+    if (!this.resend) {
+      this.logger.error('Resend client is not initialized');
+      return;
+    }
+
+    if (!templateId) {
+      this.logger.error('RESEND_REGISTER_TEMPLATE_ALIAS is not set');
+      return;
+    }
+
     try {
       await this.resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
@@ -278,6 +288,234 @@ export class EmailService {
         where: { email },
         data: { password: changePasswordDto.password },
       });
+    }
+  }
+
+  async sendMeetingConfirmedClient(params: {
+    to: string;
+    lang: Language;
+    clientName: string;
+    docName: string;
+    startTime: Date;
+    pricePln: number;
+  }) {
+    const { to, lang, clientName, docName, startTime, pricePln } = params;
+
+    const formattedTime = startTime.toLocaleString(
+      lang === 'pl' ? 'pl-PL' : 'en-US',
+    );
+
+    const subject = this.i18n.t('test.meetingConfirmedClientSubject', { lang });
+    const preview = this.i18n.t('test.meetingConfirmedClientPreview', { lang });
+    const text = this.i18n.t('test.meetingConfirmedClientText', {
+      lang,
+      args: { docName },
+    });
+    const details = this.i18n.t('test.meetingConfirmedClientDetails', {
+      lang,
+      args: { startTime: formattedTime },
+    });
+    const price = this.i18n.t('test.meetingConfirmedClientPrice', {
+      lang,
+      args: { pricePln },
+    });
+
+    const common = this.getCommonContext(lang);
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL ?? 'no-reply@melius-app.com';
+    const fromName = process.env.RESEND_FROM_NAME ?? 'Melius';
+    const templateId = process.env.RESEND_MEETING_TEMPLATE_ALIAS;
+
+    if (!this.resend) {
+      this.logger.error('Resend client is not initialized');
+      return;
+    }
+
+    if (!templateId) {
+      this.logger.error('RESEND_MEETING_TEMPLATE_ALIAS is not set');
+      return;
+    }
+
+    try {
+      await this.resend.emails.send({
+        from: `${fromName} <${fromEmail}>`,
+        to,
+        subject,
+        template: {
+          id: templateId,
+          variables: {
+            lang,
+            text,
+            details,
+            price,
+            preview,
+            clientName,
+            ...common,
+          },
+        },
+      });
+
+      this.logger.log(`Meeting confirmed email sent to client ${to}`);
+    } catch (error) {
+      this.logger.error(
+        `Error sending meeting confirmed email to client ${to}`,
+        (error as any).toString(),
+      );
+    }
+  }
+
+  async sendMeetingConfirmedDoc(params: {
+    to: string;
+    lang: Language;
+    docName: string;
+    clientName: string;
+    startTime: Date;
+    clientMessage?: string;
+  }) {
+    const { to, lang, docName, clientName, startTime, clientMessage } = params;
+
+    const formattedTime = startTime.toLocaleString(
+      lang === 'pl' ? 'pl-PL' : 'en-US',
+    );
+
+    const subject = this.i18n.t('test.meetingConfirmedDocSubject', { lang });
+    const preview = this.i18n.t('test.meetingConfirmedDocPreview', { lang });
+    const text = this.i18n.t('test.meetingConfirmedDocText', {
+      lang,
+      args: { clientName },
+    });
+    const details = this.i18n.t('test.meetingConfirmedDocDetails', {
+      lang,
+      args: { startTime: formattedTime },
+    });
+    const message = clientMessage
+      ? this.i18n.t('test.meetingConfirmedDocMessage', {
+          lang,
+          args: { clientMessage },
+        })
+      : '';
+
+    const common = this.getCommonContext(lang);
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL ?? 'no-reply@melius-app.com';
+    const fromName = process.env.RESEND_FROM_NAME ?? 'Melius';
+    const templateId = process.env.RESEND_MEETING_TEMPLATE_ALIAS;
+
+    if (!this.resend) {
+      this.logger.error('Resend client is not initialized');
+      return;
+    }
+
+    if (!templateId) {
+      this.logger.error('RESEND_MEETING_TEMPLATE_ALIAS is not set');
+      return;
+    }
+
+    try {
+      await this.resend.emails.send({
+        from: `${fromName} <${fromEmail}>`,
+        to,
+        subject,
+        template: {
+          id: templateId,
+          variables: {
+            lang,
+            text,
+            details,
+            message,
+            preview,
+            docName,
+            ...common,
+          },
+        },
+      });
+
+      this.logger.log(`Meeting confirmed email sent to doc ${to}`);
+    } catch (error) {
+      this.logger.error(
+        `Error sending meeting confirmed email to doc ${to}`,
+        (error as any).toString(),
+      );
+    }
+  }
+
+  async sendMeetingCancelled(params: {
+    to: string;
+    lang: Language;
+    recipientName: string;
+    otherPartyName: string;
+    startTime: Date;
+    cancelledBy: 'user' | 'doc' | 'system';
+  }) {
+    const { to, lang, recipientName, otherPartyName, startTime, cancelledBy } =
+      params;
+
+    const formattedTime = startTime.toLocaleString(
+      lang === 'pl' ? 'pl-PL' : 'en-US',
+    );
+
+    const subject = this.i18n.t('test.meetingCancelledSubject', { lang });
+    const preview = this.i18n.t('test.meetingCancelledPreview', { lang });
+    const text = this.i18n.t('test.meetingCancelledText', {
+      lang,
+      args: { recipientName },
+    });
+    const details = this.i18n.t('test.meetingCancelledDetails', {
+      lang,
+      args: {
+        otherPartyName,
+        startTime: formattedTime,
+      },
+    });
+
+    const cancelledByMap = {
+      user: this.i18n.t('test.meetingCancelledByUser', { lang }),
+      doc: this.i18n.t('test.meetingCancelledByDoc', { lang }),
+      system: this.i18n.t('test.meetingCancelledBySystem', { lang }),
+    };
+    const cancelledByText = cancelledByMap[cancelledBy];
+
+    const common = this.getCommonContext(lang);
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL ?? 'no-reply@melius-app.com';
+    const fromName = process.env.RESEND_FROM_NAME ?? 'Melius';
+    const templateId = process.env.RESEND_MEETING_TEMPLATE_ALIAS;
+
+    if (!this.resend) {
+      this.logger.error('Resend client is not initialized');
+      return;
+    }
+
+    if (!templateId) {
+      this.logger.error('RESEND_MEETING_TEMPLATE_ALIAS is not set');
+      return;
+    }
+
+    try {
+      await this.resend.emails.send({
+        from: `${fromName} <${fromEmail}>`,
+        to,
+        subject,
+        template: {
+          id: templateId,
+          variables: {
+            lang,
+            text,
+            details,
+            cancelledByText,
+            preview,
+            recipientName,
+            ...common,
+          },
+        },
+      });
+
+      this.logger.log(`Meeting cancelled email sent to ${to}`);
+    } catch (error) {
+      this.logger.error(
+        `Error sending meeting cancelled email to ${to}`,
+        (error as any).toString(),
+      );
     }
   }
 }

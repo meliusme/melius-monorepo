@@ -17,6 +17,23 @@ export type I18nTranslations = {
         "previewConfirm": string;
         "subjectChange": string;
         "previewChange": string;
+        "meetingConfirmedClientSubject": string;
+        "meetingConfirmedClientPreview": string;
+        "meetingConfirmedClientText": string;
+        "meetingConfirmedClientDetails": string;
+        "meetingConfirmedClientPrice": string;
+        "meetingConfirmedDocSubject": string;
+        "meetingConfirmedDocPreview": string;
+        "meetingConfirmedDocText": string;
+        "meetingConfirmedDocDetails": string;
+        "meetingConfirmedDocMessage": string;
+        "meetingCancelledSubject": string;
+        "meetingCancelledPreview": string;
+        "meetingCancelledText": string;
+        "meetingCancelledDetails": string;
+        "meetingCancelledByUser": string;
+        "meetingCancelledByDoc": string;
+        "meetingCancelledBySystem": string;
         "exceptions": {
             "emailExist": string;
             "emailTokenExpired": string;

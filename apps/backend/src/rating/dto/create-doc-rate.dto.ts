@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsNumber, IsPositive, Min, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsPositive,
+  Min,
+  Max,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateDocRateDto {
   @IsNumber()
@@ -15,4 +24,9 @@ export class CreateDocRateDto {
   @Min(1)
   @Max(5)
   rate: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  comment?: string;
 }

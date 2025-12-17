@@ -7,7 +7,7 @@ export class RatingService {
   constructor(private prisma: PrismaService) {}
 
   async addDocRate(user: User, createDocRateDto: CreateDocRateDto) {
-    const { docId, meetingId, rate } = createDocRateDto;
+    const { docId, meetingId, rate, comment } = createDocRateDto;
 
     // 1) Check if the doc profile exists
     const docProfile = await this.prisma.docProfile.findUnique({
@@ -49,58 +49,49 @@ export class RatingService {
         'You can only rate sessions with the selected therapist',
       );
     }
-
+    // 6) Check if the meeting is completed
     if (meeting.status !== MeetingStatus.completed) {
       throw new BadRequestException('You can only rate completed sessions');
     }
 
     // 7) Check if there is already a rating for this meeting from this user
-    const existingRating = await this.prisma.rating.findFirst({
-      where: {
-        meetingId,
-        userId: userProfile.id,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // 7) existing rating check
+      const existingRating = await tx.rating.findFirst({
+        where: { meetingId, userId: userProfile.id },
+      });
+      if (existingRating)
+        throw new BadRequestException('You have already rated this session');
+
+      // 8) create rating
+      await tx.rating.create({
+        data: {
+          rate,
+          comment,
+          docId: docProfile.id,
+          userId: userProfile.id,
+          meetingId,
+        },
+      });
+
+      // 9) aggregate
+      const avgAndCount = await tx.rating.aggregate({
+        where: { docId: docProfile.id },
+        _count: { rate: true },
+        _avg: { rate: true },
+      });
+
+      // 10) update doc profile
+      const updatedDocProfile = await tx.docProfile.update({
+        where: { id: docProfile.id },
+        data: {
+          rate: avgAndCount._avg.rate,
+          ratesLot: avgAndCount._count.rate,
+        },
+      });
+
+      return updatedDocProfile;
     });
-
-    if (existingRating) {
-      throw new BadRequestException('You have already rated this session');
-    }
-
-    // 8) create the rating
-    await this.prisma.rating.create({
-      data: {
-        rate,
-        docId: docProfile.id,
-        userId: userProfile.id,
-        meetingId,
-      },
-    });
-
-    // 9) Recalculate the average and count of the therapist's ratings
-    const avgAndCount = await this.prisma.rating.aggregate({
-      where: {
-        docId: docProfile.id,
-      },
-      _count: {
-        rate: true,
-      },
-      _avg: {
-        rate: true,
-      },
-    });
-
-    // 10) Update the therapist's profile
-    const updatedDocProfile = await this.prisma.docProfile.update({
-      where: {
-        id: docProfile.id,
-      },
-      data: {
-        rate: avgAndCount._avg.rate,
-        ratesLot: avgAndCount._count.rate,
-      },
-    });
-
-    return updatedDocProfile;
   }
 
   async getDocRatings(docId: number, page = 1, limit = 10) {
@@ -109,12 +100,17 @@ export class RatingService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.rating.findMany({
         where: { docId },
-        include: {
-          user: true, // UserProfile (contains firstName/lastName)
+        select: {
+          id: true,
+          rate: true,
+          comment: true,
+          createdAt: true,
+          userId: true,
+          user: {
+            select: { firstName: true, lastName: true },
+          },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
