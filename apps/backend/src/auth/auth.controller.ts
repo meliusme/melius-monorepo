@@ -1,16 +1,19 @@
 import { Body, Controller, Post, Res, Get, UseGuards } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
+import { AuthService } from './auth.service';
 import { RegisterLightDto } from './dto/register-light.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from 'src/decorators/user.decorator';
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 900 } })
   @Post('/login')
   async login(
     @Body() loginDto: LoginDto,
@@ -36,6 +39,7 @@ export class AuthController {
       .send({ role: user.role, userId: user.id });
   }
 
+  @Throttle({ default: { limit: 5, ttl: 900 } })
   @Post('/register-light')
   async registerLight(
     @Body() dto: RegisterLightDto,
@@ -60,6 +64,7 @@ export class AuthController {
       .send({ role: user.role, userId: user.id });
   }
 
+  @Throttle({ default: { limit: 3, ttl: 900 } })
   @Post('/set-password')
   @UseGuards(JwtAuthGuard)
   async setPassword(
@@ -84,6 +89,7 @@ export class AuthController {
       .send({ role: updatedUser.role, userId: updatedUser.id });
   }
 
+  @SkipThrottle()
   @Get('/logout')
   async logout(@Res({ passthrough: true }) res: Response): Promise<string> {
     res.cookie('access_token', '', { expires: new Date(Date.now()) });
