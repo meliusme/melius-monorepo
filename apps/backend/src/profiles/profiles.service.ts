@@ -132,12 +132,18 @@ export class ProfilesService {
         avatar: true,
       },
       take: 3,
-      orderBy: {
-        docProfile: {
-          rate: 'desc',
-          ratesLot: 'desc',
+      orderBy: [
+        {
+          docProfile: {
+            rate: 'desc',
+          },
         },
-      },
+        {
+          docProfile: {
+            ratesLot: 'desc',
+          },
+        },
+      ],
     });
   }
 }

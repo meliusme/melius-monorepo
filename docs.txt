@@ -61,7 +61,7 @@ GŁÓWNE MODELE:
    - Relacje: doc, meetings
 
 6. Payment (Płatność)
-   - amountCents, currency, status, provider
+   - unitAmount, currency, status, provider
    - stripePaymentIntentId, stripeCheckoutId (Stripe)
    - p24SessionId, p24OrderId, p24Token (Przelewy24)
    - Relacje: meeting

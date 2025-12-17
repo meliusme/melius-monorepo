@@ -93,11 +93,11 @@ model DocProfile {
   firstName         String?
   lastName          String?
   profession        Profession?
-  rate              Int?
+  rate              Float?
   ratesLot          Int?
   sessionPricePln   Int?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime           @default(now()) @db.Timestamptz
+  updatedAt         DateTime           @updatedAt @db.Timestamptz
   published         Boolean            @default(false)
   meetings          Meeting[]
   specializations   Specialization[]
@@ -106,18 +106,20 @@ model DocProfile {
 }
 
 model AdminProfile {
-  id        Int     @id @default(autoincrement())
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int     @unique
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int      @unique
   firstName String?
   lastName  String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
 }
 
 model Avatar {
   id     Int    @id @default(autoincrement())
   key    String
   url    String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int    @unique
 }
 
@@ -132,6 +134,10 @@ model Rating {
   docId     Int
   meeting   Meeting?    @relation(fields: [meetingId], references: [id])
   meetingId Int?
+
+  @@index([docId])
+  @@index([userId])
+  @@index([meetingId])
 }
 
 model Meeting {
@@ -146,7 +152,7 @@ model Meeting {
   doc           DocProfile        @relation(fields: [docId], references: [id])
   docId         Int
   slot          AvailabilitySlot? @relation(fields: [slotId], references: [id])
-  slotId        Int?              @unique
+  slotId        Int?
   payments      Payment[]
   ratings       Rating[]
   clientMessage String?
@@ -169,7 +175,7 @@ model Payment {
   meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   meetingId Int
 
-  amountCents Int
+  unitAmount Int
   currency    String
   status      PaymentStatus   @default(pending)
   provider    PaymentProvider @default(stripe)

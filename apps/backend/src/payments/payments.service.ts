@@ -243,7 +243,7 @@ export class PaymentsService {
     // 2) Amount guard:
     // - We ALWAYS verify using the amount stored in DB (source of truth).
     // - If webhook provides an amount and it doesn't match DB, we fail fast (spoofing / mismatch).
-    const dbAmount = payment.amountCents;
+    const dbAmount = payment.unitAmount;
 
     if (!Number.isFinite(amount)) {
       this.logger.warn(
@@ -420,7 +420,7 @@ export class PaymentsService {
       : await this.prisma.payment.create({
           data: {
             meetingId: meeting.id,
-            amountCents: amount,
+            unitAmount: amount,
             currency,
             status: PaymentStatus.pending,
             provider: PaymentProvider.p24,
@@ -556,7 +556,7 @@ export class PaymentsService {
       );
     }
 
-    const amountCents = Math.round(pricePln * 100);
+    const unitAmount = Math.round(pricePln * 100);
     const currency = 'pln';
 
     if (!meeting.user?.user?.email) {
@@ -567,7 +567,7 @@ export class PaymentsService {
     const payment = await this.prisma.payment.create({
       data: {
         meetingId: meeting.id,
-        amountCents,
+        unitAmount,
         currency: currency.toUpperCase(), // "PLN"
         status: PaymentStatus.pending,
       },
@@ -583,7 +583,7 @@ export class PaymentsService {
         {
           price_data: {
             currency,
-            unit_amount: amountCents,
+            unit_amount: unitAmount,
             product_data: {
               name: 'Sesja terapeutyczna',
               description:

@@ -125,5 +125,6 @@ export class ProfilesController {
       pageNumber,
       limitNumber,
     );
+    return result;
   }
 }
