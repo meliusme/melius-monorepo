@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { DocVerificationStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { throwAppError } from '../common/errors/throw-app-error';
@@ -18,6 +19,14 @@ export class AvailabilityService {
         ErrorCode.DOC_PROFILE_NOT_FOUND,
         HttpStatus.NOT_FOUND,
         'Therapist profile not found',
+      );
+    }
+
+    if (docProfile.verificationStatus !== DocVerificationStatus.approved) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_APPROVED,
+        HttpStatus.FORBIDDEN,
+        'You can add availability only after approval',
       );
     }
 
@@ -75,6 +84,14 @@ export class AvailabilityService {
     const docProfile = await this.prisma.docProfile.findUnique({
       where: { docId: docUserId },
     });
+
+    if (docProfile.verificationStatus !== DocVerificationStatus.approved) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_APPROVED,
+        HttpStatus.FORBIDDEN,
+        'You can manage availability only after approval',
+      );
+    }
 
     if (!docProfile || slot.docId !== docProfile.id) {
       throwAppError(

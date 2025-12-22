@@ -25,11 +25,12 @@ STRUKTURA BAZY DANYCH:
 ENUM TYPES:
 - Role: user, doc, admin
 - Sex: male, female, other
-- MeetingStatus: pending, confirmed, cancelled_by_user, cancelled_by_doc, completed
+- MeetingStatus: pending, confirmed, cancelled_by_user, cancelled_by_doc, cancelled_by_system, completed
 - PaymentStatus: pending, succeeded, failed, refunded
 - PaymentProvider: stripe, p24
 - Profession: psychologist, psychotherapist, sexologist
 - Language: pl, en
+- DocVerificationStatus: draft, submitted, approved, rejected
 
 GŁÓWNE MODELE:
 
@@ -48,7 +49,12 @@ GŁÓWNE MODELE:
    - firstName, lastName, profession
    - rate (średnia ocena), ratesLot (liczba ocen)
    - sessionPricePln (cena sesji w PLN)
-   - published (czy profil jest widoczny)
+   - verificationStatus (draft, submitted, approved, rejected)
+     * draft - profil w trakcie tworzenia
+     * submitted - przesłany do weryfikacji
+     * approved - zatwierdzony, widoczny publicznie
+     * rejected - odrzucony przez admina
+   - submittedAt, reviewedAt, rejectionReason
    - Relacje: user, meetings, specializations, availabilitySlots, ratings
 
 4. Meeting (Spotkanie)
@@ -182,15 +188,24 @@ ENDPOINTY:
 ----------
 
 POST /profiles/user (wymaga JWT + user role)
+- Logika: Nie używany, używaj PUT /profiles/user
+
+PUT /profiles/user (wymaga JWT + user role)
 - Body: UpdateUserProfileDto (firstName, lastName, problems[])
 - Zwraca: Zaktualizowany profil użytkownika
 - Logika: Aktualizuje dane pacjenta i przypisuje problemy
 
 PUT /profiles/doc (wymaga JWT + doc role)
 - Body: UpdateDocProfileDto (firstName, lastName, profession, sessionPricePln, 
-        specializations[], published)
+        specializations[])
 - Zwraca: Zaktualizowany profil terapeuty
 - Logika: Aktualizuje dane terapeuty, specjalizacje i cenę sesji
+- Uwaga: Nie można zmienić verificationStatus tym endpointem
+
+POST /profiles/doc/submit (wymaga JWT + doc role)
+- Zwraca: Zaktualizowany profil terapeuty
+- Logika: Przesyła profil terapeuty do weryfikacji (verificationStatus=submitted)
+- Walidacja: Wymaga wypełnienia firstName, lastName, profession, sessionPricePln, specializations
 
 POST /profiles/admin (wymaga JWT + admin role)
 - Body: UpdateAdminProfileDto (firstName, lastName)
@@ -202,39 +217,50 @@ GET /profiles/user (wymaga JWT + user role)
 GET /profiles/doc (wymaga JWT + doc role)
 - Zwraca: Profil zalogowanego terapeuty ze specjalizacjami
 
+POST /profiles/rate (wymaga JWT + user role)
+- Body: CreateDocRateDto (docId, meetingId, rate, comment?)
+- Zwraca: Zaktualizowany profil terapeuty
+- Logika: Tworzy ocenę, aktualizuje średnią ocenę terapeuty
+
+GET /profiles/doc/:docId/ratings
+- Query: page=1, limit=10
+- Zwraca: Lista ocen terapeuty z paginacją
+- Logika: Pobiera oceny terapeuty posortowane od najnowszych
+
 GET /profiles/new
-- Zwraca: Lista nowych terapeutów (ostatnie 10, published=true)
+- Zwraca: Lista nowych terapeutów (ostatnie 10)
 - Sortowanie: Po dacie utworzenia (malejąco)
+- Filtr: verificationStatus=approved
 
 GET /profiles/best
 - Zwraca: Lista najlepszych terapeutów (wysoka ocena, min 3 opinie)
 - Sortowanie: Po rate (malejąco)
-- Filtr: ratesLot >= 3, published=true
+- Filtr: ratesLot >= 3, verificationStatus=approved
 
-POST /profiles/doc/:docId/rate (wymaga JWT + user role)
-- Body: CreateDocRateDto (rate, comment?)
-- Zwraca: Utworzona ocena
-- Logika: Tworzy ocenę, aktualizuje średnią ocenę terapeuty
+POST /profiles/rate (wymaga JWT + user role)
+- Logika: Zduplikowany endpoint, używaj zamiast tego
+  (endpoint został przeniesiony wyżej w dokumentacji)
 
 GET /profiles/doc/:docId
 - Zwraca: Publiczny profil terapeuty
-- Logika: Zwraca dane tylko jeśli published=true
+- Logika: Zwraca dane tylko jeśli verificationStatus=approved
 
 PROFILES SERVICE - METODY:
 ---------------------------
 - updateUserProfile(userId, dto): Aktualizuje profil pacjenta
-- updateDocProfile(userId, dto): Aktualizuje profil terapeuty
+- updateDocProfile(userId, dto): Aktualizuje profil terapeuty (bez verificationStatus)
+- submitDocProfile(userId): Przesyła profil terapeuty do weryfikacji
 - updateAdminProfile(userId, dto): Aktualizuje profil admina
 - getUserProfile(userId): Pobiera profil pacjenta
 - getDocProfile(userId): Pobiera profil terapeuty
-- getNewDocsProfiles(): Pobiera nowych terapeutów
-- getBestDocsProfiles(): Pobiera najlepiej ocenianych terapeutów
-- getDocProfileById(docId): Pobiera profil terapeuty po ID
+- getNewDocsProfiles(): Pobiera nowych terapeutów (tylko approved)
+- getBestDocsProfiles(): Pobiera najlepiej ocenianych terapeutów (tylko approved)
+- getDocProfileById(docId): Pobiera profil terapeuty po ID (tylko approved dla publicznego dostępu)
 
 RATING SERVICE - METODY:
 -------------------------
-- create(userId, docId, dto): Tworzy ocenę i aktualizuje średnią
-- updateDocRating(docId): Przelicza średnią ocenę terapeuty
+- addDocRate(user, createDocRateDto): Tworzy ocenę i aktualizuje średnią
+- getDocRatings(docId, page, limit): Pobiera oceny terapeuty z paginacją
 
 4. MATCHES MODULE (/matches)
 -----------------------------
@@ -246,6 +272,7 @@ ENDPOINTY:
 GET /matches (wymaga JWT + user role)
 - Zwraca: Lista dopasowanych terapeutów
 - Logika: Znajduje terapeutów, których specjalizacje pasują do problemów użytkownika
+- Filtr: verificationStatus=approved
 - Sortowanie: Po rate (malejąco)
 
 GET /matches/problems
@@ -257,12 +284,13 @@ POST /matches/search-with-slots
 - Zwraca: Lista terapeutów z wolnymi slotami
 - Logika: Znajduje terapeutów pasujących do problemów, którzy mają wolne sloty
   w podanym okresie
+- Filtr: verificationStatus=approved
 
 MATCHES SERVICE - METODY:
 --------------------------
-- getMatchedDocs(userId): Dopasowuje terapeutów do problemów użytkownika
+- getMatchedDocs(userId): Dopasowuje terapeutów do problemów użytkownika (tylko approved)
 - getProblems(): Zwraca wszystkie problemy
-- searchDocsWithSlots(dto): Wyszukuje terapeutów z wolnymi slotami
+- searchDocsWithSlots(dto): Wyszukuje terapeutów z wolnymi slotami (tylko approved)
 
 5. AVAILABILITY MODULE (/availability)
 ---------------------------------------
@@ -275,7 +303,9 @@ POST /availability (wymaga JWT + doc role)
 - Body: CreateAvailabilityDto (startTime, endTime)
 - Zwraca: Utworzony slot
 - Logika: Tworzy nowy slot dostępności dla terapeuty
-- Walidacja: Sprawdza czy slot nie koliduje z istniejącymi
+- Walidacja: 
+  * Wymaga verificationStatus=approved
+  * Sprawdza czy slot nie koliduje z istniejącymi
 
 GET /availability/my (wymaga JWT + doc role)
 - Zwraca: Wszystkie sloty zalogowanego terapeuty
@@ -288,13 +318,14 @@ GET /availability/doc/:docId
 DELETE /availability/:slotId (wymaga JWT + doc role)
 - Zwraca: Status usunięcia
 - Logika: Usuwa slot, tylko jeśli nie jest zarezerwowany (booked=false)
+- Walidacja: Wymaga verificationStatus=approved
 
 AVAILABILITY SERVICE - METODY:
 -------------------------------
-- create(docId, dto): Tworzy nowy slot
+- create(docId, dto): Tworzy nowy slot (wymaga verificationStatus=approved)
 - findForDoc(docId): Pobiera wszystkie sloty terapeuty
-- findFreeSlotsForDoc(docId): Pobiera wolne sloty terapeuty
-- remove(docId, slotId): Usuwa slot (jeśli niezarezerwowany)
+- findFreeSlotsForDoc(docId): Pobiera wolne sloty terapeuty (tylko approved)
+- remove(docId, slotId): Usuwa slot (jeśli niezarezerwowany, wymaga approved)
 
 6. MEETINGS MODULE (/meetings)
 -------------------------------
@@ -320,10 +351,15 @@ GET /meetings/me (wymaga JWT + user role)
   - past: status = completed OR endTime <= now
   - all: wszystkie
 
-GET /meetings/doc/me (wymaga JWT + doc role)
-- Query: scope? (upcoming | past | all)
-- Zwraca: Lista spotkań terapeuty
-- Filtracja: jak wyżej
+GET /meetings/doc (wymaga JWT + doc role)
+- Query: scope? (today | upcoming | past | cancelled), page?, limit?
+- Zwraca: Lista spotkań terapeuty z paginacją
+- Filtracja: 
+  - today: dzisiejsze spotkania
+  - upcoming: nadchodzące spotkania
+  - past: przeszłe spotkania
+  - cancelled: anulowane spotkania
+- Paginacja: domyślnie page=1, limit=20
 
 POST /meetings/:id/cancel (wymaga JWT + user role)
 - Zwraca: Anulowane spotkanie
@@ -343,15 +379,17 @@ MEETINGS SERVICE - METODY:
 ---------------------------
 - createMeeting(userId, dto): Tworzy nowe spotkanie
 - getUserMeetings(userId, scope): Pobiera spotkania pacjenta
-- getDocMeetingsForUser(docUserId, scope): Pobiera spotkania terapeuty
+- getDocMeetingsListForUser(docUserId, scope, page, limit): Pobiera spotkania terapeuty z paginacją
 - cancelMeetingByUser(meetingId, userId): Anuluje spotkanie (pacjent)
 - cancelMeetingByDocUser(meetingId, docUserId): Anuluje spotkanie (terapeuta)
 
 MEETINGS CRON SERVICE:
 ----------------------
-- @Cron('0 */5 * * * *') - Co 5 minut
-- completePastMeetings(): Automatycznie zmienia status spotkań które się zakończyły
+- @Cron('*/5 * * * *') - Co 5 minut
+- markCompletedMeetings(): Automatycznie zmienia status spotkań które się zakończyły
   (endTime < now AND status = confirmed) na 'completed'
+- autoCancelUnpaidMeetings(): Automatycznie anuluje spotkania pending starsze niż 15 minut
+  (status=cancelled_by_system, zwalnia slot)
 
 7. PAYMENTS MODULE (/payments)
 -------------------------------
@@ -413,53 +451,92 @@ Wysyłka emaili weryfikacyjnych i resetowania hasła przez Resend.
 ENDPOINTY:
 ----------
 
-POST /email/send-confirmation
-- Body: { email }
+POST /email/confirm
+- Body: ConfirmEmailDto (token)
+- Zwraca: Status potwierdzenia
+- Logika:
+  1. Dekoduje JWT token
+  2. Ustawia emailConfirmed=true
+
+POST /email/resend-confirm
+- Body: EmailDto (email)
 - Zwraca: Status wysyłki
 - Logika:
-  1. Sprawdza czy token nie był wysłany ostatnio (cooldown 10 sek)
+  1. Sprawdza czy token nie był wysłany ostatnio (cooldown)
   2. Generuje JWT token z emailem
   3. Wysyła email z linkiem potwierdzającym
   4. Zapisuje tokenActivatedAt
 
-GET /email/confirm/:token
-- Zwraca: Komunikat o potwierdzeniu
-- Logika:
-  1. Weryfikuje JWT token
-  2. Ustawia emailConfirmed=true
-
-POST /email/send-reset-password
-- Body: { email }
+POST /email/password
+- Body: EmailDto (email)
 - Zwraca: Status wysyłki
 - Logika:
   1. Sprawdza cooldown
   2. Generuje token
   3. Wysyła email z linkiem do resetowania hasła
 
-POST /email/reset-password
-- Body: { token, newPassword }
+PATCH /email/password-change
+- Body: ChangePasswordDto (token, newPassword)
 - Zwraca: Status zmiany
 - Logika:
   1. Weryfikuje token
   2. Hashuje nowe hasło
   3. Aktualizuje w bazie
 
-POST /email/change-password (wymaga JWT)
-- Body: { oldPassword, newPassword }
-- Zwraca: Status zmiany
-- Logika: Zmienia hasło dla zalogowanego użytkownika
-
 EMAIL SERVICE - METODY:
 ------------------------
-- sendConfirmationEmail(email): Wysyła email potwierdzający
-- confirmEmail(token): Potwierdza email
-- sendResetPasswordEmail(email): Wysyła link do resetu hasła
-- resetPassword(token, newPassword): Resetuje hasło
-- changePassword(userId, oldPassword, newPassword): Zmienia hasło
-- createToken(email): Tworzy JWT token
-- getCommonContext(lang): Przygotowuje wspólny kontekst dla emaili
+- confirmEmail(email): Potwierdza email
+- decodeConfirmationToken(token): Dekoduje JWT token potwierdzenia
+- resendConfirmationLink(email): Wysyła ponownie link potwierdzający
+- sendPasswordLink(email): Wysyła link do resetu hasła
+- changePassword(dto): Zmienia hasło na podstawie tokenu
 
-9. IMAGE MODULE
+9. ADMIN MODULE (/admin)
+------------------------
+Panel administratora do zarządzania weryfikacją terapeutów.
+
+ENDPOINTY:
+----------
+
+POST /admin/docs/:docProfileId/approve (wymaga JWT + admin role)
+- Zwraca: Zaktualizowany profil terapeuty
+- Logika: 
+  1. Zmienia verificationStatus na 'approved'
+  2. Zapisuje reviewedAt
+  3. Terapeuta automatycznie staje się widoczny publicznie
+  4. Może teraz dodawać sloty dostępności
+
+POST /admin/docs/:docProfileId/reject (wymaga JWT + admin role)
+- Body: { reason: string }
+- Zwraca: Zaktualizowany profil terapeuty
+- Logika:
+  1. Zmienia verificationStatus na 'rejected'
+  2. Zapisuje reviewedAt i rejectionReason
+  3. Terapeuta musi poprawić profil i wysłać ponownie przez POST /profiles/doc/submit
+  4. Terapeuta traci możliwość zarządzania slotami (jeśli miał)
+
+ADMIN SERVICE - METODY:
+------------------------
+- approveDocProfile(docProfileId): Zatwierdza profil terapeuty (approved = widoczny publicznie)
+- rejectDocProfile(docProfileId, reason): Odrzuca profil terapeuty z powodem (musi poprawić)
+
+10. DOC MODULE (/doc)
+---------------------
+Funkcje specyficzne dla terapeutów (kalendarze, statystyki).
+
+ENDPOINTY:
+----------
+
+GET /doc/calendar/week (wymaga JWT + doc role)
+- Query: from (ISO date), to (ISO date)
+- Zwraca: Kalendarz tygodniowy z spotkaniami
+- Logika: Pobiera spotkania terapeuty w podanym zakresie dat
+
+DOC SERVICE - METODY:
+---------------------
+- getWeekCalendar(docId, from, to): Pobiera kalendarz tygodniowy
+
+11. IMAGE MODULE
 ---------------
 Upload zdjęć do AWS S3.
 
@@ -468,15 +545,15 @@ IMAGE SERVICE - METODY:
 - uploadImage(file, path): Upload pliku do S3
 - deleteImage(key): Usuwa plik z S3
 
-10. CLEANUP MODULE
+12. CLEANUP MODULE
 ------------------
-Cron job czyszczący nieaktywne konta.
+Cron job czyszczący nieaktywne konta (obecnie wyłączony).
 
 CLEANUP SERVICE:
 ----------------
-- @Cron('0 0 * * *') - Codziennie o północy
-- cleanupUnconfirmedUsers(): Usuwa użytkowników z emailConfirmed=false
-  starszych niż 7 dni
+- @Cron('0 0 * * *') - Codziennie o północy (obecnie zakomentowany)
+- handleCleanUsers(): Usuwa użytkowników z emailConfirmed=false
+  starszych niż 1 dzień
 
 ===========================================
 FLOW UŻYTKOWANIA APLIKACJI
@@ -492,9 +569,9 @@ FLOW REJESTRACJI I LOGOWANIA:
    -> Użytkownik może przeglądać i rezerwować spotkania
 
 2. POTWIERDZENIE EMAIL:
-   POST /email/send-confirmation { email }
+   POST /email/resend-confirm { email }
    -> Wysyła email z tokenem
-   GET /email/confirm/:token
+   POST /email/confirm { token }
    -> Ustawia emailConfirmed=true
 
 3. USTAWIENIE HASŁA:
@@ -512,7 +589,7 @@ FLOW PACJENTA (USER):
 
 1. Rejestracja + uzupełnienie profilu:
    POST /auth/register-light
-   POST /profiles/user { firstName, lastName, problems }
+   PUT /profiles/user { firstName, lastName, problems }
 
 2. Wyszukiwanie terapeutów:
    GET /matches -> dopasowani terapeuci
@@ -545,7 +622,10 @@ FLOW PACJENTA (USER):
    POST /meetings/:id/cancel -> anulowanie (zwrot pieniędzy jeśli opłacone)
 
 7. Ocena terapeuty (po spotkaniu):
-   POST /profiles/doc/:docId/rate { rate, comment? }
+   POST /profiles/rate { docId, meetingId, rate, comment? }
+
+8. Sprawdzanie ocen terapeuty:
+   GET /profiles/doc/:docId/ratings?page=1&limit=10
 
 FLOW TERAPEUTY (DOC):
 ----------------------
@@ -556,22 +636,37 @@ FLOW TERAPEUTY (DOC):
 2. Uzupełnienie profilu:
    PUT /profiles/doc { 
      firstName, lastName, profession,
-     sessionPricePln, specializations[],
-     published: true 
+     sessionPricePln, specializations[]
    }
 
-3. Zarządzanie dostępnością:
+3. Przesłanie profilu do weryfikacji:
+   POST /profiles/doc/submit
+   -> verificationStatus = 'submitted'
+
+4. Oczekiwanie na weryfikację admina:
+   - Admin zatwierdza: POST /admin/docs/:id/approve
+     → verificationStatus = 'approved' (profil automatycznie widoczny publicznie)
+   - Admin odrzuca: POST /admin/docs/:id/reject { reason }
+     → verificationStatus = 'rejected' (terapeuta musi poprawić i wysłać ponownie)
+
+5. Po zatwierdzeniu - zarządzanie dostępnością:
+   UWAGA: Tylko zatwierdzeni terapeuci (approved) mogą dodawać/usuwać sloty
    POST /availability { startTime, endTime }
    GET /availability/my -> wszystkie sloty
    DELETE /availability/:slotId -> usuwanie (jeśli niezarezerwowane)
 
-4. Zarządzanie spotkaniami:
-   GET /meetings/doc/me?scope=upcoming
-   GET /meetings/doc/me?scope=past
+6. Zarządzanie spotkaniami:
+   GET /meetings/doc?scope=today&page=1&limit=20
+   GET /meetings/doc?scope=upcoming
+   GET /meetings/doc?scope=past
    POST /meetings/doc/:id/cancel -> anulowanie
 
-5. Monitorowanie opinii:
+7. Kalendarz tygodniowy:
+   GET /doc/calendar/week?from=2024-01-01&to=2024-01-07
+
+8. Monitorowanie opinii:
    GET /profiles/doc -> sprawdzanie swojej oceny (rate, ratesLot)
+   GET /profiles/doc/:docId/ratings -> lista opinii
 
 FLOW PŁATNOŚCI:
 ---------------
@@ -616,8 +711,14 @@ AUTOMATYZACJE (CRON JOBS)
    - Znajduje spotkania z endTime < now i status=confirmed
    - Zmienia status na 'completed'
 
-2. Cleanup Cron (codziennie o północy):
-   - Usuwa użytkowników z emailConfirmed=false starszych niż 7 dni
+2. Auto-anulowanie nieopłaconych spotkań (co 5 minut):
+   - Znajduje spotkania z status=pending starsze niż 15 minut
+   - Zmienia status na 'cancelled_by_system'
+   - Zwalnia slot (booked=false)
+   - Aktualizuje powiązane płatności
+
+3. Cleanup Cron (obecnie wyłączony):
+   - Miałby usuwać użytkowników z niepotwierdzonym emailem
 
 ===========================================
 ZABEZPIECZENIA
@@ -655,6 +756,28 @@ WALIDACJA:
 - ValidationPipe (class-validator) na wszystkich endpointach
 - DTO z dekoratora mi walidacyjnymi
 - Whitelist: true (usuwa nieznane pola)
+
+THROTTLING:
+-----------
+- Domyślnie: 60 requestów na 60 sekund
+- Login: 5 requestów na 15 minut (900 sek)
+- Register-light: 5 requestów na 15 minut
+- Set-password: 3 requesty na 15 minut
+- Logout: bez limitu (SkipThrottle)
+
+WERYFIKACJA TERAPEUTÓW:
+-----------------------
+- Tylko admin może zatwierdzać/odrzucać terapeutów
+- verificationStatus kontroluje widoczność publiczną:
+  * draft - profil w edycji, niewidoczny
+  * submitted - czeka na weryfikację admina, niewidoczny
+  * approved - zatwierdzony, WIDOCZNY PUBLICZNIE, może zarządzać slotami
+  * rejected - odrzucony, niewidoczny, wymaga poprawek
+- Tylko terapeuci z approved mogą:
+  * Dodawać/usuwać sloty dostępności
+  * Być widoczni w wynikach wyszukiwania
+  * Być dopasowywani do pacjentów
+  * Otrzymywać rezerwacje
 
 CORS:
 -----
@@ -800,23 +923,55 @@ NAJWAŻNIEJSZE PLIKI
   ├── auth/                      # Autentykacja
   │   ├── auth.controller.ts
   │   ├── auth.service.ts
-  │   └── guards/
-  │       └── jwt-auth.guard.ts
+  │   ├── guards/
+  │   │   └── jwt-auth.guard.ts
+  │   └── strategies/
+  │       └── jwt.strategy.ts
   ├── users/                     # Zarządzanie użytkownikami
+  │   ├── users.controller.ts
+  │   ├── users.service.ts
+  │   └── entities/
   ├── profiles/                  # Profile (user, doc, admin)
+  │   ├── profiles.controller.ts
+  │   ├── profiles.service.ts
+  │   └── entities/
   ├── matches/                   # Dopasowywanie
+  │   ├── matches.controller.ts
+  │   └── matches.service.ts
   ├── availability/              # Dostępność terapeutów
+  │   ├── availability.controller.ts
+  │   └── availability.service.ts
   ├── meetings/                  # Spotkania
+  │   ├── meetings.controller.ts
   │   ├── meetings.service.ts
   │   └── meetings-cron.service.ts
-  ├── payments/                  # Płatności
-  ├── email/                     # Wysyłka emaili
-  ├── rating/                    # Oceny
+  ├── payments/                  # Płatności (Stripe, P24)
+  │   ├── payments.controller.ts
+  │   └── payments.service.ts
+  ├── email/                     # Wysyłka emaili (Resend)
+  │   ├── email.controller.ts
+  │   └── email.service.ts
+  ├── rating/                    # Oceny terapeutów
+  │   └── rating.service.ts
+  ├── admin/                     # Panel admina
+  │   ├── admin.controller.ts
+  │   └── admin.service.ts
+  ├── doc/                       # Funkcje dla terapeutów
+  │   ├── doc.controller.ts
+  │   └── doc.service.ts
   ├── image/                     # Upload do S3
+  │   └── image.service.ts
   ├── cleanup/                   # Cron czyszczący
+  │   └── cleanup.service.ts
   ├── prisma/                    # Prisma service
+  │   └── prisma.service.ts
   ├── guards/                    # Globalne guardy
-  └── decorators/                # Custom decoratory
+  │   └── roles.guard.ts
+  ├── decorators/                # Custom decoratory
+  │   ├── roles.decorator.ts
+  │   └── user.decorator.ts
+  ├── middlewares/               # Middleware
+  └── common/                    # Wspólne utility
 
 /apps/backend/prisma/
   ├── schema.prisma              # Schemat bazy danych
@@ -824,6 +979,69 @@ NAJWAŻNIEJSZE PLIKI
   ├── seed.ts                    # Seed 1
   ├── seed2.ts                   # Seed 2
   └── migrations/                # Historia migracji
+
+===========================================
+PODSUMOWANIE MODUŁÓW
+===========================================
+
+MODUŁY BACKENDU:
+----------------
+1. AuthModule - Autentykacja (JWT, login, rejestracja)
+2. UsersModule - Zarządzanie użytkownikami i awatarami
+3. ProfilesModule - Profile użytkowników, terapeutów, adminów
+4. MatchesModule - Dopasowywanie pacjentów do terapeutów
+5. AvailabilityModule - Zarządzanie dostępnością terapeutów
+6. MeetingsModule - Rezerwacje spotkań + cron
+7. PaymentsModule - Płatności przez Stripe i Przelewy24
+8. EmailModule - Wysyłka emaili przez Resend
+9. RatingModule - System ocen terapeutów
+10. AdminModule - Panel administratora (weryfikacja terapeutów)
+11. DocModule - Funkcje dla terapeutów (kalendarz)
+12. ImageModule - Upload zdjęć do AWS S3
+13. CleanupModule - Cron job do czyszczenia (wyłączony)
+14. PrismaModule - ORM do bazy PostgreSQL
+
+LICZBA KONTROLERÓW: 11
+LICZBA MODELI W BAZIE: 12
+LICZBA ENUMÓW: 7
+
+GŁÓWNE FUNKCJONALNOŚCI:
+-----------------------
+✓ Rejestracja i logowanie (JWT + cookies)
+✓ Trzy role: user (pacjent), doc (terapeuta), admin
+✓ System weryfikacji terapeutów przez admina (draft→submitted→approved/rejected)
+✓ Widoczność publiczna tylko dla zatwierdzonych terapeutów (verificationStatus=approved)
+✓ Dopasowywanie pacjentów do terapeutów
+✓ Zarządzanie dostępnością (sloty czasowe)
+✓ Rezerwacja i płatności za spotkania
+✓ Automatyczne zarządzanie statusem spotkań (cron)
+✓ System ocen i komentarzy
+✓ Wysyłka emaili (potwierdzenia, resetowanie hasła)
+✓ Upload awatarów do S3
+✓ Zabezpieczenia (guards, throttling, validacja)
+✓ Obsługa dwóch systemów płatności (Stripe, P24)
+
+STATUS PROJEKTU:
+----------------
+✅ Backend w pełni funkcjonalny
+✅ Wszystkie główne endpointy zaimplementowane
+✅ System płatności Stripe + P24 działający
+✅ Cron jobs do automatyzacji
+✅ System ocen i dopasowywania
+✅ Panel admina do weryfikacji terapeutów
+✅ System weryfikacji oparty WYŁĄCZNIE na verificationStatus (bez pola published)
+⚠️  Cleanup cron wyłączony (do rozważenia włączenie)
+
+WAŻNE ZALEŻNOŚCI:
+-----------------
+• Terapeuci muszą być zatwierdzeni (approved) aby:
+  - Być widoczni publicznie
+  - Zarządzać slotami dostępności
+  - Przyjmować rezerwacje
+  - Pojawiać się w wynikach wyszukiwania
+• System NIE używa już pola 'published' - wszystko oparte na verificationStatus
+
+OSTATNIA AKTUALIZACJA DOKUMENTACJI: 22 grudnia 2025
 
 ===========================================
 KONIEC DOKUMENTACJI

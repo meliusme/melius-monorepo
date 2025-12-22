@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpStatus } from '@nestjs/common';
+import { DocVerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
 import { UpdateDocProfileDto } from './dtos/update-doc-profile.dto';
 import { UpdateAdminProfileDto } from './dtos/update-admin-profile.dto';
-
+import { throwAppError } from 'src/common/errors/throw-app-error';
+import { ErrorCode } from 'src/common/errors/error-codes';
 @Injectable()
 export class ProfilesService {
   constructor(private prisma: PrismaService) {}
@@ -40,6 +42,34 @@ export class ProfilesService {
     docId: number,
     updateDocProfileDto: UpdateDocProfileDto,
   ) {
+    const current = await this.prisma.docProfile.findUnique({
+      where: { docId },
+      select: { id: true, verificationStatus: true },
+    });
+
+    if (!current) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Doc profile not found',
+      );
+    }
+
+    if (
+      current.verificationStatus === DocVerificationStatus.submitted ||
+      current.verificationStatus === DocVerificationStatus.rejected
+    ) {
+      await this.prisma.docProfile.update({
+        where: { id: current.id },
+        data: {
+          verificationStatus: DocVerificationStatus.draft,
+          submittedAt: null,
+          reviewedAt: null,
+          rejectionReason: null,
+        },
+      });
+    }
+
     const existingIds = await this.prisma.specialization.findMany({
       where: {
         id: {
@@ -52,13 +82,79 @@ export class ProfilesService {
     }
 
     return await this.prisma.docProfile.update({
-      where: { docId },
+      where: { id: current.id },
       data: {
         ...updateDocProfileDto,
         specializations: {
           set: updateDocProfileDto.specializations.map((id) => ({ id })),
         },
       },
+    });
+  }
+
+  async submitDocProfile(userId: number) {
+    const doc = await this.prisma.docProfile.findUnique({
+      where: { docId: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        profession: true,
+        sessionPricePln: true,
+        verificationStatus: true,
+        specializations: { select: { id: true } },
+      },
+    });
+
+    if (!doc) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Doc profile not found',
+      );
+    }
+
+    // nie pozwalamy submitować zaakceptowanego profilu
+    if (doc.verificationStatus === DocVerificationStatus.approved) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_ALREADY_APPROVED,
+        HttpStatus.CONFLICT,
+        'Profile already approved',
+      );
+    }
+
+    // jeśli już submitted, to zwracamy aktualny stan (idempotencja)
+    if (doc.verificationStatus === DocVerificationStatus.submitted) {
+      return this.prisma.docProfile.findUnique({
+        where: { id: doc.id },
+        include: { specializations: true },
+      });
+    }
+
+    // walidacja kompletności (MVP)
+    const missing: string[] = [];
+    if (!doc.firstName) missing.push('firstName');
+    if (!doc.lastName) missing.push('lastName');
+    if (!doc.profession) missing.push('profession');
+    if (!doc.sessionPricePln) missing.push('sessionPricePln');
+    if (!doc.specializations?.length) missing.push('specializations');
+
+    if (missing.length) {
+      throwAppError(
+        ErrorCode.DOC_PROFILE_INCOMPLETE,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        `Profile incomplete. Missing: ${missing.join(', ')}`,
+      );
+    }
+
+    return this.prisma.docProfile.update({
+      where: { id: doc.id },
+      data: {
+        verificationStatus: DocVerificationStatus.submitted,
+        submittedAt: new Date(),
+        rejectionReason: null,
+      },
+      include: { specializations: true },
     });
   }
 
@@ -105,7 +201,7 @@ export class ProfilesService {
       where: {
         role: 'doc',
         docProfile: {
-          published: true,
+          verificationStatus: DocVerificationStatus.approved,
         },
       },
       include: {
@@ -124,7 +220,7 @@ export class ProfilesService {
       where: {
         role: 'doc',
         docProfile: {
-          published: true,
+          verificationStatus: DocVerificationStatus.approved,
         },
       },
       include: {

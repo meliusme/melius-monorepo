@@ -56,6 +56,13 @@ enum Language {
   en
 }
 
+enum DocVerificationStatus {
+  draft
+  submitted
+  approved
+  rejected
+}
+
 model User {
   id               Int           @id @default(autoincrement())
   email            String        @unique
@@ -87,22 +94,25 @@ model UserProfile {
 }
 
 model DocProfile {
-  id                Int                @id @default(autoincrement())
-  user              User               @relation(fields: [docId], references: [id], onDelete: Cascade)
-  docId             Int                @unique
-  firstName         String?
-  lastName          String?
-  profession        Profession?
-  rate              Float?
-  ratesLot          Int?
-  sessionPricePln   Int?
-  createdAt         DateTime           @default(now()) @db.Timestamptz
-  updatedAt         DateTime           @updatedAt @db.Timestamptz
-  published         Boolean            @default(false)
-  meetings          Meeting[]
-  specializations   Specialization[]
-  availabilitySlots AvailabilitySlot[]
-  ratings           Rating[]
+  id                 Int                   @id @default(autoincrement())
+  user               User                  @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId              Int                   @unique
+  firstName          String?
+  lastName           String?
+  profession         Profession?
+  rate               Float?
+  ratesLot           Int?
+  sessionPricePln    Int?
+  createdAt          DateTime              @default(now()) @db.Timestamptz
+  updatedAt          DateTime              @updatedAt @db.Timestamptz
+  verificationStatus DocVerificationStatus @default(draft)
+  submittedAt        DateTime?             @db.Timestamptz
+  reviewedAt         DateTime?             @db.Timestamptz
+  rejectionReason    String?
+  meetings           Meeting[]
+  specializations    Specialization[]
+  availabilitySlots  AvailabilitySlot[]
+  ratings            Rating[]
 }
 
 model AdminProfile {
@@ -176,10 +186,10 @@ model Payment {
   meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   meetingId Int
 
-  unitAmount  Int
-  currency    String
-  status      PaymentStatus   @default(pending)
-  provider    PaymentProvider @default(stripe)
+  unitAmount Int
+  currency   String
+  status     PaymentStatus   @default(pending)
+  provider   PaymentProvider @default(stripe)
 
   // Stripe
   stripePaymentIntentId String? @unique

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DocVerificationStatus } from '@prisma/client';
 import { SearchMatchesDto } from './dto/search-matches.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfilesService } from '../profiles/profiles.service';
@@ -28,7 +29,7 @@ export class MatchesService {
 
     const docProfiles = await this.prisma.docProfile.findMany({
       where: {
-        published: true,
+        verificationStatus: DocVerificationStatus.approved,
         specializations: {
           some: {
             matches: {
@@ -58,7 +59,7 @@ export class MatchesService {
 
     const docs = await this.prisma.docProfile.findMany({
       where: {
-        published: true,
+        verificationStatus: DocVerificationStatus.approved,
         specializations: {
           some: {
             matches: {
@@ -103,7 +104,7 @@ export class MatchesService {
       rate: doc.rate,
       ratesLot: doc.ratesLot,
       sessionPricePln: doc.sessionPricePln,
-      published: doc.published,
+      isApproved: doc.verificationStatus === DocVerificationStatus.approved,
       user: {
         id: doc.user.id,
         email: doc.user.email,

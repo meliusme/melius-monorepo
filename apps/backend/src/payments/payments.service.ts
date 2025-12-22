@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { MeetingStatus, PaymentStatus, PaymentProvider } from '@prisma/client';
 import { throwAppError } from '../common/errors/throw-app-error';
 import { ErrorCode } from '../common/errors/error-codes';
+import { DocVerificationStatus } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
@@ -399,7 +400,7 @@ export class PaymentsService {
         'This meeting is already paid',
       );
     }
-    if (!meeting.doc.published)
+    if (!(meeting.doc.verificationStatus === DocVerificationStatus.approved))
       throwAppError(
         ErrorCode.THERAPIST_NOT_PUBLISHED,
         HttpStatus.BAD_REQUEST,
@@ -597,7 +598,7 @@ export class PaymentsService {
       );
     }
 
-    if (!meeting.doc.published) {
+    if (!(meeting.doc.verificationStatus === DocVerificationStatus.approved)) {
       throwAppError(
         ErrorCode.MEETING_NOT_FOUND,
         HttpStatus.BAD_REQUEST,

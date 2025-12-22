@@ -8,6 +8,8 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { CurrentUser } from '../decorators/user.decorator';
@@ -34,7 +36,7 @@ export class ProfilesController {
 
   @Roles(Role.user)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('user')
+  @Put('user')
   async updateUserProfile(
     @CurrentUser() user: User,
     @Body() body: UpdateUserProfileDto,
@@ -53,6 +55,16 @@ export class ProfilesController {
   ) {
     return new DocProfileEntity(
       await this.profilesService.updateDocProfile(user.id, body),
+    );
+  }
+
+  @Roles(Role.doc)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('doc/submit')
+  @HttpCode(HttpStatus.OK)
+  async submitDocProfile(@CurrentUser() user: User) {
+    return new DocProfileEntity(
+      await this.profilesService.submitDocProfile(user.id),
     );
   }
 

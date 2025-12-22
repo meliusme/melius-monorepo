@@ -1,5 +1,10 @@
-import { Profession, Specialization } from '@prisma/client';
+import {
+  Profession,
+  Specialization,
+  DocVerificationStatus,
+} from '@prisma/client';
 import { Exclude } from 'class-transformer';
+import { ArrayNotEmpty } from 'class-validator';
 
 export class DocProfileEntity {
   constructor(partial: Partial<DocProfileEntity>) {
@@ -23,6 +28,7 @@ export class DocProfileEntity {
 
   sessionPricePln: number | null;
 
+  @ArrayNotEmpty()
   specializations: Specialization[];
 
   @Exclude()
@@ -31,6 +37,13 @@ export class DocProfileEntity {
   @Exclude()
   updatedAt: Date;
 
+  verificationStatus: DocVerificationStatus;
+
   @Exclude()
-  published: boolean;
+  submittedAt: Date | null;
+
+  @Exclude()
+  reviewedAt: Date | null;
+
+  rejectionReason: string | null;
 }
