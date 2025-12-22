@@ -1,11 +1,18 @@
+MVP (MUSI BYĆ)
+
+Tu zostaw tylko te rzeczy, które blokują uruchomienie:
+	•	Email templates w Resend (bo bez tego UX jest martwy)
+	•	ewentualnie krytyczne walidacje availability, jeśli nie masz overlapów
+	•	auto-cleanup pending (jeśli nie chcesz “wiszących” slotów)
+
 TODO LATER (PO MVP) — TYLKO NIEZROBIONE
 
 1. Availability — walidacja slotów
 	•	Walidacja, że startTime < endTime przy tworzeniu slotu.
-	•	Walidacja, że nowe sloty nie nakładają się na istniejące sloty terapeuty.
+	•	Walidacja, że nowe sloty nie nakładają się na istniejące sloty danego terapeuty.
 	•	(Opcjonalnie) minimalna / maksymalna długość slotu (np. 50–60 min).
 
-Filtrowanie przyszłych slotów JUŻ JEST → usunięte.
+Filtrowanie tylko przyszłych slotów → JUŻ JEST.
 
 ⸻
 
@@ -16,7 +23,7 @@ Filtrowanie przyszłych slotów JUŻ JEST → usunięte.
 	•	Opcjonalne dodatkowe scope’y:
 	•	tylko cancelled
 	•	tylko completed
-	•	Jeden endpoint pod dashboard (zamiast kilku zapytań).
+	•	Jeden endpoint pod dashboard terapeuty (zamiast kilku zapytań).
 
 ⸻
 
@@ -35,11 +42,12 @@ Idempotencja, sanity checks, blokady statusów → JUŻ ZROBIONE.
 	•	Flow zmiany emaila użytkownika:
 	•	mail potwierdzający nowy adres,
 	•	update w bazie dopiero po kliknięciu.
-	•	Mail do terapeuty po akceptacji konta przez admina.
+	•	Mail do terapeuty po akceptacji profilu przez admina.
 	•	Przypomnienia o spotkaniu (np. 24h przed terminem).
 	•	(Opcjonalnie) rate limit per email, nie tylko per IP.
 
-Rejestracja, reset hasła, booking, cancel → JUŻ SĄ.
+Rejestracja, reset hasła, booking, cancel → logika backendowa JUŻ JEST
+(template’y i copy pozostają osobnym zadaniem operacyjnym).
 
 ⸻
 
@@ -48,17 +56,27 @@ Rejestracja, reset hasła, booking, cancel → JUŻ SĄ.
 	•	Walidacja MIME (image/jpeg, image/png).
 	•	Automatyczny resize (np. Sharp).
 	•	Opcjonalne miniaturki.
-	•	Czyszczenie nieużywanych plików.
+	•	Czyszczenie nieużywanych plików (cron / lifecycle).
 
 ⸻
 
-6. Profiles / DocProfile — publikacja
+6. Profiles / DocProfile — weryfikacja i publiczny profil
 	•	Publiczny endpoint:
-	•	GET /profiles/doc/:id (publiczna karta terapeuty).
-	•	Flow publikacji:
-	•	terapeuta uzupełnia profil → published = false,
-	•	admin weryfikuje dokumenty → published = true.
-	•	Dokumenty terapeuty (upload + weryfikacja admina).
+	•	GET /profiles/doc/:id — publiczna karta terapeuty.
+	•	Dokumenty terapeuty:
+	•	upload dokumentów (S3 / Cloudflare R2),
+	•	lista / usuwanie,
+	•	podgląd dokumentów przez admina.
+	•	Workflow weryfikacji:
+	•	submit → JUŻ JEST
+	•	approve / reject → JUŻ JEST (API)
+	•	LATER: UI admina + wymagania dot. typów dokumentów.
+	•	Doprecyzowanie reguł:
+	•	które zmiany po approved wymagają ponownej weryfikacji
+(np. dokumenty tak, cena/specjalizacje nie).
+
+Publiczność profilu = verificationStatus === approved
+published nie istnieje.
 
 ⸻
 
@@ -67,8 +85,11 @@ Rejestracja, reset hasła, booking, cancel → JUŻ SĄ.
 	•	poprawny format,
 	•	from <= to,
 	•	maksymalny zakres (np. 30 dni).
-	•	Punktowanie terapeutów (skoring), zamiast prostego filtrowania.
-	•	Wagi skoringu (specjalizacja / dostępność / rating).
+	•	Punktowanie terapeutów (scoring), zamiast prostego filtrowania.
+	•	Wagi scoringu:
+	•	specjalizacja,
+	•	dostępność,
+	•	rating.
 
 ⸻
 
@@ -86,7 +107,7 @@ Transakcja + update średniej → JUŻ JEST.
 
 9. Admin / rozliczenia
 	•	Panel admina:
-	•	akceptacja terapeutów,
+	•	akceptacja / odrzucanie terapeutów,
 	•	podgląd meetingów i płatności,
 	•	statystyki.
 	•	Rozliczenia:
