@@ -70,8 +70,6 @@ export class MeetingsService {
     userId: number,
     scope: 'upcoming' | 'past' | 'all' = 'upcoming',
   ) {
-    const now = new Date();
-
     const where: any = {
       userId,
     };
@@ -110,56 +108,15 @@ export class MeetingsService {
     });
   }
 
-  async getDocMeetings(
-    docProfileId: number,
-    scope: 'upcoming' | 'past' | 'all' = 'upcoming',
-  ) {
-    const now = new Date();
-
-    const where: any = {
-      docId: docProfileId,
-    };
-
-    if (scope === 'upcoming') {
-      where.status = { in: [MeetingStatus.pending, MeetingStatus.confirmed] };
-    } else if (scope === 'past') {
-      where.status = {
-        in: [
-          MeetingStatus.completed,
-          MeetingStatus.cancelled_by_user,
-          MeetingStatus.cancelled_by_doc,
-          MeetingStatus.cancelled_by_system,
-        ],
-      };
-    }
-
-    return this.prisma.meeting.findMany({
-      where,
-      orderBy: {
-        startTime: scope === 'past' ? 'desc' : 'asc',
-      },
-      include: {
-        slot: true,
-        user: {
-          include: {
-            user: {
-              include: {
-                avatar: true,
-              },
-            },
-            problems: true,
-          },
-        },
-      },
-    });
-  }
-
-  async getDocMeetingsForUser(
+  async getDocMeetingsListForUser(
     userId: number,
-    scope: 'upcoming' | 'past' | 'all' = 'upcoming',
+    scope: 'today' | 'upcoming' | 'past' | 'cancelled' = 'today',
+    page = 1,
+    limit = 20,
   ) {
     const docProfile = await this.prisma.docProfile.findUnique({
       where: { docId: userId },
+      select: { id: true },
     });
 
     if (!docProfile) {
@@ -169,7 +126,84 @@ export class MeetingsService {
         'Doc profile not found',
       );
     }
-    return this.getDocMeetings(docProfile.id, scope);
+
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const where: any = { docId: docProfile.id };
+
+    if (scope === 'today') {
+      where.status = MeetingStatus.confirmed;
+      where.startTime = { gte: startOfToday, lte: endOfToday };
+    } else if (scope === 'upcoming') {
+      where.status = MeetingStatus.confirmed;
+      where.startTime = { gte: now };
+    } else if (scope === 'past') {
+      where.status = MeetingStatus.completed;
+    } else if (scope === 'cancelled') {
+      where.status = {
+        in: [
+          MeetingStatus.cancelled_by_user,
+          MeetingStatus.cancelled_by_doc,
+          MeetingStatus.cancelled_by_system,
+        ],
+      };
+    }
+
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const skip = (safePage - 1) * safeLimit;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.meeting.findMany({
+        where,
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          clientMessage: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          payments: {
+            where: { status: 'succeeded' },
+            select: { id: true },
+            take: 1,
+          },
+        },
+        orderBy: {
+          startTime: scope === 'past' || scope === 'cancelled' ? 'desc' : 'asc',
+        },
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.meeting.count({ where }),
+    ]);
+
+    return {
+      items: items.map((m) => ({
+        id: m.id,
+        startTime: m.startTime.toISOString(),
+        endTime: m.endTime.toISOString(),
+        status: m.status,
+        paid: m.payments.length > 0,
+        clientName:
+          m.user?.firstName || m.user?.lastName
+            ? `${m.user?.firstName ?? ''} ${m.user?.lastName ?? ''}`.trim()
+            : null,
+        clientMessage: m.clientMessage ?? null,
+      })),
+      page: safePage,
+      limit: safeLimit,
+      total,
+    };
   }
 
   async cancelMeetingByDocUser(meetingId: number, userId: number) {
@@ -195,7 +229,7 @@ export class MeetingsService {
 
     if (!meeting) {
       throwAppError(
-        ErrorCode.MEETING_NOT_OWNED,
+        ErrorCode.MEETING_NOT_FOUND,
         HttpStatus.NOT_FOUND,
         'Meeting not found',
       );
@@ -203,7 +237,7 @@ export class MeetingsService {
 
     if (meeting.userId !== userId) {
       throwAppError(
-        ErrorCode.MEETING_NOT_FOUND,
+        ErrorCode.MEETING_NOT_OWNED,
         HttpStatus.FORBIDDEN,
         'You do not have permission to cancel this meeting',
       );

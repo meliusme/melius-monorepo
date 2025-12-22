@@ -49,19 +49,21 @@ export class MeetingsController {
     return meetings.map((m) => new MeetingEntity(m));
   }
 
-  @Get('doc/me')
+  @Get('doc')
   @Roles(Role.doc)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getMyDocMeetings(
+  async getDocMeetingsList(
     @CurrentUser() user: User,
-    @Query() query: GetMeetingsQueryDto,
+    @Query('scope') scope?: 'today' | 'upcoming' | 'past' | 'cancelled',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const meetings = await this.meetingsService.getDocMeetingsForUser(
+    return this.meetingsService.getDocMeetingsListForUser(
       user.id,
-      query.scope,
+      scope ?? 'today',
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 20,
     );
-
-    return meetings.map((m) => new MeetingEntity(m));
   }
 
   @Post(':id/cancel')

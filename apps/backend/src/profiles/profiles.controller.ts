@@ -84,18 +84,6 @@ export class ProfilesController {
     );
   }
 
-  @Get('new')
-  async getNewDocsProfiles() {
-    const docsProfiles = await this.profilesService.getNewDocsProfiles();
-    return docsProfiles.map((p) => new DocWithProfileEntity(p));
-  }
-
-  @Get('best')
-  async getBestDocsProfiles() {
-    const docsProfiles = await this.profilesService.getBestDocsProfiles();
-    return docsProfiles.map((p) => new DocWithProfileEntity(p));
-  }
-
   @Roles(Role.user)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('rate')
