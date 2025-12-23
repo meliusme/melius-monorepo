@@ -15,7 +15,7 @@ export class EmailEventsListener {
   ) {}
 
   @OnEvent('auth.registered')
-  async onAuthRegistered(payload: { userId: number; activationToken: string }) {
+  async onAuthRegistered(payload: { userId: number }) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: payload.userId },
@@ -33,7 +33,7 @@ export class EmailEventsListener {
   }
 
   @OnEvent('auth.password_reset_requested')
-  async onPasswordReset(payload: { userId: number; resetToken: string }) {
+  async onPasswordReset(payload: { userId: number }) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: payload.userId },

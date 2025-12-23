@@ -1,24 +1,169 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { randomBytes, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { I18nService } from 'nestjs-i18n';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from './../prisma/prisma.service';
 import { AuthEntity } from './entity/auth.entity';
-import { I18nTranslations } from '../generated/i18n.generated';
 import { throwAppError } from '../common/errors/throw-app-error';
 import { ErrorCode } from '../common/errors/error-codes';
 
+const ACCESS_SEC = Number(process.env.JWT_SECRET_TIME ?? 900); // 15 min default
+const REFRESH_SEC = Number(process.env.JWT_REFRESH_SECRET_TIME ?? 604800); // 7d default
+
+function genRefreshToken() {
+  return randomBytes(64).toString('base64url');
+}
+function hashToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly MAX_SESSIONS_PER_USER = Number(
+    process.env.MAX_SESSIONS_PER_USER ?? 5,
+  );
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private i18n: I18nService<I18nTranslations>,
   ) {}
 
-  async login(email: string, password: string): Promise<AuthEntity> {
+  private issueAccessToken(userId: number) {
+    return this.jwtService.sign(
+      { userId },
+      {
+        secret: process.env.JWT_SECRET,
+        expiresIn: ACCESS_SEC,
+      },
+    );
+  }
+
+  async issueSession(
+    userId: number,
+    meta?: { userAgent?: string; ip?: string },
+  ) {
+    // Sprawdź liczbę aktywnych sesji i usuń najstarsze jeśli będzie przekroczony limit po dodaniu nowej
+    const activeTokens = await this.prisma.refreshToken.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, createdAt: true },
+    });
+
+    // Jeśli po dodaniu nowej sesji przekroczymy limit, revoke najstarsze
+    const toRevoke = activeTokens.length - this.MAX_SESSIONS_PER_USER + 1;
+    if (toRevoke > 0) {
+      const idsToRevoke = activeTokens.slice(0, toRevoke).map((t) => t.id);
+      await this.prisma.refreshToken.updateMany({
+        where: { id: { in: idsToRevoke } },
+        data: { revokedAt: new Date() },
+      });
+      this.logger.log(
+        `Revoked ${toRevoke} oldest session(s) for user ${userId} (max sessions: ${this.MAX_SESSIONS_PER_USER})`,
+      );
+    }
+
+    const accessToken = this.issueAccessToken(userId);
+
+    const refreshToken = genRefreshToken();
+    const refreshHash = hashToken(refreshToken);
+
+    const now = Date.now();
+    const accessExpMs = now + ACCESS_SEC * 1000;
+    const refreshExpMs = now + REFRESH_SEC * 1000;
+
+    const rt = await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tokenHash: refreshHash,
+        expiresAt: new Date(refreshExpMs),
+        userAgent: meta?.userAgent,
+        ip: meta?.ip,
+      },
+      select: { id: true },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      accessExpMs,
+      refreshExpMs,
+      refreshTokenId: rt.id,
+    };
+  }
+
+  async revokeRefreshToken(refreshTokenRaw: string) {
+    const tokenHash = hashToken(refreshTokenRaw);
+
+    await this.prisma.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  async refreshSession(
+    refreshTokenRaw: string,
+    meta?: { userAgent?: string; ip?: string },
+  ) {
+    const refreshHash = hashToken(refreshTokenRaw);
+
+    const existing = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: refreshHash },
+      select: { id: true, userId: true, revokedAt: true, expiresAt: true },
+    });
+
+    if (!existing) {
+      throwAppError(
+        ErrorCode.REFRESH_INVALID,
+        HttpStatus.UNAUTHORIZED,
+        'Invalid refresh token',
+      );
+    }
+
+    // reuse detection: ktoś próbuje użyć już unieważnionego refresh
+    if (existing.revokedAt) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: existing.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throwAppError(
+        ErrorCode.REFRESH_REUSED,
+        HttpStatus.UNAUTHORIZED,
+        'Refresh token reuse detected',
+      );
+    }
+
+    if (existing.expiresAt.getTime() <= Date.now()) {
+      await this.prisma.refreshToken.update({
+        where: { id: existing.id },
+        data: { revokedAt: new Date() },
+      });
+      throwAppError(
+        ErrorCode.REFRESH_EXPIRED,
+        HttpStatus.UNAUTHORIZED,
+        'Refresh token expired',
+      );
+    }
+
+    // rotacja: wydaj nowy refresh + access, oznacz stary jako revoked + replacedBy
+    const issued = await this.issueSession(existing.userId, meta);
+
+    await this.prisma.refreshToken.update({
+      where: { id: existing.id },
+      data: { revokedAt: new Date(), replacedByTokenId: issued.refreshTokenId },
+    });
+
+    return issued;
+  }
+
+  async login(
+    email: string,
+    password: string,
+    meta?: { userAgent?: string; ip?: string },
+  ): Promise<AuthEntity> {
     const user = await this.prisma.user.findUnique({ where: { email: email } });
 
+    // Sprawdzamy emailConfirmed osobno, bo to inna sytuacja
     if (user && !user.emailConfirmed)
       throwAppError(
         ErrorCode.EMAIL_NOT_CONFIRMED,
@@ -26,38 +171,35 @@ export class AuthService {
         'Email not confirmed',
       );
 
-    if (!user) {
-      throwAppError(
-        ErrorCode.EMAIL_NOT_FOUND,
-        HttpStatus.NOT_FOUND,
-        'Invalid email',
-      );
-    }
+    // Zunifikowany błąd - nie leakujemy czy email istnieje
+    const isPasswordValid = user
+      ? await bcrypt.compare(password, user.password)
+      : false;
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
+    if (!user || !isPasswordValid) {
       throwAppError(
-        ErrorCode.INVALID_PASSWORD,
+        ErrorCode.INVALID_CREDENTIALS,
         HttpStatus.UNAUTHORIZED,
-        'Invalid password',
+        'Invalid email or password',
       );
     }
 
-    return {
-      access_token: this.jwtService.sign({ userId: user.id }),
-      user,
-    };
+    const issued = await this.issueSession(user.id, meta);
+    return { user, issued };
   }
 
   async registerLight(
     email: string,
     firstName?: string,
     lastName?: string,
+    meta?: { userAgent?: string; ip?: string },
   ): Promise<AuthEntity> {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        role: true,
+        emailConfirmed: true,
         userProfile: true,
       },
     });
@@ -97,10 +239,8 @@ export class AuthService {
       }
 
       // I tak go logujemy – to dalej "light" konto, bez hasła
-      return {
-        access_token: this.jwtService.sign({ userId: existingUser.id }),
-        user: existingUser,
-      };
+      const issued = await this.issueSession(existingUser.id, meta);
+      return { user: existingUser, issued };
     }
 
     // Nowy email → tworzymy "light" usera
@@ -124,13 +264,15 @@ export class AuthService {
       },
     });
 
-    return {
-      access_token: this.jwtService.sign({ userId: user.id }),
-      user,
-    };
+    const issued = await this.issueSession(user.id, meta);
+    return { user, issued };
   }
 
-  async setPassword(userId: number, password: string): Promise<AuthEntity> {
+  async setPassword(
+    userId: number,
+    password: string,
+    meta?: { userAgent?: string; ip?: string },
+  ): Promise<AuthEntity> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.prisma.user.update({
@@ -142,9 +284,7 @@ export class AuthService {
       },
     });
 
-    return {
-      access_token: this.jwtService.sign({ userId: user.id }),
-      user,
-    };
+    const issued = await this.issueSession(user.id, meta);
+    return { user, issued };
   }
 }

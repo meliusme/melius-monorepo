@@ -12,8 +12,9 @@ import { throwAppError } from '../common/errors/throw-app-error';
 import { ErrorCode } from '../common/errors/error-codes';
 
 export const roundsOfHashing = 10;
-// const TOKEN_COOLDOWN_PERIOD = 10 * 60 * 1000; // 10 minutes
-const TOKEN_COOLDOWN_PERIOD = 10 * 1000; // 10 seconds for testing
+const TOKEN_COOLDOWN_PERIOD = Number(
+  process.env.EMAIL_TOKEN_COOLDOWN_MS ?? 10 * 60 * 1000, // default 10 min
+);
 
 @Injectable()
 export class EmailService {
@@ -36,8 +37,8 @@ export class EmailService {
   private createToken(email: string): string {
     const payload: ConfirmationTokenPayload = { email };
     return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '10m',
+      secret: process.env.JWT_EMAIL_SECRET,
+      expiresIn: Number(process.env.JWT_EMAIL_SECRET_TIME ?? 600), // sekundy
     });
   }
 
@@ -53,29 +54,25 @@ export class EmailService {
     return { header, rights, dontAnswer, year };
   }
 
-  private async canSendNewToken(email: string): Promise<boolean> {
+  private async canSendConfirmationToken(email: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    // 🔹 jeśli user nie istnieje — pozwalamy (np. przy pierwszej rejestracji)
-    if (!user) {
-      return true;
-    }
+    if (!user) return true;
+    if (user.emailConfirmed) return false;
+    if (!user.tokenActivatedAt) return true;
 
-    // 🔹 jeśli e-mail już potwierdzony — nie wysyłamy
-    if (user.emailConfirmed) {
-      return false;
-    }
+    const diff = Date.now() - user.tokenActivatedAt.getTime();
+    return diff > TOKEN_COOLDOWN_PERIOD;
+  }
 
-    // 🔹 jeśli jeszcze nigdy nie wysłano tokena — pozwalamy
-    if (!user.tokenActivatedAt) {
-      return true;
-    }
+  private async canSendPasswordResetToken(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-    // 🔹 cooldown logic
-    const now = Date.now();
-    const lastSent = user.tokenActivatedAt.getTime();
-    const diff = now - lastSent;
+    // przy resecie: jeśli user nie istnieje → nie zdradzamy; ale cooldown "logicznie" niepotrzebny
+    if (!user) return true;
+    if (!user.tokenActivatedAt) return true;
 
+    const diff = Date.now() - user.tokenActivatedAt.getTime();
     return diff > TOKEN_COOLDOWN_PERIOD;
   }
 
@@ -87,7 +84,7 @@ export class EmailService {
   }
 
   async sendConfirmationEmail(email: string, lang: Language) {
-    if (!(await this.canSendNewToken(email))) {
+    if (!(await this.canSendConfirmationToken(email))) {
       throwAppError(
         ErrorCode.TOKEN_COOLDOWN,
         HttpStatus.BAD_REQUEST,
@@ -153,7 +150,7 @@ export class EmailService {
   }
 
   async sendPasswordLink(email: string) {
-    if (!(await this.canSendNewToken(email))) {
+    if (!(await this.canSendPasswordResetToken(email))) {
       throwAppError(
         ErrorCode.TOKEN_COOLDOWN,
         HttpStatus.BAD_REQUEST,
@@ -169,7 +166,7 @@ export class EmailService {
       return;
     }
 
-    const lang = user.language;
+    const lang = user.language ?? 'pl';
     const token = this.createToken(email);
     await this.updateTokenTimestamp(email);
 
@@ -186,7 +183,7 @@ export class EmailService {
     const fromEmail =
       process.env.RESEND_FROM_EMAIL ?? 'no-reply@melius-app.com';
     const fromName = process.env.RESEND_FROM_NAME ?? 'Melius';
-    const templateId = process.env.RESEND_REGISTER_TEMPLATE_ALIAS;
+    const templateId = process.env.RESEND_PASSWORD_TEMPLATE_ALIAS;
 
     if (!this.resend) {
       this.logger.error('Resend client is not initialized');
@@ -194,7 +191,7 @@ export class EmailService {
     }
 
     if (!templateId) {
-      this.logger.error('RESEND_REGISTER_TEMPLATE_ALIAS is not set');
+      this.logger.error('RESEND_PASSWORD_TEMPLATE_ALIAS is not set');
       return;
     }
 
@@ -227,29 +224,31 @@ export class EmailService {
   }
 
   async confirmEmail(email: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (user.emailConfirmed)
+    if (!user) {
       throwAppError(
-        ErrorCode.EMAIL_ALREADY_CONFIRMED,
-        HttpStatus.BAD_REQUEST,
-        'Email already confirmed',
+        ErrorCode.EMAIL_NOT_FOUND,
+        HttpStatus.NOT_FOUND,
+        'Email not found',
       );
+    }
+
+    // Idempotencja: jeśli user kliknie 2 razy, chcemy OK
+    if (user.emailConfirmed) {
+      return;
+    }
 
     await this.prisma.user.update({
       where: { email },
-      data: {
-        emailConfirmed: true,
-      },
+      data: { emailConfirmed: true },
     });
   }
 
   async decodeConfirmationToken(token: string): Promise<string> {
     try {
       const payload = await this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.JWT_EMAIL_SECRET,
       });
       if (typeof payload === 'object' && 'email' in payload) {
         return payload.email;
@@ -415,7 +414,7 @@ export class EmailService {
           lang,
           args: { clientMessage },
         })
-      : '';
+      : null;
 
     const common = this.getCommonContext(lang);
     const fromEmail =
