@@ -64,39 +64,39 @@ enum DocVerificationStatus {
 }
 
 model RefreshToken {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  tokenHash          String    @unique
-  createdAt          DateTime  @default(now()) @db.Timestamptz
-  expiresAt          DateTime  @db.Timestamptz
-  revokedAt          DateTime? @db.Timestamptz
-  replacedByTokenId  Int?
-  userAgent          String?
-  ip                 String?
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  tokenHash         String    @unique
+  createdAt         DateTime  @default(now()) @db.Timestamptz
+  expiresAt         DateTime  @db.Timestamptz
+  revokedAt         DateTime? @db.Timestamptz
+  replacedByTokenId Int?
+  userAgent         String?
+  ip                String?
 
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  replacedBy  RefreshToken? @relation("RefreshReplacement", fields: [replacedByTokenId], references: [id])
-  replaces    RefreshToken[] @relation("RefreshReplacement")
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken?  @relation("RefreshReplacement", fields: [replacedByTokenId], references: [id])
+  replaces   RefreshToken[] @relation("RefreshReplacement")
 
   @@index([userId])
   @@index([expiresAt])
 }
 
 model User {
-  id               Int           @id @default(autoincrement())
-  email            String        @unique
+  id               Int            @id @default(autoincrement())
+  email            String         @unique
   password         String
-  role             Role          @default(user)
-  createdAt        DateTime      @default(now()) @db.Timestamptz
-  updatedAt        DateTime      @updatedAt @db.Timestamptz
+  role             Role           @default(user)
+  createdAt        DateTime       @default(now()) @db.Timestamptz
+  updatedAt        DateTime       @updatedAt @db.Timestamptz
   avatar           Avatar?
   userProfile      UserProfile?
   docProfile       DocProfile?
   adminProfile     AdminProfile?
-  emailConfirmed   Boolean       @default(false)
-  language         Language      @default(pl)
-  tokenActivatedAt DateTime?     @db.Timestamptz()
-  refreshTokens RefreshToken[]
+  emailConfirmed   Boolean        @default(false)
+  language         Language       @default(pl)
+  tokenActivatedAt DateTime?      @db.Timestamptz()
+  refreshTokens    RefreshToken[]
 }
 
 model UserProfile {
@@ -114,25 +114,40 @@ model UserProfile {
 }
 
 model DocProfile {
-  id                 Int                   @id @default(autoincrement())
-  user               User                  @relation(fields: [docId], references: [id], onDelete: Cascade)
-  docId              Int                   @unique
-  firstName          String?
-  lastName           String?
-  profession         Profession?
-  rate               Float?
-  ratesLot           Int?
-  sessionPricePln    Int?
-  createdAt          DateTime              @default(now()) @db.Timestamptz
-  updatedAt          DateTime              @updatedAt @db.Timestamptz
-  verificationStatus DocVerificationStatus @default(draft)
-  submittedAt        DateTime?             @db.Timestamptz
-  reviewedAt         DateTime?             @db.Timestamptz
-  rejectionReason    String?
-  meetings           Meeting[]
-  specializations    Specialization[]
-  availabilitySlots  AvailabilitySlot[]
-  ratings            Rating[]
+  id                       Int                       @id @default(autoincrement())
+  user                     User                      @relation(fields: [docId], references: [id], onDelete: Cascade)
+  docId                    Int                       @unique
+  firstName                String?
+  lastName                 String?
+  profession               Profession?
+  rate                     Float?
+  ratesLot                 Int?
+  sessionPricePln          Int?
+  createdAt                DateTime                  @default(now()) @db.Timestamptz
+  updatedAt                DateTime                  @updatedAt @db.Timestamptz
+  verificationStatus       DocVerificationStatus     @default(draft)
+  submittedAt              DateTime?                 @db.Timestamptz
+  reviewedAt               DateTime?                 @db.Timestamptz
+  rejectionReason          String?
+  meetings                 Meeting[]
+  specializations          Specialization[]
+  availabilitySlots        AvailabilitySlot[]
+  ratings                  Rating[]
+  docVerificationDocuments DocVerificationDocument[]
+}
+
+model DocVerificationDocument {
+  id           Int      @id @default(autoincrement())
+  docId        Int
+  fileKey      String
+  mimeType     String
+  sizeBytes    Int
+  originalName String
+  uploadedAt   DateTime @default(now()) @db.Timestamptz
+
+  doc DocProfile @relation(fields: [docId], references: [id], onDelete: Cascade)
+
+  @@index([docId])
 }
 
 model AdminProfile {
