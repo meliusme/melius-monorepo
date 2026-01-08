@@ -6,6 +6,7 @@ import { PrismaService } from './../prisma/prisma.service';
 import { AuthEntity } from './entity/auth.entity';
 import { throwAppError } from '../common/errors/throw-app-error';
 import { ErrorCode } from '../common/errors/error-codes';
+import { EmailService } from '../email/email.service';
 
 const ACCESS_SEC = Number(process.env.JWT_SECRET_TIME ?? 900); // 15 min default
 const REFRESH_SEC = Number(process.env.JWT_REFRESH_SECRET_TIME ?? 604800); // 7d default
@@ -27,6 +28,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   private issueAccessToken(userId: number) {
@@ -199,7 +201,7 @@ export class AuthService {
   ): Promise<AuthEntity> {
     if (!consentTerms || !consentAdult || !consentHealthData) {
       throwAppError(
-        ErrorCode.INVALID_REQUEST,
+        ErrorCode.CONSENT_REQUIRED,
         HttpStatus.BAD_REQUEST,
         'Required consents not accepted',
       );
@@ -211,6 +213,7 @@ export class AuthService {
         id: true,
         role: true,
         emailConfirmed: true,
+        language: true,
         userProfile: true,
       },
     });
@@ -267,6 +270,16 @@ export class AuthService {
 
       // Still log in: it's still a "light" account without a password.
       const issued = await this.issueSession(existingUser.id, meta);
+      try {
+        await this.emailService.sendConfirmationEmail(
+          email,
+          existingUser.language ?? 'pl',
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to send confirmation email for register-light (userId=${existingUser.id}): ${(error as Error).message}`,
+        );
+      }
       return { user: existingUser, issued };
     }
 
@@ -280,21 +293,26 @@ export class AuthService {
       data: {
         email,
         password: tempPassword,
-      },
-    });
-
-    await this.prisma.userProfile.create({
-      data: {
-        userId: user.id,
-        firstName: firstName?.trim() || null,
-        lastName: lastName?.trim() || null,
-        consentTerms: true,
-        consentAdult: true,
-        consentHealthData: true,
+        userProfile: {
+          create: {
+            firstName: firstName?.trim() || null,
+            lastName: lastName?.trim() || null,
+            consentTerms: true,
+            consentAdult: true,
+            consentHealthData: true,
+          },
+        },
       },
     });
 
     const issued = await this.issueSession(user.id, meta);
+    try {
+      await this.emailService.sendConfirmationEmail(email, user.language ?? 'pl');
+    } catch (error) {
+      this.logger.warn(
+        `Failed to send confirmation email for register-light (userId=${user.id}): ${(error as Error).message}`,
+      );
+    }
     return { user, issued };
   }
 

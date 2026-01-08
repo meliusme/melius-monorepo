@@ -23,5 +23,14 @@ export class UserProfileEntity implements UserProfile {
   @Exclude()
   published: boolean;
 
+  @Exclude()
+  consentTerms: boolean;
+
+  @Exclude()
+  consentAdult: boolean;
+
+  @Exclude()
+  consentHealthData: boolean;
+
   problems: Problem[];
 }

@@ -36,6 +36,36 @@ export class MeetingsService {
         );
       }
 
+      const now = new Date();
+      if (slot.startTime <= now) {
+        throwAppError(
+          ErrorCode.MEETING_EXPIRED,
+          HttpStatus.BAD_REQUEST,
+          'You cannot book a slot that has already started or passed',
+        );
+      }
+
+      const profile = await tx.userProfile.findUnique({
+        where: { userId },
+        select: {
+          consentTerms: true,
+          consentAdult: true,
+          consentHealthData: true,
+        },
+      });
+
+      if (
+        !profile?.consentTerms ||
+        !profile?.consentAdult ||
+        !profile?.consentHealthData
+      ) {
+        throwAppError(
+          ErrorCode.CONSENT_REQUIRED,
+          HttpStatus.BAD_REQUEST,
+          'Consents required',
+        );
+      }
+
       // Try to book the slot only if it is still free.
       const bookedResult = await tx.availabilitySlot.updateMany({
         where: { id: slot.id, booked: false },

@@ -18,7 +18,10 @@ Content-Type: application/json
   "email": "{{email}}",
   "password": "{{password}}",
   "role": "user",
-  "language": "pl"
+  "language": "pl",
+  "consentTerms": true,
+  "consentAdult": true,
+  "consentHealthData": true
 }
 
 ### Get Current User (Me)

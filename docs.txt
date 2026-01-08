@@ -130,6 +130,7 @@ POST /auth/register-light
 - Logika: "Lekka" rejestracja bez hasła - pozwala użytkownikowi rozpocząć proces
   bez pełnej rejestracji. Jeśli użytkownik już istnieje z niepotwierdzonym emailem,
   aktualizuje jego dane i loguje go.
+- Email: wysyła link potwierdzający (ustaw hasło / potwierdź email)
 - Wymagane zgody (wszystkie true): regulamin + polityka prywatności, pełnoletniość
   lub zgoda opiekuna, zgoda na przetwarzanie danych dotyczących zdrowia.
 - Cookie: access_token (httpOnly), refresh_token (httpOnly, path=/auth/refresh),
@@ -165,9 +166,11 @@ ENDPOINTY:
 ----------
 
 POST /users
-- Body: CreateUserDto (email, password, role, firstName, lastName)
+- Body: CreateUserDto (email, password, role, language,
+  consentTerms, consentAdult, consentHealthData)
 - Zwraca: Utworzonego użytkownika (bez hasła)
 - Logika: Tworzy nowego użytkownika z profilem odpowiednim dla roli
+  - Dla roli user wymagane są zgody (wszystkie true)
 
 GET /users/me (wymaga JWT)
 - Zwraca: Dane zalogowanego użytkownika
@@ -349,6 +352,7 @@ POST /meetings (wymaga JWT + user role)
 - Zwraca: Utworzone spotkanie
 - Logika: 
   1. Sprawdza czy slot jest wolny
+  1a. Wymaga zaakceptowanych zgód (consentTerms, consentAdult, consentHealthData)
   2. Tworzy spotkanie ze statusem 'pending'
   3. Oznacza slot jako booked=true
   4. Kopiuje czasy ze slotu do spotkania
@@ -413,6 +417,7 @@ POST /payments/checkout (wymaga JWT + user role)
 - Body: CreateCheckoutSessionDto (meetingId)
 - Zwraca: { url, sessionId }
 - Uwaga: Jeśli STRIPE_SECRET_KEY nie jest ustawione, Stripe jest wyłączony (503)
+- Wymaga zaakceptowanych zgód (consentTerms, consentAdult, consentHealthData)
 - Logika (Stripe):
   1. Weryfikuje spotkanie i cenę
   2. Tworzy Payment w bazie (status=pending, provider=stripe)
@@ -423,6 +428,7 @@ POST /payments/checkout (wymaga JWT + user role)
 POST /payments/p24/start (wymaga JWT + user role)
 - Body: CreateCheckoutSessionDto (meetingId)
 - Zwraca: { url, token, sessionId }
+- Wymaga zaakceptowanych zgód (consentTerms, consentAdult, consentHealthData)
 - Logika (Przelewy24):
   1. Weryfikuje spotkanie i cenę
   2. Tworzy Payment w bazie (status=pending, provider=p24)
@@ -454,7 +460,6 @@ PAYMENTS SERVICE - METODY:
 - handleStripeWebhook(rawBody, signature): Obsługa webhook Stripe
 - handleP24Webhook(body): Obsługa webhook P24
 - refundPaymentForMeeting(meetingId, reason): Zwrot przez Przelewy24
-- Uwaga: endpoint/spec refundu P24 do potwierdzenia (może wymagać doprecyzowania payloadu)
 - p24SignRegister(params): Generuje podpis dla P24
 
 8. EMAIL MODULE (/email)
@@ -597,8 +602,10 @@ FLOW REJESTRACJI I LOGOWANIA:
 1. LEKKA REJESTRACJA (pacjent):
    POST /auth/register-light { email, consentTerms, consentAdult, consentHealthData }
    -> Tworzy User (emailConfirmed=false) + UserProfile
-   -> Zwraca JWT token
-   -> Użytkownik może przeglądać i rezerwować spotkania
+   -> Zapisuje zgody (consentTerms, consentAdult, consentHealthData)
+   -> Loguje użytkownika (cookies: access + refresh + flags)
+   -> Wysyła email: ustaw hasło / potwierdź email
+   -> Użytkownik może od razu: wyszukiwać terapeutów, bookować, płacić
 
 2. POTWIERDZENIE EMAIL:
    POST /email/resend-confirm { email }
@@ -650,6 +657,8 @@ FLOW PACJENTA (USER):
    POST /payments/p24/start { meetingId }
    -> Przekierowanie do Przelewy24
    -> Po płatności webhook -> Meeting (status=confirmed)
+
+   Uwaga: potwierdzenie spotkania wynika z płatności, niezależnie od statusu potwierdzenia emaila.
 
 6. Zarządzanie spotkaniami:
    GET /meetings/me?scope=upcoming -> nadchodzące
@@ -868,6 +877,7 @@ P24_BASE_URL=https://sandbox.przelewy24.pl/api/v1
 P24_GATEWAY_URL=https://sandbox.przelewy24.pl/trnRequest
 P24_RETURN_URL=http://localhost:3001/payment-success
 P24_STATUS_URL=http://localhost:3000/payments/p24/webhook
+P24_REFUND_STATUS_URL=http://localhost:3000/payments/p24/refund-webhook
 
 APP:
 ----

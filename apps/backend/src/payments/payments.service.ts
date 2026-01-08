@@ -199,43 +199,40 @@ export class PaymentsService {
     orderId: number;
     amount: number;
     currency: string;
+    description: string;
   }): Promise<'success' | 'failed'> {
-    const merchantId = Number(process.env.P24_MERCHANT_ID);
-    const posId = Number(process.env.P24_POS_ID);
-    const crc = process.env.P24_CRC ?? '';
+    const urlStatus =
+      process.env.P24_REFUND_STATUS_URL ??
+      process.env.P24_STATUS_URL ??
+      'http://localhost:3000/payments/p24/refund-webhook';
 
-    if (!merchantId || !posId || !crc) {
-      throwAppError(
-        ErrorCode.P24_CONFIG_MISSING,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Payment configuration missing',
-      );
-    }
-
-    const sign = this.p24SignVerify({
-      sessionId: params.sessionId,
-      orderId: params.orderId,
-      amount: params.amount,
-      currency: params.currency,
-      crc,
-    });
+    const requestId = `refund-${params.orderId}-${Date.now()}`;
+    const refundsUuid = crypto.randomUUID();
 
     const payload = {
-      merchantId,
-      posId,
-      sessionId: params.sessionId,
-      orderId: params.orderId,
-      amount: params.amount,
-      currency: params.currency,
-      sign,
+      requestId,
+      refunds: [
+        {
+          orderId: params.orderId,
+          sessionId: params.sessionId,
+          amount: params.amount,
+          description: params.description,
+        },
+      ],
+      refundsUuid,
+      urlStatus,
     };
 
-    const resp = await this.p24Post<{ data?: { status?: string } }>(
+    const resp = await this.p24Post<{
+      data?: { status?: boolean; message?: string }[];
+      responseCode?: number;
+    }>(
       '/transaction/refund',
       payload,
     );
 
-    return resp?.data?.status === 'success' ? 'success' : 'failed';
+    const first = resp?.data?.[0];
+    return first?.status ? 'success' : 'failed';
   }
 
   async handleP24Webhook(body: any) {
@@ -481,6 +478,18 @@ export class PaymentsService {
         'User email is missing',
       );
 
+    if (
+      !meeting.user?.consentTerms ||
+      !meeting.user?.consentAdult ||
+      !meeting.user?.consentHealthData
+    ) {
+      throwAppError(
+        ErrorCode.CONSENT_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        'Consents required',
+      );
+    }
+
     const amount = Math.round(pricePln * 100); // cents
     const currency = 'PLN';
 
@@ -687,6 +696,18 @@ export class PaymentsService {
         ErrorCode.EMAIL_NOT_FOUND,
         HttpStatus.BAD_REQUEST,
         'User email is missing',
+      );
+    }
+
+    if (
+      !meeting.user?.consentTerms ||
+      !meeting.user?.consentAdult ||
+      !meeting.user?.consentHealthData
+    ) {
+      throwAppError(
+        ErrorCode.CONSENT_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        'Consents required',
       );
     }
 
@@ -905,6 +926,7 @@ export class PaymentsService {
       orderId: payment.p24OrderId,
       amount: payment.unitAmount,
       currency,
+      description: reason,
     });
 
     if (result !== 'success') {

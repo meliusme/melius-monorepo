@@ -20,12 +20,23 @@ export class UsersService {
     private emailService: EmailService,
   ) {}
 
-  async createProfile(id: number, role: Role) {
+  async createProfile(
+    id: number,
+    role: Role,
+    consents?: {
+      consentTerms: boolean;
+      consentAdult: boolean;
+      consentHealthData: boolean;
+    },
+  ) {
     switch (role) {
       case Role.user:
         return await this.prisma.userProfile.create({
           data: {
             userId: id,
+            consentTerms: consents?.consentTerms ?? false,
+            consentAdult: consents?.consentAdult ?? false,
+            consentHealthData: consents?.consentHealthData ?? false,
           },
         });
       case Role.doc:
@@ -75,6 +86,20 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    const role = createUserDto.role ?? Role.user;
+    if (
+      role === Role.user &&
+      (!createUserDto.consentTerms ||
+        !createUserDto.consentAdult ||
+        !createUserDto.consentHealthData)
+    ) {
+      throwAppError(
+        ErrorCode.CONSENT_REQUIRED,
+        HttpStatus.BAD_REQUEST,
+        'Required consents not accepted',
+      );
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -94,12 +119,18 @@ export class UsersService {
 
     const user = await this.prisma.user.create({
       data: {
-        ...createUserDto,
+        email: createUserDto.email,
         password: hashedPassword,
+        role,
+        language: createUserDto.language,
       },
     });
 
-    await this.createProfile(user.id, user.role);
+    await this.createProfile(user.id, user.role, {
+      consentTerms: createUserDto.consentTerms ?? false,
+      consentAdult: createUserDto.consentAdult ?? false,
+      consentHealthData: createUserDto.consentHealthData ?? false,
+    });
 
     await this.emailService.sendConfirmationEmail(user.email, user.language);
 

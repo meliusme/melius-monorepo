@@ -1,25 +1,23 @@
 import {
   IsBoolean,
   IsEmail,
-  IsNotEmpty,
   IsOptional,
   IsString,
-  MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export class RegisterLightDto {
   @IsEmail()
-  @IsNotEmpty()
   email: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
+  @MinLength(1)
   firstName?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
+  @MinLength(1)
   lastName?: string;
 
   @IsBoolean()

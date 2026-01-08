@@ -1,11 +1,13 @@
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
-import { $Enums } from '@prisma/client';
+import { $Enums, Role } from '@prisma/client';
 
 export class CreateUserDto {
   @IsEmail()
@@ -21,4 +23,16 @@ export class CreateUserDto {
 
   @IsOptional()
   language: $Enums.Language;
+
+  @ValidateIf((o) => (o.role ?? Role.user) === Role.user)
+  @IsBoolean()
+  consentTerms: boolean;
+
+  @ValidateIf((o) => (o.role ?? Role.user) === Role.user)
+  @IsBoolean()
+  consentAdult: boolean;
+
+  @ValidateIf((o) => (o.role ?? Role.user) === Role.user)
+  @IsBoolean()
+  consentHealthData: boolean;
 }
