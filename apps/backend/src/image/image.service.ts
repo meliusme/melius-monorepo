@@ -1,63 +1,92 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, S3, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
-import { v4 as uuid } from 'uuid';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 
 @Injectable()
 export class ImageService {
-  constructor(private prisma: PrismaService) {}
+  private readonly bucket = process.env.AWS_BUCKET_NAME;
 
-  private config = { region: process.env.AWS_REGION };
-  private bucket = process.env.AWS_BUCKET_NAME;
+  // Optional for Cloudflare R2 / custom S3 endpoints:
+  private readonly endpoint = process.env.S3_ENDPOINT || undefined;
+  private readonly forcePathStyle =
+    (process.env.S3_FORCE_PATH_STYLE ?? 'false') === 'true';
 
-  async uploadImageToS3(userId: number, dataBuffer: Buffer, filename: string) {
-    try {
-      const uploadParams = {
-        Bucket: this.bucket,
-        Key: `${uuid()}-${filename}`,
-        Body: dataBuffer,
-      };
-      const parallelUploads3 = new Upload({
-        client: new S3Client(this.config),
-        params: uploadParams,
-      });
+  // Optional public base URL if you want to store a stable URL in DB:
+  // e.g. https://cdn.melius-app.com or https://<bucket>.s3.<region>.amazonaws.com
+  private readonly publicBaseUrl = process.env.S3_PUBLIC_BASE_URL || '';
 
-      parallelUploads3.on('httpUploadProgress', () => {});
+  private readonly client = new S3Client({
+    region: process.env.AWS_REGION ?? 'us-east-1',
+    endpoint: this.endpoint,
+    forcePathStyle: this.forcePathStyle,
+    credentials: process.env.AWS_ACCESS_KEY_ID
+      ? {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        }
+      : undefined,
+  });
 
-      const avatar = await parallelUploads3.done();
-
-      return await this.prisma.avatar.create({
-        data: {
-          userId,
-          key: avatar.Key,
-          url: avatar.Location,
-        },
-      });
-    } catch (err) {
-      console.error('Error uploading image to S3:', err);
-      throw err;
+  private assertBucket() {
+    if (!this.bucket) {
+      throw new Error('AWS_BUCKET_NAME is missing');
     }
   }
 
-  async deleteImageFromS3(avatarId: number) {
-    try {
-      const avatar = await this.prisma.avatar.findUnique({
-        where: { id: avatarId },
-      });
-      const client = new S3Client(this.config);
-      const input = {
+  /**
+   * Uploads raw buffer to S3/R2. Does NOT touch DB.
+   * Returns key + optional public url (if S3_PUBLIC_BASE_URL set).
+   */
+  async uploadObject(params: {
+    key: string;
+    body: Buffer;
+    contentType: string;
+    cacheControl?: string;
+  }): Promise<{ key: string; url: string }> {
+    this.assertBucket();
+
+    await this.client.send(
+      new PutObjectCommand({
         Bucket: this.bucket,
-        Key: avatar.key,
-      };
-      const command = new DeleteObjectCommand(input);
-      await client.send(command);
-      await this.prisma.avatar.delete({
-        where: { id: avatarId },
-      });
-    } catch (err) {
-      console.error('Error deleting file from S3:', err);
-      throw err;
-    }
+        Key: params.key,
+        Body: params.body,
+        ContentType: params.contentType,
+        CacheControl: params.cacheControl,
+      }),
+    );
+
+    const url = this.publicBaseUrl
+      ? `${this.publicBaseUrl.replace(/\/+$/, '')}/${params.key}`
+      : '';
+
+    return { key: params.key, url };
+  }
+
+  /**
+   * Deletes object from S3/R2 by key. Does NOT touch DB.
+   */
+  async deleteObject(key: string): Promise<void> {
+    this.assertBucket();
+
+    if (!key) return;
+
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    );
+  }
+
+  async normalizeAvatar(buffer: Buffer): Promise<Buffer> {
+    return await sharp(buffer)
+      .rotate()
+      .resize(512, 512, { fit: 'cover' })
+      .webp({ quality: 82 })
+      .toBuffer();
   }
 }

@@ -1,13 +1,12 @@
 import * as bcrypt from 'bcrypt';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { I18nService } from 'nestjs-i18n';
+import { v4 as uuid } from 'uuid';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ImageService } from '../image/image.service';
 import { EmailService } from '../email/email.service';
-import { I18nTranslations } from '../generated/i18n.generated';
 import { throwAppError } from '../common/errors/throw-app-error';
 import { ErrorCode } from '../common/errors/error-codes';
 
@@ -19,7 +18,6 @@ export class UsersService {
     private prisma: PrismaService,
     private imageService: ImageService,
     private emailService: EmailService,
-    private i18n: I18nService<I18nTranslations>,
   ) {}
 
   async createProfile(id: number, role: Role) {
@@ -149,35 +147,77 @@ export class UsersService {
     return await this.prisma.user.delete({ where: { id } });
   }
 
-  async addAvatar(userId: number, imageBuffer: Buffer, filename: string) {
-    const addedAvatar = await this.prisma.avatar.findUnique({
-      where: {
+  async addAvatar(userId: number, imageBuffer: Buffer, mimetype?: string) {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxBytes = 2 * 1024 * 1024;
+
+    if (!mimetype || !allowed.includes(mimetype)) {
+      throwAppError(
+        ErrorCode.INVALID_FILE_TYPE,
+        HttpStatus.BAD_REQUEST,
+        'Invalid avatar mimetype',
+      );
+    }
+
+    if (imageBuffer.length > maxBytes) {
+      throwAppError(
+        ErrorCode.FILE_TOO_LARGE,
+        HttpStatus.BAD_REQUEST,
+        'Avatar too large',
+      );
+    }
+
+    const existing = await this.prisma.avatar.findUnique({
+      where: { userId },
+      select: { id: true, key: true },
+    });
+
+    const key = `avatars/users/${userId}/${uuid()}.webp`;
+
+    const normalized = await this.imageService.normalizeAvatar(imageBuffer);
+
+    const uploaded = await this.imageService.uploadObject({
+      key,
+      body: normalized,
+      contentType: 'image/webp',
+      cacheControl: 'public, max-age=604800',
+    });
+
+    const avatar = await this.prisma.avatar.upsert({
+      where: { userId },
+      create: {
         userId,
+        key: uploaded.key,
+        url: uploaded.url, // może być '' jeśli S3_PUBLIC_BASE_URL nie ustawione
+      },
+      update: {
+        key: uploaded.key,
+        url: uploaded.url,
       },
     });
 
-    if (addedAvatar) {
-      await this.imageService.deleteImageFromS3(addedAvatar.id);
+    // best-effort delete starego pliku (po upsercie)
+    if (existing?.key) {
+      this.imageService.deleteObject(existing.key).catch(() => {});
     }
-
-    const avatar = await this.imageService.uploadImageToS3(
-      userId,
-      imageBuffer,
-      filename,
-    );
 
     return avatar;
   }
 
   async deleteAvatar(userId: number) {
-    const addedAvatar = await this.prisma.avatar.findUnique({
-      where: {
-        userId,
-      },
+    const existing = await this.prisma.avatar.findUnique({
+      where: { userId },
+      select: { id: true, key: true },
     });
 
-    if (addedAvatar) {
-      await this.imageService.deleteImageFromS3(addedAvatar.id);
-    }
+    if (!existing) return;
+
+    // best-effort delete pliku
+    await this.imageService.deleteObject(existing.key).catch(() => {});
+
+    // usuń rekord w DB
+    await this.prisma.avatar.delete({
+      where: { userId },
+    });
   }
 }

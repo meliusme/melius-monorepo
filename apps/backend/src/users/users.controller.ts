@@ -103,7 +103,11 @@ export class UsersController {
 
   @Post('avatar')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+    }),
+  )
   async addAvatar(
     @CurrentUser() user: User,
     @UploadedFile() file: Express.Multer.File,
@@ -111,7 +115,7 @@ export class UsersController {
     const avatar = await this.usersService.addAvatar(
       user.id,
       file.buffer,
-      file.originalname,
+      file.mimetype,
     );
     return new AvatarEntity(avatar);
   }
