@@ -8,6 +8,7 @@ import {
   ArrayNotEmpty,
   IsOptional,
   IsInt,
+  IsBoolean,
   Max,
   Min,
 } from 'class-validator';
@@ -35,4 +36,8 @@ export class UpdateDocProfileDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   specializations: number[];
+
+  @IsOptional()
+  @IsBoolean()
+  docTermsAccepted?: boolean;
 }

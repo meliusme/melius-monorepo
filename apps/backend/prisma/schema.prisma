@@ -106,6 +106,9 @@ model UserProfile {
   firstName String?
   lastName  String?
   published Boolean   @default(false)
+  consentTerms      Boolean @default(false)
+  consentAdult      Boolean @default(false)
+  consentHealthData Boolean @default(false)
   createdAt DateTime  @default(now()) @db.Timestamptz
   updatedAt DateTime  @updatedAt @db.Timestamptz
   meetings  Meeting[]
@@ -125,6 +128,7 @@ model DocProfile {
   sessionPricePln          Int?
   createdAt                DateTime                  @default(now()) @db.Timestamptz
   updatedAt                DateTime                  @updatedAt @db.Timestamptz
+  docTermsAccepted         Boolean                   @default(false)
   verificationStatus       DocVerificationStatus     @default(draft)
   submittedAt              DateTime?                 @db.Timestamptz
   reviewedAt               DateTime?                 @db.Timestamptz

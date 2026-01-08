@@ -102,6 +102,7 @@ export class ProfilesService {
         profession: true,
         sessionPricePln: true,
         verificationStatus: true,
+        docTermsAccepted: true,
         specializations: { select: { id: true } },
       },
     });
@@ -114,7 +115,7 @@ export class ProfilesService {
       );
     }
 
-    // nie pozwalamy submitować zaakceptowanego profilu
+    // Do not allow submitting an approved profile.
     if (doc.verificationStatus === DocVerificationStatus.approved) {
       throwAppError(
         ErrorCode.DOC_PROFILE_ALREADY_APPROVED,
@@ -123,7 +124,7 @@ export class ProfilesService {
       );
     }
 
-    // jeśli już submitted, to zwracamy aktualny stan (idempotencja)
+    // If already submitted, return current state (idempotent).
     if (doc.verificationStatus === DocVerificationStatus.submitted) {
       return this.prisma.docProfile.findUnique({
         where: { id: doc.id },
@@ -131,13 +132,14 @@ export class ProfilesService {
       });
     }
 
-    // walidacja kompletności (MVP)
+    // Completeness validation (MVP).
     const missing: string[] = [];
     if (!doc.firstName) missing.push('firstName');
     if (!doc.lastName) missing.push('lastName');
     if (!doc.profession) missing.push('profession');
     if (!doc.sessionPricePln) missing.push('sessionPricePln');
     if (!doc.specializations?.length) missing.push('specializations');
+    if (!doc.docTermsAccepted) missing.push('docTermsAccepted');
 
     if (missing.length) {
       throwAppError(

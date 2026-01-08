@@ -86,13 +86,13 @@ export class EmailEventsListener {
       if (!payment?.meeting) return;
       const m = payment.meeting;
 
-      // Pobierz dane użytkownika
+      // Fetch user data.
       const user = await this.prisma.user.findUnique({
         where: { id: m.user.userId },
         select: { email: true, language: true },
       });
 
-      // Pobierz dane terapeuty
+      // Fetch therapist data.
       const doc = await this.prisma.user.findUnique({
         where: { id: m.doc.docId },
         select: { email: true, language: true },
@@ -110,7 +110,7 @@ export class EmailEventsListener {
         .trim();
       const pricePln = Math.round(payment.unitAmount / 100);
 
-      // klient
+      // Client
       await this.email.sendMeetingConfirmedClient({
         to: user.email,
         lang: user.language ?? 'pl',
@@ -120,7 +120,7 @@ export class EmailEventsListener {
         pricePln,
       });
 
-      // terapeuta
+      // Therapist
       await this.email.sendMeetingConfirmedDoc({
         to: doc.email,
         lang: doc.language ?? 'pl',
@@ -163,13 +163,13 @@ export class EmailEventsListener {
       });
       if (!meeting) return;
 
-      // Pobierz dane użytkownika
+      // Fetch user data.
       const user = await this.prisma.user.findUnique({
         where: { id: meeting.user.userId },
         select: { email: true, language: true },
       });
 
-      // Pobierz dane terapeuty
+      // Fetch therapist data.
       const doc = await this.prisma.user.findUnique({
         where: { id: meeting.doc.docId },
         select: { email: true, language: true },
@@ -186,7 +186,7 @@ export class EmailEventsListener {
         .join(' ')
         .trim();
 
-      // do klienta
+      // To client
       await this.email.sendMeetingCancelled({
         to: user.email,
         lang: user.language ?? 'pl',
@@ -196,7 +196,7 @@ export class EmailEventsListener {
         cancelledBy: payload.cancelledBy,
       });
 
-      // do terapeuty
+      // To therapist
       await this.email.sendMeetingCancelled({
         to: doc.email,
         lang: doc.language ?? 'pl',

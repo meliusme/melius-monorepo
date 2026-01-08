@@ -65,7 +65,7 @@ export class MeetingsCronService {
   @Cron('*/5 * * * *')
   async autoCancelUnpaidMeetings() {
     const now = new Date();
-    const cutoff = new Date(now.getTime() - 15 * 60 * 1000); // 15 minut temu
+    const cutoff = new Date(now.getTime() - 15 * 60 * 1000); // 15 minutes ago
 
     this.logger.debug('Checking for unpaid pending meetings to cancel...');
 

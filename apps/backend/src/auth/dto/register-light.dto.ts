@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -20,4 +21,13 @@ export class RegisterLightDto {
   @IsString()
   @MaxLength(100)
   lastName?: string;
+
+  @IsBoolean()
+  consentTerms: boolean;
+
+  @IsBoolean()
+  consentAdult: boolean;
+
+  @IsBoolean()
+  consentHealthData: boolean;
 }

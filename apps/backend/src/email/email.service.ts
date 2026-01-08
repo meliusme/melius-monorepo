@@ -38,7 +38,7 @@ export class EmailService {
     const payload: ConfirmationTokenPayload = { email };
     return this.jwtService.sign(payload, {
       secret: process.env.JWT_EMAIL_SECRET,
-      expiresIn: Number(process.env.JWT_EMAIL_SECRET_TIME ?? 600), // sekundy
+      expiresIn: Number(process.env.JWT_EMAIL_SECRET_TIME ?? 600), // seconds
     });
   }
 
@@ -68,7 +68,7 @@ export class EmailService {
   private async canSendPasswordResetToken(email: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    // przy resecie: jeśli user nie istnieje → nie zdradzamy; ale cooldown "logicznie" niepotrzebny
+    // For resets: if user does not exist, do not reveal it; cooldown is not logically needed.
     if (!user) return true;
     if (!user.tokenActivatedAt) return true;
 
@@ -234,7 +234,7 @@ export class EmailService {
       );
     }
 
-    // Idempotencja: jeśli user kliknie 2 razy, chcemy OK
+    // Idempotency: if the user clicks twice, we still return OK.
     if (user.emailConfirmed) {
       return;
     }

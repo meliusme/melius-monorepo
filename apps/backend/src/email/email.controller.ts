@@ -33,7 +33,7 @@ export class EmailController {
       select: { id: true, role: true },
     });
 
-    // sanity (teoretycznie confirmEmail już rzuca, ale zostawiamy bezpiecznie)
+    // Sanity check (confirmEmail should throw, but keep it safe).
     if (!user) return;
 
     const meta = { userAgent: req.headers['user-agent'], ip: req.ip };

@@ -8,7 +8,7 @@ export class AuthCleanupService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // Czyszczenie wygasłych refresh tokenów - codziennie o 3:00
+  // Cleanup expired refresh tokens - daily at 03:00.
   @Cron('0 3 * * *')
   async cleanupExpiredTokens() {
     try {
@@ -20,7 +20,7 @@ export class AuthCleanupService {
               revokedAt: {
                 lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
               },
-            }, // revoked > 30 dni temu
+            }, // revoked > 30 days ago
           ],
         },
       });

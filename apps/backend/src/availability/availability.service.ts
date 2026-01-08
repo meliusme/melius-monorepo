@@ -58,7 +58,7 @@ export class AvailabilityService {
       );
     }
 
-    // Overlap: istnieje slot gdzie existing.start < new.end AND existing.end > new.start
+    // Overlap check: existing.start < new.end AND existing.end > new.start.
     const overlap = await this.prisma.availabilitySlot.findFirst({
       where: {
         docId: docProfile.id,

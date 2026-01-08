@@ -25,11 +25,11 @@ export class PaymentsController {
     const sig = req.headers['stripe-signature'];
 
     if (!sig) {
-      // nie od Stripe – po prostu nic nie robimy
+      // Not from Stripe, so do nothing.
       return;
     }
 
-    // dzięki bodyParser.raw w main.ts mamy raw body:
+    // We get raw body thanks to bodyParser.raw in main.ts.
     const rawBody = (req as any).body as Buffer;
 
     await this.paymentsService.handleStripeWebhook(rawBody, sig as string);
@@ -69,7 +69,7 @@ export class PaymentsController {
   @Post('p24/webhook')
   @HttpCode(200)
   async handleP24Webhook(@Body() body: any) {
-    // P24 nie będzie miał stripe-signature, więc normalny JSON body jest OK
+    // P24 has no stripe-signature, so normal JSON body is fine.
     await this.paymentsService.handleP24Webhook(body);
     return { received: true };
   }

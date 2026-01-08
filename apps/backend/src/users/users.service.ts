@@ -188,7 +188,7 @@ export class UsersService {
       create: {
         userId,
         key: uploaded.key,
-        url: uploaded.url, // może być '' jeśli S3_PUBLIC_BASE_URL nie ustawione
+        url: uploaded.url, // may be '' if S3_PUBLIC_BASE_URL is not set
       },
       update: {
         key: uploaded.key,
@@ -196,7 +196,7 @@ export class UsersService {
       },
     });
 
-    // best-effort delete starego pliku (po upsercie)
+    // Best-effort delete of the old file (after upsert).
     if (existing?.key) {
       this.imageService.deleteObject(existing.key).catch(() => {});
     }
@@ -212,10 +212,10 @@ export class UsersService {
 
     if (!existing) return;
 
-    // best-effort delete pliku
+    // Best-effort delete of the file.
     await this.imageService.deleteObject(existing.key).catch(() => {});
 
-    // usuń rekord w DB
+    // Delete the DB record.
     await this.prisma.avatar.delete({
       where: { userId },
     });

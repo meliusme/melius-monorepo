@@ -22,7 +22,7 @@ export class AdminService {
       );
     }
 
-    // opcjonalnie: wymagaj, żeby był submitted
+    // Optional: require submitted status.
     if (doc.verificationStatus === DocVerificationStatus.draft) {
       throwAppError(
         ErrorCode.DOC_PROFILE_NOT_SUBMITTED,
@@ -71,7 +71,7 @@ export class AdminService {
       );
     }
 
-    // opcjonalnie: wymagaj submitted
+    // Optional: require submitted status.
     if (doc.verificationStatus === DocVerificationStatus.draft) {
       throwAppError(
         ErrorCode.DOC_PROFILE_NOT_SUBMITTED,

@@ -243,7 +243,7 @@ export class MeetingsService {
       );
     }
 
-    // 🔹 Limit czasowy dla klienta – tylko dla opłaconych (confirmed)
+    // 🔹 Client time limit — only for paid (confirmed) meetings.
     // Policy: cancellation (and refund) allowed only up to 24h before start.
     if (meeting.status === MeetingStatus.confirmed) {
       const now = new Date();
@@ -312,7 +312,7 @@ export class MeetingsService {
       );
     }
 
-    // 🔹 1. Transakcja: tylko DB (status + slot)
+    // 🔹 1. Transaction: DB-only update (status + slot).
     const updatedMeeting = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.meeting.update({
         where: { id: meeting.id },
@@ -337,7 +337,7 @@ export class MeetingsService {
       );
     }
 
-    // 🔹 3. Zwracamy zaktualizowany meeting
+    // 🔹 3. Return the updated meeting.
     return updatedMeeting;
   }
 }

@@ -43,7 +43,7 @@ Content-Type: application/json
 DELETE {{baseUrl}}/users/{{userId}}
 
 ### Upload Avatar
-POST {{baseUrl}}/users/{{userId}}/avatar
+POST {{baseUrl}}/users/avatar
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
 
 ------WebKitFormBoundary
@@ -54,7 +54,7 @@ Content-Type: image/jpeg
 ------WebKitFormBoundary--
 
 ### Delete Avatar
-DELETE {{baseUrl}}/users/{{userId}}/avatar
+DELETE {{baseUrl}}/users/avatar/{{userId}}
 
 ### ============================================
 ### AUTH ENDPOINTS
@@ -77,7 +77,10 @@ Content-Type: application/json
 {
   "email": "newuser@example.com",
   "firstName": "John",
-  "lastName": "Doe"
+  "lastName": "Doe",
+  "consentTerms": true,
+  "consentAdult": true,
+  "consentHealthData": true
 }
 
 ### Set Password (after light registration)
@@ -88,8 +91,11 @@ Content-Type: application/json
   "password": "newpassword123"
 }
 
+### Refresh Session
+POST {{baseUrl}}/auth/refresh
+
 ### Logout
-GET {{baseUrl}}/auth/logout
+POST {{baseUrl}}/auth/logout
 
 ### ============================================
 ### EMAIL ENDPOINTS
@@ -125,8 +131,7 @@ Content-Type: application/json
 
 {
   "token": "YOUR_TOKEN_HERE",
-  "oldPassword": "{{password}}",
-  "newPassword": "newpassword123"
+  "password": "newpassword123"
 }
 
 ### ============================================
@@ -147,7 +152,6 @@ POST {{baseUrl}}/meetings
 Content-Type: application/json
 
 {
-  "docId": {{docId}},
   "slotId": {{slotId}},
   "clientMessage": "Looking forward to our meeting"
 }
@@ -160,13 +164,13 @@ POST {{baseUrl}}/meetings/{{meetingId}}/cancel
 ### ============================================
 
 ### Get My Doc Meetings (upcoming)
-GET {{baseUrl}}/meetings/doc/me
+GET {{baseUrl}}/meetings/doc?scope=upcoming
 
 ### Get My Doc Meetings - Past
-GET {{baseUrl}}/meetings/doc/me?scope=past
+GET {{baseUrl}}/meetings/doc?scope=past
 
 ### Get My Doc Meetings - All
-GET {{baseUrl}}/meetings/doc/me?scope=all
+GET {{baseUrl}}/meetings/doc?scope=cancelled
 
 ### Cancel Meeting as Doc
 POST {{baseUrl}}/meetings/doc/{{meetingId}}/cancel
@@ -208,9 +212,9 @@ POST {{baseUrl}}/matches/search-with-slots
 Content-Type: application/json
 
 {
-  "problemKeys": ["anxiety", "depression"],
-  "startDate": "2025-12-15T00:00:00.000Z",
-  "endDate": "2025-12-25T23:59:59.999Z"
+  "problemId": 1,
+  "from": "2025-12-15T00:00:00.000Z",
+  "to": "2025-12-25T23:59:59.999Z"
 }
 
 ### ============================================
@@ -262,13 +266,13 @@ Content-Type: application/json
 GET {{baseUrl}}/profiles/user
 
 ### Update My User Profile (User only)
-POST {{baseUrl}}/profiles/user
+PUT {{baseUrl}}/profiles/user
 Content-Type: application/json
 
 {
   "firstName": "Jan",
   "lastName": "Kowalski",
-  "problemIds": [1, 2]
+  "problems": [1, 2]
 }
 
 ### Get My Doc Profile (Doc only)
@@ -282,9 +286,9 @@ Content-Type: application/json
   "firstName": "Dr",
   "lastName": "Psycholog",
   "profession": "psychologist",
-  "specializationIds": [1, 2],
+  "specializations": [1, 2],
   "sessionPricePln": 220,
-  "published": true
+  "docTermsAccepted": true
 }
 
 ### Update Admin Profile (Admin only)
@@ -296,26 +300,50 @@ Content-Type: application/json
   "lastName": "User"
 }
 
-### Get New Docs Profiles (public)
-GET {{baseUrl}}/profiles/new
-
-### Get Best Docs Profiles (public)
-GET {{baseUrl}}/profiles/best
-
-### Get Doc Profile by ID (public)
-GET {{baseUrl}}/profiles/doc/{{docId}}
+### Submit Doc Profile (Doc only)
+POST {{baseUrl}}/profiles/doc/submit
 
 ### Rate Doc (User only - after completed meeting)
-POST {{baseUrl}}/profiles/doc/{{docId}}/rate
+POST {{baseUrl}}/profiles/rate
 Content-Type: application/json
 
 {
+  "docId": {{docId}},
+  "meetingId": {{meetingId}},
   "rate": 5,
   "comment": "Bardzo dobra sesja!"
 }
 
 ### Get Doc Ratings (public)
 GET {{baseUrl}}/profiles/doc/{{docId}}/ratings?page=1&limit=10
+
+### ============================================
+### DOC VERIFICATION DOCUMENTS (DOC)
+### ============================================
+
+### Upload Verification Document
+POST {{baseUrl}}/doc/verification-documents
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="document.pdf"
+Content-Type: application/pdf
+
+< ./path/to/document.pdf
+------WebKitFormBoundary--
+
+### List Verification Documents
+GET {{baseUrl}}/doc/verification-documents
+
+### Delete Verification Document
+DELETE {{baseUrl}}/doc/verification-documents/1
+
+### ============================================
+### ADMIN DOCUMENTS (ADMIN)
+### ============================================
+
+### Get Verification Document URL
+GET {{baseUrl}}/admin/documents/1/url
 
 ### ============================================
 ### NEGATIVE CASES (UX codes)
@@ -326,7 +354,6 @@ POST {{baseUrl}}/meetings
 Content-Type: application/json
 
 {
-  "docId": {{docId}},
   "slotId": 999999,
   "clientMessage": "test"
 }
@@ -337,7 +364,6 @@ POST {{baseUrl}}/meetings
 Content-Type: application/json
 
 {
-  "docId": {{docId}},
   "slotId": {{slotId}},
   "clientMessage": "test"
 }
@@ -351,7 +377,7 @@ Content-Type: application/json
 }
 
 ### Start P24 payment - therapist not published (expect code: THERAPIST_NOT_PUBLISHED)
-# (ustaw published=false dla doca)
+# (ustaw verificationStatus != approved dla doca)
 POST {{baseUrl}}/payments/p24/start
 Content-Type: application/json
 

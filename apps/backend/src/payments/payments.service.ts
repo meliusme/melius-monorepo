@@ -60,8 +60,8 @@ export class PaymentsService {
     currency: string;
     crc: string;
   }) {
-    // Najczęściej: JSON stringify z tymi polami + sha384.
-    // Jeśli będziesz miał mismatch, podepniemy to 1:1 pod kalkulator P24.
+    // Usually JSON stringify with these fields + sha384.
+    // If you get a mismatch, align 1:1 with the P24 calculator.
     const payload = JSON.stringify({
       sessionId: params.sessionId,
       merchantId: params.merchantId,
@@ -239,7 +239,7 @@ export class PaymentsService {
   }
 
   async handleP24Webhook(body: any) {
-    // P24 potrafi wysłać różne pola – dlatego defensywnie:
+    // P24 can send different field names, so be defensive.
     const sessionId = String(body?.sessionId ?? body?.SessionId ?? '');
     const orderIdRaw = body?.orderId ?? body?.OrderId;
     const amountRaw = body?.amount ?? body?.Amount;
@@ -260,7 +260,7 @@ export class PaymentsService {
     const amount = amountRaw == null ? NaN : Number(amountRaw);
     const currency = 'PLN';
 
-    // 1) znajdź payment po sessionId (provider=p24)
+    // 1) Find payment by sessionId (provider=p24).
     const payment = await this.prisma.payment.findFirst({
       where: {
         provider: PaymentProvider.p24,
@@ -315,7 +315,7 @@ export class PaymentsService {
       return;
     }
 
-    // 3) verify w P24 (źródło prawdy) using DB amount
+    // 3) Verify with P24 (source of truth) using DB amount.
     const verified = await this.verifyP24Transaction({
       sessionId,
       orderId,
@@ -481,7 +481,7 @@ export class PaymentsService {
         'User email is missing',
       );
 
-    const amount = Math.round(pricePln * 100); // grosze
+    const amount = Math.round(pricePln * 100); // cents
     const currency = 'PLN';
 
     // Simple protection: reuse existing pending P24 payment for this meeting
@@ -526,7 +526,7 @@ export class PaymentsService {
       });
     }
 
-    // 3) register w P24
+    // 3) Register with P24.
     const merchantId = Number(process.env.P24_MERCHANT_ID);
     const posId = Number(process.env.P24_POS_ID);
     const crc = process.env.P24_CRC ?? '';
@@ -568,12 +568,12 @@ export class PaymentsService {
       urlReturn,
       urlStatus,
       sign,
-      // MVP: pomijamy resztę pól
+      // MVP: omit the remaining fields.
     };
 
     const token = await this.p24RegisterTransaction(body);
 
-    // zapisz token w Payment (debug + przyszłe retry)
+    // Store token in Payment (debug + future retries).
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: { p24Token: token },
@@ -596,7 +596,7 @@ export class PaymentsService {
         'Stripe is disabled',
       );
     }
-    // 1. Pobierz meeting razem z docProfile i użytkownikiem (żeby mieć email)
+    // 1. Fetch meeting with docProfile and user (to get email).
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
       include: {
@@ -690,7 +690,7 @@ export class PaymentsService {
       );
     }
 
-    // 2. Utwórz Payment w bazie
+    // 2. Create Payment in DB.
     const payment = await this.prisma.payment.create({
       data: {
         meetingId: meeting.id,
@@ -702,7 +702,7 @@ export class PaymentsService {
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3001';
 
-    // 3. Utwórz Stripe Checkout Session
+    // 3. Create Stripe Checkout Session.
     const session = await this.stripe!.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -731,7 +731,7 @@ export class PaymentsService {
       },
     });
 
-    // 4. Zaktualizuj Payment o ID checkoutu
+    // 4. Update Payment with checkout ID.
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -790,7 +790,7 @@ export class PaymentsService {
         await this.handleCheckoutCompleted(session);
         break;
       }
-      // tu później możesz dodać inne eventy (expired, failed itd.)
+      // You can add other events later (expired, failed, etc.).
       default:
         this.logger.debug(`Unhandled event type: ${event.type}`);
         break;

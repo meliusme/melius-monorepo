@@ -48,12 +48,14 @@ GŁÓWNE MODELE:
 
 3. UserProfile (Profil pacjenta)
    - firstName, lastName, published (pole legacy, nieużywane w logice)
+   - consentTerms, consentAdult, consentHealthData (zgody z register-light)
    - Relacje: user, meetings, problems, ratings
 
 4. DocProfile (Profil terapeuty)
    - firstName, lastName, profession
    - rate (średnia ocena), ratesLot (liczba ocen)
    - sessionPricePln (cena sesji w PLN)
+   - docTermsAccepted (zgoda terapeuty na regulamin)
    - verificationStatus (draft, submitted, approved, rejected)
      * draft - profil w trakcie tworzenia
      * submitted - przesłany do weryfikacji
@@ -123,11 +125,13 @@ POST /auth/login
   isAuth, access_exp, refresh_exp
 
 POST /auth/register-light
-- Body: { email, firstName?, lastName? }
+- Body: { email, firstName?, lastName?, consentTerms, consentAdult, consentHealthData }
 - Zwraca: role i userId
 - Logika: "Lekka" rejestracja bez hasła - pozwala użytkownikowi rozpocząć proces
   bez pełnej rejestracji. Jeśli użytkownik już istnieje z niepotwierdzonym emailem,
   aktualizuje jego dane i loguje go.
+- Wymagane zgody (wszystkie true): regulamin + polityka prywatności, pełnoletniość
+  lub zgoda opiekuna, zgoda na przetwarzanie danych dotyczących zdrowia.
 - Cookie: access_token (httpOnly), refresh_token (httpOnly, path=/auth/refresh),
   isAuth, access_exp, refresh_exp
 
@@ -219,7 +223,7 @@ PUT /profiles/user (wymaga JWT + user role)
 
 PUT /profiles/doc (wymaga JWT + doc role)
 - Body: UpdateDocProfileDto (firstName, lastName, profession, sessionPricePln, 
-        specializations[])
+        specializations[], docTermsAccepted?)
 - Zwraca: Zaktualizowany profil terapeuty
 - Logika: Aktualizuje dane terapeuty, specjalizacje i cenę sesji
 - Uwaga: Nie można zmienić verificationStatus tym endpointem
@@ -227,7 +231,9 @@ PUT /profiles/doc (wymaga JWT + doc role)
 POST /profiles/doc/submit (wymaga JWT + doc role)
 - Zwraca: Zaktualizowany profil terapeuty
 - Logika: Przesyła profil terapeuty do weryfikacji (verificationStatus=submitted)
-- Walidacja: Wymaga wypełnienia firstName, lastName, profession, sessionPricePln, specializations
+- Walidacja: Wymaga wypełnienia firstName, lastName, profession, sessionPricePln,
+  specializations oraz docTermsAccepted=true
+- docTermsAccepted: akceptacja regulaminu dla terapeutów (wymagana przed submit)
 
 POST /profiles/admin (wymaga JWT + admin role)
 - Body: UpdateAdminProfileDto (firstName, lastName)
@@ -589,7 +595,7 @@ FLOW REJESTRACJI I LOGOWANIA:
 ------------------------------
 
 1. LEKKA REJESTRACJA (pacjent):
-   POST /auth/register-light { email }
+   POST /auth/register-light { email, consentTerms, consentAdult, consentHealthData }
    -> Tworzy User (emailConfirmed=false) + UserProfile
    -> Zwraca JWT token
    -> Użytkownik może przeglądać i rezerwować spotkania
@@ -665,7 +671,7 @@ FLOW TERAPEUTY (DOC):
 2. Uzupełnienie profilu:
    PUT /profiles/doc { 
      firstName, lastName, profession,
-     sessionPricePln, specializations[]
+     sessionPricePln, specializations[], docTermsAccepted
    }
 
 3. Dodanie dokumentów weryfikacyjnych (opcjonalnie/na żądanie admina):

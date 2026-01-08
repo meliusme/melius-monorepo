@@ -58,6 +58,9 @@ export class AuthController {
       dto.email,
       dto.firstName,
       dto.lastName,
+      dto.consentTerms,
+      dto.consentAdult,
+      dto.consentHealthData,
       meta,
     );
 

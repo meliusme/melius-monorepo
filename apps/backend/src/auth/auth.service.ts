@@ -43,14 +43,14 @@ export class AuthService {
     userId: number,
     meta?: { userAgent?: string; ip?: string },
   ) {
-    // Sprawdź liczbę aktywnych sesji i usuń najstarsze jeśli będzie przekroczony limit po dodaniu nowej
+    // Check active sessions and revoke the oldest if the limit would be exceeded.
     const activeTokens = await this.prisma.refreshToken.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'asc' },
       select: { id: true, createdAt: true },
     });
 
-    // Jeśli po dodaniu nowej sesji przekroczymy limit, revoke najstarsze
+    // If adding a new session exceeds the limit, revoke the oldest.
     const toRevoke = activeTokens.length - this.MAX_SESSIONS_PER_USER + 1;
     if (toRevoke > 0) {
       const idsToRevoke = activeTokens.slice(0, toRevoke).map((t) => t.id);
@@ -120,7 +120,7 @@ export class AuthService {
       );
     }
 
-    // reuse detection: ktoś próbuje użyć już unieważnionego refresh
+    // Reuse detection: someone tries to use a revoked refresh token.
     if (existing.revokedAt) {
       await this.prisma.refreshToken.updateMany({
         where: { userId: existing.userId, revokedAt: null },
@@ -145,7 +145,7 @@ export class AuthService {
       );
     }
 
-    // rotacja: wydaj nowy refresh + access, oznacz stary jako revoked + replacedBy
+    // Rotation: issue new refresh + access, mark old as revoked + replacedBy.
     const issued = await this.issueSession(existing.userId, meta);
 
     await this.prisma.refreshToken.update({
@@ -163,7 +163,7 @@ export class AuthService {
   ): Promise<AuthEntity> {
     const user = await this.prisma.user.findUnique({ where: { email: email } });
 
-    // Sprawdzamy emailConfirmed osobno, bo to inna sytuacja
+    // Check emailConfirmed separately; it's a different case.
     if (user && !user.emailConfirmed)
       throwAppError(
         ErrorCode.EMAIL_NOT_CONFIRMED,
@@ -171,7 +171,7 @@ export class AuthService {
         'Email not confirmed',
       );
 
-    // Zunifikowany błąd - nie leakujemy czy email istnieje
+    // Unified error to avoid leaking whether the email exists.
     const isPasswordValid = user
       ? await bcrypt.compare(password, user.password)
       : false;
@@ -192,8 +192,19 @@ export class AuthService {
     email: string,
     firstName?: string,
     lastName?: string,
+    consentTerms?: boolean,
+    consentAdult?: boolean,
+    consentHealthData?: boolean,
     meta?: { userAgent?: string; ip?: string },
   ): Promise<AuthEntity> {
+    if (!consentTerms || !consentAdult || !consentHealthData) {
+      throwAppError(
+        ErrorCode.INVALID_REQUEST,
+        HttpStatus.BAD_REQUEST,
+        'Required consents not accepted',
+      );
+    }
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -205,7 +216,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      // Jeśli to "pełne" konto (ma potwierdzony email) → nie logujemy po samym mailu
+      // If it's a "full" account (email confirmed) we do not log in by email only.
       if (existingUser.emailConfirmed) {
         throwAppError(
           ErrorCode.EMAIL_EXISTS,
@@ -214,12 +225,15 @@ export class AuthService {
         );
       }
 
-      // Jeśli to "lekki" user z poprzedniego register-light:
-      // możemy uzupełnić mu profil (o ile przyszły dane)
+      // If it's a "light" user from a previous register-light,
+      // we can update their profile if data is provided.
       if (existingUser.userProfile) {
         const dataToUpdate: {
           firstName?: string | null;
           lastName?: string | null;
+          consentTerms?: boolean;
+          consentAdult?: boolean;
+          consentHealthData?: boolean;
         } = {};
 
         if (firstName) {
@@ -230,20 +244,33 @@ export class AuthService {
           dataToUpdate.lastName = lastName.trim();
         }
 
+        dataToUpdate.consentTerms = true;
+        dataToUpdate.consentAdult = true;
+        dataToUpdate.consentHealthData = true;
+
         if (Object.keys(dataToUpdate).length > 0) {
           await this.prisma.userProfile.update({
             where: { userId: existingUser.id },
             data: dataToUpdate,
           });
         }
+      } else {
+        await this.prisma.userProfile.create({
+          data: {
+            userId: existingUser.id,
+            consentTerms: true,
+            consentAdult: true,
+            consentHealthData: true,
+          },
+        });
       }
 
-      // I tak go logujemy – to dalej "light" konto, bez hasła
+      // Still log in: it's still a "light" account without a password.
       const issued = await this.issueSession(existingUser.id, meta);
       return { user: existingUser, issued };
     }
 
-    // Nowy email → tworzymy "light" usera
+    // New email -> create a "light" user.
     const tempPassword = await bcrypt.hash(
       Math.random().toString(36).slice(-8),
       10,
@@ -261,6 +288,9 @@ export class AuthService {
         userId: user.id,
         firstName: firstName?.trim() || null,
         lastName: lastName?.trim() || null,
+        consentTerms: true,
+        consentAdult: true,
+        consentHealthData: true,
       },
     });
 
