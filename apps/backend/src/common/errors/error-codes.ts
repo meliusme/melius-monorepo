@@ -53,4 +53,6 @@ export enum ErrorCode {
   // Avatars / Files
   INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+  INVALID_REQUEST = 'INVALID_REQUEST',
+  NOT_FOUND = 'NOT_FOUND',
 }

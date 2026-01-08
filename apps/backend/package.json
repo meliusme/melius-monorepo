@@ -26,8 +26,9 @@
     "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.554.0",
-    "@aws-sdk/lib-storage": "^3.556.0",
+    "@aws-sdk/client-s3": "^3.965.0",
+    "@aws-sdk/lib-storage": "^3.965.0",
+    "@aws-sdk/s3-request-presigner": "^3.965.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",

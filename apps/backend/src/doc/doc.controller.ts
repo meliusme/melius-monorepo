@@ -1,4 +1,16 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
@@ -19,5 +31,31 @@ export class DocController {
     @Query('to') to: string,
   ) {
     return this.docService.getWeekCalendar(user.id, from, to);
+  }
+
+  @Post('verification-documents')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    }),
+  )
+  uploadVerificationDocument(
+    @CurrentUser() user: User,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.docService.uploadVerificationDocument(user.id, file);
+  }
+
+  @Get('verification-documents')
+  listVerificationDocuments(@CurrentUser() user: User) {
+    return this.docService.listVerificationDocuments(user.id);
+  }
+
+  @Delete('verification-documents/:id')
+  deleteVerificationDocument(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.docService.deleteVerificationDocument(user.id, id);
   }
 }
