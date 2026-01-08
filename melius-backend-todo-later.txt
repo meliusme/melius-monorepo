@@ -2,17 +2,11 @@ MVP (MUSI BYĆ)
 
 Tu zostaw tylko te rzeczy, które blokują uruchomienie:
 	•	Email templates w Resend (bo bez tego UX jest martwy)
-	•	ewentualnie krytyczne walidacje availability, jeśli nie masz overlapów
-	•	auto-cleanup pending (jeśli nie chcesz “wiszących” slotów)
 
 TODO LATER (PO MVP) — TYLKO NIEZROBIONE
 
 1. Availability — walidacja slotów
-	•	Walidacja, że startTime < endTime przy tworzeniu slotu.
-	•	Walidacja, że nowe sloty nie nakładają się na istniejące sloty danego terapeuty.
 	•	(Opcjonalnie) minimalna / maksymalna długość slotu (np. 50–60 min).
-
-Filtrowanie tylko przyszłych slotów → JUŻ JEST.
 
 ⸻
 
@@ -28,7 +22,6 @@ Filtrowanie tylko przyszłych slotów → JUŻ JEST.
 ⸻
 
 3. Payments — funkcje po MVP
-	•	Obsługa refundów (API providera).
 	•	Rozróżnienie powodów refundu:
 	•	user / therapist / system (TTL).
 	•	Historia płatności w dashboardzie terapeuty.
@@ -52,9 +45,6 @@ Rejestracja, reset hasła, booking, cancel → logika backendowa JUŻ JEST
 ⸻
 
 5. Images / avatar
-	•	Walidacja rozmiaru uploadu (np. max 2MB).
-	•	Walidacja MIME (image/jpeg, image/png).
-	•	Automatyczny resize (np. Sharp).
 	•	Opcjonalne miniaturki.
 	•	Czyszczenie nieużywanych plików (cron / lifecycle).
 
@@ -64,12 +54,7 @@ Rejestracja, reset hasła, booking, cancel → logika backendowa JUŻ JEST
 	•	Publiczny endpoint:
 	•	GET /profiles/doc/:id — publiczna karta terapeuty.
 	•	Dokumenty terapeuty:
-	•	upload dokumentów (S3 / Cloudflare R2),
-	•	lista / usuwanie,
-	•	podgląd dokumentów przez admina.
 	•	Workflow weryfikacji:
-	•	submit → JUŻ JEST
-	•	approve / reject → JUŻ JEST (API)
 	•	LATER: UI admina + wymagania dot. typów dokumentów.
 	•	Doprecyzowanie reguł:
 	•	które zmiany po approved wymagają ponownej weryfikacji
@@ -100,8 +85,6 @@ published nie istnieje.
 	•	zgłaszanie komentarzy,
 	•	ukrywanie bez usuwania.
 	•	(Opcjonalnie) odpowiedź terapeuty na komentarz.
-
-Transakcja + update średniej → JUŻ JEST.
 
 ⸻
 

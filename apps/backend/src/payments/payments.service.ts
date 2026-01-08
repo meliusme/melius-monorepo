@@ -194,6 +194,50 @@ export class PaymentsService {
     return resp?.data?.status === 'success' ? 'success' : 'failed';
   }
 
+  private async refundP24Transaction(params: {
+    sessionId: string;
+    orderId: number;
+    amount: number;
+    currency: string;
+  }): Promise<'success' | 'failed'> {
+    const merchantId = Number(process.env.P24_MERCHANT_ID);
+    const posId = Number(process.env.P24_POS_ID);
+    const crc = process.env.P24_CRC ?? '';
+
+    if (!merchantId || !posId || !crc) {
+      throwAppError(
+        ErrorCode.P24_CONFIG_MISSING,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Payment configuration missing',
+      );
+    }
+
+    const sign = this.p24SignVerify({
+      sessionId: params.sessionId,
+      orderId: params.orderId,
+      amount: params.amount,
+      currency: params.currency,
+      crc,
+    });
+
+    const payload = {
+      merchantId,
+      posId,
+      sessionId: params.sessionId,
+      orderId: params.orderId,
+      amount: params.amount,
+      currency: params.currency,
+      sign,
+    };
+
+    const resp = await this.p24Post<{ data?: { status?: string } }>(
+      '/transaction/refund',
+      payload,
+    );
+
+    return resp?.data?.status === 'success' ? 'success' : 'failed';
+  }
+
   async handleP24Webhook(body: any) {
     // P24 potrafi wysłać różne pola – dlatego defensywnie:
     const sessionId = String(body?.sessionId ?? body?.SessionId ?? '');
@@ -826,10 +870,58 @@ export class PaymentsService {
   }
 
   async refundPaymentForMeeting(meetingId: number, reason: string) {
-    // MVP: refunds are disabled (manual process outside the system)
-    this.logger.warn(
-      `Refund requested for meeting ${meetingId} (${reason}) but refunds are disabled in MVP`,
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        meetingId,
+        provider: PaymentProvider.p24,
+        status: PaymentStatus.succeeded,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!payment) {
+      this.logger.warn(
+        `Refund skipped: no succeeded P24 payment found for meeting ${meetingId}`,
+      );
+      return;
+    }
+
+    if (payment.status === PaymentStatus.refunded) {
+      return;
+    }
+
+    if (!payment.p24OrderId || !payment.p24SessionId) {
+      throwAppError(
+        ErrorCode.P24_CONFIG_MISSING,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'P24 refund missing orderId/sessionId',
+      );
+    }
+
+    const currency = payment.currency || 'PLN';
+
+    const result = await this.refundP24Transaction({
+      sessionId: payment.p24SessionId,
+      orderId: payment.p24OrderId,
+      amount: payment.unitAmount,
+      currency,
+    });
+
+    if (result !== 'success') {
+      throwAppError(
+        ErrorCode.P24_REFUND_FAILED,
+        HttpStatus.BAD_REQUEST,
+        `P24 refund failed for meeting ${meetingId}`,
+      );
+    }
+
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: PaymentStatus.refunded },
+    });
+
+    this.logger.log(
+      `Refunded P24 payment ${payment.id} for meeting ${meetingId} (${reason})`,
     );
-    return;
   }
 }

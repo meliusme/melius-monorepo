@@ -329,8 +329,13 @@ export class MeetingsService {
       return updated;
     });
 
-    // 🔹 2. Refund
-    // MVP: refunds are disabled (manual process outside the system).
+    // 🔹 2. Refund (P24) if needed
+    if (meeting.status === MeetingStatus.confirmed) {
+      await this.paymentsService.refundPaymentForMeeting(
+        meeting.id,
+        cancelStatus,
+      );
+    }
 
     // 🔹 3. Zwracamy zaktualizowany meeting
     return updatedMeeting;

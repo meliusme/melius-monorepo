@@ -16,7 +16,7 @@ STACK TECHNOLOGICZNY:
 - Autentykacja: JWT + cookies
 - Płatności: Stripe, Przelewy24
 - Email: Resend
-- Storage: AWS S3 (awatary)
+- Storage: AWS S3 (awatary i dokumenty weryfikacyjne)
 - Harmonogramowanie: @nestjs/schedule (cron jobs)
 
 STRUKTURA BAZY DANYCH:
@@ -34,18 +34,23 @@ ENUM TYPES:
 
 GŁÓWNE MODELE:
 
-1. User (Użytkownik)
+1. RefreshToken (Sesja odświeżania)
+   - tokenHash, expiresAt, revokedAt, replacedByTokenId
+   - userAgent, ip
+   - Relacje: user, replacedBy, replaces
+
+2. User (Użytkownik)
    - id, email, password, role
    - emailConfirmed (weryfikacja emaila)
    - language (preferowany język)
    - tokenActivatedAt (ostatnia aktywacja tokenu)
    - Relacje: avatar, userProfile, docProfile, adminProfile
 
-2. UserProfile (Profil pacjenta)
-   - firstName, lastName, published
+3. UserProfile (Profil pacjenta)
+   - firstName, lastName, published (pole legacy, nieużywane w logice)
    - Relacje: user, meetings, problems, ratings
 
-3. DocProfile (Profil terapeuty)
+4. DocProfile (Profil terapeuty)
    - firstName, lastName, profession
    - rate (średnia ocena), ratesLot (liczba ocen)
    - sessionPricePln (cena sesji w PLN)
@@ -55,36 +60,48 @@ GŁÓWNE MODELE:
      * approved - zatwierdzony, widoczny publicznie
      * rejected - odrzucony przez admina
    - submittedAt, reviewedAt, rejectionReason
-   - Relacje: user, meetings, specializations, availabilitySlots, ratings
+   - Relacje: user, meetings, specializations, availabilitySlots, ratings, docVerificationDocuments
 
-4. Meeting (Spotkanie)
+5. DocVerificationDocument (Dokument weryfikacyjny)
+   - fileKey, mimeType, sizeBytes, originalName, uploadedAt
+   - Relacje: doc
+
+6. AdminProfile (Profil administratora)
+   - firstName, lastName
+   - Relacje: user
+
+7. Avatar (Awatar)
+   - key, url
+   - Relacje: user
+
+8. Meeting (Spotkanie)
    - startTime, endTime, status
    - clientMessage (wiadomość od klienta)
    - Relacje: user, doc, slot, payments, ratings
 
-5. AvailabilitySlot (Slot dostępności terapeuty)
+9. AvailabilitySlot (Slot dostępności terapeuty)
    - startTime, endTime, booked
    - Relacje: doc, meetings
 
-6. Payment (Płatność)
+10. Payment (Płatność)
    - unitAmount, currency, status, provider
    - stripePaymentIntentId, stripeCheckoutId (Stripe)
    - p24SessionId, p24OrderId, p24Token (Przelewy24)
    - Relacje: meeting
 
-7. Rating (Ocena)
+11. Rating (Ocena)
    - rate (1-5), comment
    - Relacje: user, doc, meeting
 
-8. Problem (Problem pacjenta)
+12. Problem (Problem pacjenta)
    - problemKey (unikalny klucz)
    - Relacje: specializations, userProfiles, matches
 
-9. Specialization (Specjalizacja terapeuty)
+13. Specialization (Specjalizacja terapeuty)
    - specializationKey (unikalny klucz)
    - Relacje: problems, docProfiles, matches
 
-10. Match (Dopasowanie problem-specjalizacja)
+14. Match (Dopasowanie problem-specjalizacja)
     - problemId, specializationId
 
 ===========================================
@@ -100,33 +117,41 @@ ENDPOINTY:
 
 POST /auth/login
 - Body: { email, password }
-- Zwraca: JWT token w cookie + role i userId
+- Zwraca: role i userId
 - Logika: Weryfikuje email i hasło, sprawdza czy email jest potwierdzony
-- Cookie: access_token (httpOnly), isAuth
+- Cookie: access_token (httpOnly), refresh_token (httpOnly, path=/auth/refresh),
+  isAuth, access_exp, refresh_exp
 
 POST /auth/register-light
 - Body: { email, firstName?, lastName? }
-- Zwraca: JWT token w cookie + role i userId
+- Zwraca: role i userId
 - Logika: "Lekka" rejestracja bez hasła - pozwala użytkownikowi rozpocząć proces
   bez pełnej rejestracji. Jeśli użytkownik już istnieje z niepotwierdzonym emailem,
   aktualizuje jego dane i loguje go.
-- Cookie: access_token (httpOnly), isAuth
+- Cookie: access_token (httpOnly), refresh_token (httpOnly, path=/auth/refresh),
+  isAuth, access_exp, refresh_exp
 
 POST /auth/set-password (wymaga JWT)
 - Body: { password }
-- Zwraca: Zaktualizowany JWT token
+- Zwraca: role i userId + nowe cookies
 - Logika: Ustawia hasło dla użytkownika z "lekkiej" rejestracji i potwierdza email
 
-GET /auth/logout
-- Zwraca: "Logout success"
-- Logika: Czyści cookies (access_token, isAuth)
+POST /auth/refresh
+- Zwraca: { ok: true } + nowe cookies
+- Logika: Rotuje refresh token i wydaje nowy access token
+- Wymaga: refresh_token w cookie (path=/auth/refresh)
+
+POST /auth/logout
+- Zwraca: { ok: true }
+- Logika: Czyści cookies i unieważnia refresh token (jeśli obecny)
 
 AUTH SERVICE - METODY:
 ----------------------
-- login(email, password): Weryfikuje dane i zwraca JWT token
+- login(email, password): Weryfikuje dane i wydaje sesję (access + refresh)
 - registerLight(email, firstName?, lastName?): Tworzy "lekkiego" użytkownika bez hasła
 - setPassword(userId, password): Ustawia hasło i potwierdza email
-- validateUser(userId): Sprawdza czy użytkownik istnieje (używane przez JWT strategy)
+- refreshSession(refreshToken): Rotacja refresh tokenu
+- revokeRefreshToken(refreshToken): Unieważnia refresh token
 
 2. USERS MODULE (/users)
 -------------------------
@@ -161,14 +186,14 @@ DELETE /users/:id (wymaga JWT, tylko własne konto)
 - Zwraca: Usunięty użytkownik
 - Logika: Usuwa użytkownika i czyści cookie, kaskadowo usuwa powiązane dane
 
-POST /users/:id/avatar (wymaga JWT)
-- Body: Multipart form-data z plikiem
-- Zwraca: URL awatara
+POST /users/avatar (wymaga JWT)
+- Body: Multipart form-data z plikiem (limit 2MB)
+- Zwraca: Avatar (key + url)
 - Logika: Upload do S3, aktualizuje rekord Avatar w bazie
 
-DELETE /users/:id/avatar (wymaga JWT)
+DELETE /users/avatar/:userId (wymaga JWT)
 - Zwraca: Status usunięcia
-- Logika: Usuwa plik z S3 i rekord z bazy
+- Logika: Usuwa plik z S3 i rekord z bazy (tylko własny userId)
 
 USERS SERVICE - METODY:
 ------------------------
@@ -177,7 +202,7 @@ USERS SERVICE - METODY:
 - findOne(id): Zwraca użytkownika po ID
 - update(id, dto): Aktualizuje dane użytkownika (email, hasło, język)
 - remove(id): Usuwa użytkownika
-- uploadAvatar(userId, file): Upload awatara do S3
+- addAvatar(userId, file): Upload awatara do S3 (normalizacja do webp)
 - deleteAvatar(userId): Usuwa awatar z S3 i bazy
 
 3. PROFILES MODULE (/profiles)
@@ -186,9 +211,6 @@ Zarządzanie profilami użytkowników, terapeutów i adminów.
 
 ENDPOINTY:
 ----------
-
-POST /profiles/user (wymaga JWT + user role)
-- Logika: Nie używany, używaj PUT /profiles/user
 
 PUT /profiles/user (wymaga JWT + user role)
 - Body: UpdateUserProfileDto (firstName, lastName, problems[])
@@ -227,24 +249,6 @@ GET /profiles/doc/:docId/ratings
 - Zwraca: Lista ocen terapeuty z paginacją
 - Logika: Pobiera oceny terapeuty posortowane od najnowszych
 
-GET /profiles/new
-- Zwraca: Lista nowych terapeutów (ostatnie 10)
-- Sortowanie: Po dacie utworzenia (malejąco)
-- Filtr: verificationStatus=approved
-
-GET /profiles/best
-- Zwraca: Lista najlepszych terapeutów (wysoka ocena, min 3 opinie)
-- Sortowanie: Po rate (malejąco)
-- Filtr: ratesLot >= 3, verificationStatus=approved
-
-POST /profiles/rate (wymaga JWT + user role)
-- Logika: Zduplikowany endpoint, używaj zamiast tego
-  (endpoint został przeniesiony wyżej w dokumentacji)
-
-GET /profiles/doc/:docId
-- Zwraca: Publiczny profil terapeuty
-- Logika: Zwraca dane tylko jeśli verificationStatus=approved
-
 PROFILES SERVICE - METODY:
 ---------------------------
 - updateUserProfile(userId, dto): Aktualizuje profil pacjenta
@@ -253,9 +257,8 @@ PROFILES SERVICE - METODY:
 - updateAdminProfile(userId, dto): Aktualizuje profil admina
 - getUserProfile(userId): Pobiera profil pacjenta
 - getDocProfile(userId): Pobiera profil terapeuty
-- getNewDocsProfiles(): Pobiera nowych terapeutów (tylko approved)
-- getBestDocsProfiles(): Pobiera najlepiej ocenianych terapeutów (tylko approved)
-- getDocProfileById(docId): Pobiera profil terapeuty po ID (tylko approved dla publicznego dostępu)
+- getNewDocsProfiles(): Pobiera nowych terapeutów (tylko approved, używane wewnętrznie)
+- getBestDocsProfiles(): Pobiera najlepiej ocenianych terapeutów (tylko approved, używane wewnętrznie)
 
 RATING SERVICE - METODY:
 -------------------------
@@ -274,13 +277,14 @@ GET /matches (wymaga JWT + user role)
 - Logika: Znajduje terapeutów, których specjalizacje pasują do problemów użytkownika
 - Filtr: verificationStatus=approved
 - Sortowanie: Po rate (malejąco)
+- Fallback: jeśli brak dopasowań, zwraca listę nowych terapeutów (internal)
 
 GET /matches/problems
 - Zwraca: Lista wszystkich problemów z bazy
 - Publiczny endpoint
 
 POST /matches/search-with-slots
-- Body: SearchMatchesDto (problemKeys[], startDate?, endDate?)
+- Body: SearchMatchesDto (problemId, from, to)
 - Zwraca: Lista terapeutów z wolnymi slotami
 - Logika: Znajduje terapeutów pasujących do problemów, którzy mają wolne sloty
   w podanym okresie
@@ -347,13 +351,14 @@ GET /meetings/me (wymaga JWT + user role)
 - Query: scope? (upcoming | past | all)
 - Zwraca: Lista spotkań pacjenta
 - Filtracja: 
-  - upcoming: status != completed AND endTime > now
-  - past: status = completed OR endTime <= now
+  - upcoming: status in (pending, confirmed)
+  - past: status in (completed, cancelled_by_user, cancelled_by_doc, cancelled_by_system)
   - all: wszystkie
 
 GET /meetings/doc (wymaga JWT + doc role)
 - Query: scope? (today | upcoming | past | cancelled), page?, limit?
-- Zwraca: Lista spotkań terapeuty z paginacją
+- Zwraca: { items, page, limit, total }
+- items[]: { id, startTime, endTime, status, paid, clientName, clientMessage }
 - Filtracja: 
   - today: dzisiejsze spotkania
   - upcoming: nadchodzące spotkania
@@ -366,14 +371,14 @@ POST /meetings/:id/cancel (wymaga JWT + user role)
 - Logika:
   1. Zmienia status na cancelled_by_user
   2. Zwalnia slot (booked=false)
-  3. Jeśli płatność succeeded -> zwraca pieniądze
+  3. Jeśli spotkanie było confirmed, anulowanie tylko > 24h przed startem
 
 POST /meetings/doc/:id/cancel (wymaga JWT + doc role)
 - Zwraca: Anulowane spotkanie
 - Logika:
   1. Zmienia status na cancelled_by_doc
   2. Zwalnia slot (booked=false)
-  3. Jeśli płatność succeeded -> zwraca pieniądze
+  3. Terapeuta może anulować zawsze
 
 MEETINGS SERVICE - METODY:
 ---------------------------
@@ -389,7 +394,7 @@ MEETINGS CRON SERVICE:
 - markCompletedMeetings(): Automatycznie zmienia status spotkań które się zakończyły
   (endTime < now AND status = confirmed) na 'completed'
 - autoCancelUnpaidMeetings(): Automatycznie anuluje spotkania pending starsze niż 15 minut
-  (status=cancelled_by_system, zwalnia slot)
+  (status=cancelled_by_system, zwalnia slot, P24 pending -> failed)
 
 7. PAYMENTS MODULE (/payments)
 -------------------------------
@@ -401,6 +406,7 @@ ENDPOINTY:
 POST /payments/checkout (wymaga JWT + user role)
 - Body: CreateCheckoutSessionDto (meetingId)
 - Zwraca: { url, sessionId }
+- Uwaga: Jeśli STRIPE_SECRET_KEY nie jest ustawione, Stripe jest wyłączony (503)
 - Logika (Stripe):
   1. Weryfikuje spotkanie i cenę
   2. Tworzy Payment w bazie (status=pending, provider=stripe)
@@ -410,13 +416,13 @@ POST /payments/checkout (wymaga JWT + user role)
 
 POST /payments/p24/start (wymaga JWT + user role)
 - Body: CreateCheckoutSessionDto (meetingId)
-- Zwraca: { paymentId, sessionId, registerPayload, redirectBase }
+- Zwraca: { url, token, sessionId }
 - Logika (Przelewy24):
   1. Weryfikuje spotkanie i cenę
   2. Tworzy Payment w bazie (status=pending, provider=p24)
   3. Generuje unikalny sessionId
-  4. Przygotowuje dane do rejestracji w P24
-  5. Zwraca dane potrzebne do przekierowania
+  4. Rejestruje transakcję w P24 i zapisuje token
+  5. Zwraca URL przekierowania
 
 POST /payments/webhook (Stripe webhook)
 - Body: Stripe event
@@ -441,7 +447,8 @@ PAYMENTS SERVICE - METODY:
 - startP24PaymentForMeeting(userId, meetingId): Inicjalizacja P24
 - handleStripeWebhook(rawBody, signature): Obsługa webhook Stripe
 - handleP24Webhook(body): Obsługa webhook P24
-- refundPaymentForMeeting(meetingId, reason): Zwrot pieniędzy
+- refundPaymentForMeeting(meetingId, reason): Zwrot przez Przelewy24
+- Uwaga: endpoint/spec refundu P24 do potwierdzenia (może wymagać doprecyzowania payloadu)
 - p24SignRegister(params): Generuje podpis dla P24
 
 8. EMAIL MODULE (/email)
@@ -498,6 +505,9 @@ Panel administratora do zarządzania weryfikacją terapeutów.
 ENDPOINTY:
 ----------
 
+GET /admin/documents/:id/url (wymaga JWT + admin role)
+- Zwraca: { url } (signed URL do dokumentu weryfikacyjnego)
+
 POST /admin/docs/:docProfileId/approve (wymaga JWT + admin role)
 - Zwraca: Zaktualizowany profil terapeuty
 - Logika: 
@@ -522,7 +532,7 @@ ADMIN SERVICE - METODY:
 
 10. DOC MODULE (/doc)
 ---------------------
-Funkcje specyficzne dla terapeutów (kalendarze, statystyki).
+Funkcje specyficzne dla terapeutów (kalendarz, dokumenty weryfikacyjne).
 
 ENDPOINTY:
 ----------
@@ -532,9 +542,23 @@ GET /doc/calendar/week (wymaga JWT + doc role)
 - Zwraca: Kalendarz tygodniowy z spotkaniami
 - Logika: Pobiera spotkania terapeuty w podanym zakresie dat
 
+POST /doc/verification-documents (wymaga JWT + doc role)
+- Body: Multipart form-data z plikiem (pdf/jpg/png, limit 10MB)
+- Zwraca: Metadane dokumentu (id, originalName, mimeType, sizeBytes, uploadedAt)
+
+GET /doc/verification-documents (wymaga JWT + doc role)
+- Zwraca: Lista dokumentów weryfikacyjnych
+
+DELETE /doc/verification-documents/:id (wymaga JWT + doc role)
+- Zwraca: { ok: true }
+
 DOC SERVICE - METODY:
 ---------------------
 - getWeekCalendar(docId, from, to): Pobiera kalendarz tygodniowy
+- uploadVerificationDocument(docId, file): Upload dokumentu weryfikacyjnego
+- listVerificationDocuments(docId): Lista dokumentów weryfikacyjnych
+- deleteVerificationDocument(docId, id): Usuwa dokument weryfikacyjny
+- getVerificationDocumentUrl(id): Generuje signed URL (używane przez admin)
 
 11. IMAGE MODULE
 ---------------
@@ -542,8 +566,10 @@ Upload zdjęć do AWS S3.
 
 IMAGE SERVICE - METODY:
 -----------------------
-- uploadImage(file, path): Upload pliku do S3
-- deleteImage(key): Usuwa plik z S3
+- uploadObject({ key, body, contentType, cacheControl }): Upload obiektu (awatary, dokumenty weryfikacyjne)
+- deleteObject(key): Usuwa obiekt z S3
+- normalizeAvatar(buffer): Normalizacja awatara (512x512, webp)
+- getObjectSignedUrl(key, ttlSec): Signed URL do pliku (np. dla admina)
 
 12. CLEANUP MODULE
 ------------------
@@ -582,7 +608,11 @@ FLOW REJESTRACJI I LOGOWANIA:
 4. LOGOWANIE:
    POST /auth/login { email, password }
    -> Weryfikuje dane
-   -> Zwraca JWT token w cookie
+   -> Zwraca access_token + refresh_token w cookies
+
+5. ODŚWIEŻENIE SESJI:
+   POST /auth/refresh
+   -> Rotuje refresh token i ustawia nowe cookies
 
 FLOW PACJENTA (USER):
 ---------------------
@@ -593,9 +623,8 @@ FLOW PACJENTA (USER):
 
 2. Wyszukiwanie terapeutów:
    GET /matches -> dopasowani terapeuci
-   GET /profiles/new -> nowi terapeuci
-   GET /profiles/best -> najlepiej oceniani
    POST /matches/search-with-slots -> z wolnymi terminami
+   GET /matches/problems -> lista problemów
 
 3. Sprawdzanie dostępności:
    GET /availability/doc/:docId -> wolne sloty
@@ -619,7 +648,7 @@ FLOW PACJENTA (USER):
 6. Zarządzanie spotkaniami:
    GET /meetings/me?scope=upcoming -> nadchodzące
    GET /meetings/me?scope=past -> przeszłe
-   POST /meetings/:id/cancel -> anulowanie (zwrot pieniędzy jeśli opłacone)
+   POST /meetings/:id/cancel -> anulowanie (confirmed tylko >24h przed startem)
 
 7. Ocena terapeuty (po spotkaniu):
    POST /profiles/rate { docId, meetingId, rate, comment? }
@@ -639,32 +668,36 @@ FLOW TERAPEUTY (DOC):
      sessionPricePln, specializations[]
    }
 
-3. Przesłanie profilu do weryfikacji:
+3. Dodanie dokumentów weryfikacyjnych (opcjonalnie/na żądanie admina):
+   POST /doc/verification-documents (multipart)
+   GET /doc/verification-documents
+
+4. Przesłanie profilu do weryfikacji:
    POST /profiles/doc/submit
    -> verificationStatus = 'submitted'
 
-4. Oczekiwanie na weryfikację admina:
+5. Oczekiwanie na weryfikację admina:
    - Admin zatwierdza: POST /admin/docs/:id/approve
      → verificationStatus = 'approved' (profil automatycznie widoczny publicznie)
    - Admin odrzuca: POST /admin/docs/:id/reject { reason }
      → verificationStatus = 'rejected' (terapeuta musi poprawić i wysłać ponownie)
 
-5. Po zatwierdzeniu - zarządzanie dostępnością:
+6. Po zatwierdzeniu - zarządzanie dostępnością:
    UWAGA: Tylko zatwierdzeni terapeuci (approved) mogą dodawać/usuwać sloty
    POST /availability { startTime, endTime }
    GET /availability/my -> wszystkie sloty
    DELETE /availability/:slotId -> usuwanie (jeśli niezarezerwowane)
 
-6. Zarządzanie spotkaniami:
+7. Zarządzanie spotkaniami:
    GET /meetings/doc?scope=today&page=1&limit=20
    GET /meetings/doc?scope=upcoming
    GET /meetings/doc?scope=past
-   POST /meetings/doc/:id/cancel -> anulowanie
+   POST /meetings/doc/:id/cancel -> anulowanie (doc zawsze)
 
-7. Kalendarz tygodniowy:
+8. Kalendarz tygodniowy:
    GET /doc/calendar/week?from=2024-01-01&to=2024-01-07
 
-8. Monitorowanie opinii:
+9. Monitorowanie opinii:
    GET /profiles/doc -> sprawdzanie swojej oceny (rate, ratesLot)
    GET /profiles/doc/:docId/ratings -> lista opinii
 
@@ -692,16 +725,14 @@ PRZELEWY24:
    - Aktualizuje Payment (status=succeeded)
    - Aktualizuje Meeting (status=confirmed)
 
-FLOW ANULOWANIA ZE ZWROTEM:
-----------------------------
+FLOW ANULOWANIA:
+----------------
 1. Użytkownik/terapeuta anuluje spotkanie:
-   POST /meetings/:id/cancel
+   POST /meetings/:id/cancel lub POST /meetings/doc/:id/cancel
 2. Backend:
    - Zmienia status Meeting (cancelled_by_user/cancelled_by_doc)
    - Zwalnia slot (booked=false)
-   - Jeśli Payment.status=succeeded:
-     * Tworzy refund w Stripe/P24
-     * Aktualizuje Payment (status=refunded)
+   - Jeśli Payment.status=succeeded i provider=p24 -> zwrot przez Przelewy24
 
 ===========================================
 AUTOMATYZACJE (CRON JOBS)
@@ -715,7 +746,7 @@ AUTOMATYZACJE (CRON JOBS)
    - Znajduje spotkania z status=pending starsze niż 15 minut
    - Zmienia status na 'cancelled_by_system'
    - Zwalnia slot (booked=false)
-   - Aktualizuje powiązane płatności
+   - Aktualizuje powiązane płatności (P24 pending -> failed)
 
 3. Cleanup Cron (obecnie wyłączony):
    - Miałby usuwać użytkowników z niepotwierdzonym emailem
@@ -731,9 +762,11 @@ GUARDS:
 
 AUTENTYKACJA:
 -------------
-- JWT token przechowywany w httpOnly cookie (bezpieczniejsze niż localStorage)
+- Access token w httpOnly cookie (bezpieczniejsze niż localStorage)
+- Refresh token w httpOnly cookie (path=/auth/refresh)
 - Token zawiera userId
-- Ważność: 24 godziny
+- Ważność: access domyślnie 15 minut, refresh domyślnie 7 dni
+- Rotacja refresh tokenów + limit aktywnych sesji (MAX_SESSIONS_PER_USER)
 
 AUTORYZACJA:
 ------------
@@ -795,6 +828,9 @@ DATABASE_URL=postgresql://user:password@host:port/database
 JWT:
 ----
 JWT_SECRET=your-secret-key
+JWT_SECRET_TIME=900
+JWT_REFRESH_SECRET_TIME=604800
+MAX_SESSIONS_PER_USER=5
 
 RESEND (Email):
 ---------------
@@ -806,7 +842,10 @@ AWS S3:
 AWS_REGION=eu-central-1
 AWS_ACCESS_KEY_ID=xxxxx
 AWS_SECRET_ACCESS_KEY=xxxxx
-AWS_S3_BUCKET_NAME=your-bucket
+AWS_BUCKET_NAME=your-bucket
+S3_ENDPOINT=optional
+S3_FORCE_PATH_STYLE=false
+S3_PUBLIC_BASE_URL=https://your-cdn.example.com
 
 STRIPE:
 -------
@@ -828,6 +867,7 @@ APP:
 ----
 PORT=3000
 CLIENT_URL=http://localhost:3001
+MEETING_PENDING_TTL_MINUTES=15
 
 ===========================================
 URUCHOMIENIE I DEVELOPMENT
@@ -883,8 +923,7 @@ PRZYKŁAD: Tworzenie spotkania
 3. MeetingsService.createMeeting()
    - Pobiera slot z bazy
    - Sprawdza czy slot jest wolny (booked=false)
-   - Sprawdza czy slot nie jest w przeszłości
-   - Tworzy Meeting w transakcji:
+   - Tworzy Meeting w transakcji (atomiczne zarezerwowanie slotu):
      * Tworzy rekord Meeting
      * Aktualizuje slot (booked=true)
    - Zwraca utworzone spotkanie
@@ -1002,8 +1041,8 @@ MODUŁY BACKENDU:
 14. PrismaModule - ORM do bazy PostgreSQL
 
 LICZBA KONTROLERÓW: 11
-LICZBA MODELI W BAZIE: 12
-LICZBA ENUMÓW: 7
+LICZBA MODELI W BAZIE: 14
+LICZBA ENUMÓW: 8
 
 GŁÓWNE FUNKCJONALNOŚCI:
 -----------------------
@@ -1029,6 +1068,8 @@ STATUS PROJEKTU:
 ✅ Cron jobs do automatyzacji
 ✅ System ocen i dopasowywania
 ✅ Panel admina do weryfikacji terapeutów
+✅ Dokumenty weryfikacyjne terapeutów (upload + podgląd admina)
+✅ Sesje z refresh tokenami i rotacją
 ✅ System weryfikacji oparty WYŁĄCZNIE na verificationStatus (bez pola published)
 ⚠️  Cleanup cron wyłączony (do rozważenia włączenie)
 
@@ -1041,7 +1082,7 @@ WAŻNE ZALEŻNOŚCI:
   - Pojawiać się w wynikach wyszukiwania
 • System NIE używa już pola 'published' - wszystko oparte na verificationStatus
 
-OSTATNIA AKTUALIZACJA DOKUMENTACJI: 22 grudnia 2025
+OSTATNIA AKTUALIZACJA DOKUMENTACJI: 8 stycznia 2026
 
 ===========================================
 KONIEC DOKUMENTACJI

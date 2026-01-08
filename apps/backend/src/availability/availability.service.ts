@@ -105,10 +105,12 @@ export class AvailabilityService {
   }
 
   async findFreeSlotsForDoc(docProfileId: number) {
+    const now = new Date();
     return this.prisma.availabilitySlot.findMany({
       where: {
         docId: docProfileId,
         booked: false,
+        startTime: { gt: now },
       },
       orderBy: { startTime: 'asc' },
     });
