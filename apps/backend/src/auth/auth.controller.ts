@@ -6,10 +6,12 @@ import {
   Req,
   UseGuards,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { User } from '@prisma/client';
 import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ApiOkResponse } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { RegisterLightDto } from './dto/register-light.dto';
@@ -19,6 +21,8 @@ import { CurrentUser } from 'src/decorators/user.decorator';
 import { setAuthCookies, clearAuthCookies } from './utils/auth.utils';
 import { throwAppError } from 'src/common/errors/throw-app-error';
 import { ErrorCode } from 'src/common/errors/error-codes';
+import { AuthResponseDto } from './dto/auth-response.dto';
+import { OkResponseDto } from 'src/common/dtos/ok-response.dto';
 
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
@@ -27,6 +31,8 @@ export class AuthController {
 
   @Throttle({ default: { limit: 5, ttl: 900 } })
   @Post('/login')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AuthResponseDto })
   async login(
     @Req() req: Request,
     @Body() loginDto: LoginDto,
@@ -47,6 +53,8 @@ export class AuthController {
 
   @Throttle({ default: { limit: 5, ttl: 900 } })
   @Post('/register-light')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AuthResponseDto })
   async registerLight(
     @Req() req: Request,
     @Body() dto: RegisterLightDto,
@@ -71,6 +79,8 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 900 } })
   @Post('/set-password')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  @ApiOkResponse({ type: AuthResponseDto })
   async setPassword(
     @Req() req: Request,
     @CurrentUser() user: User,
@@ -91,6 +101,8 @@ export class AuthController {
 
   @Post('/refresh')
   @SkipThrottle()
+  @HttpCode(200)
+  @ApiOkResponse({ type: OkResponseDto })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -114,6 +126,8 @@ export class AuthController {
 
   @Post('/logout')
   @SkipThrottle()
+  @HttpCode(200)
+  @ApiOkResponse({ type: OkResponseDto })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {

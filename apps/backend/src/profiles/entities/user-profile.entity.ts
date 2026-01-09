@@ -1,5 +1,7 @@
-import { UserProfile, Problem } from '@prisma/client';
-import { Exclude } from 'class-transformer';
+import { UserProfile } from '@prisma/client';
+import { Exclude, Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { ProblemEntity } from './problem.entity';
 
 export class UserProfileEntity implements UserProfile {
   constructor(partial: Partial<UserProfileEntity>) {
@@ -31,6 +33,7 @@ export class UserProfileEntity implements UserProfile {
 
   @Exclude()
   consentHealthData: boolean;
-
-  problems: Problem[];
+  @ApiProperty({ type: () => [ProblemEntity] })
+  @Type(() => ProblemEntity)
+  problems: ProblemEntity[];
 }

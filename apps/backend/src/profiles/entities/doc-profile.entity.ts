@@ -1,10 +1,8 @@
-import {
-  Profession,
-  Specialization,
-  DocVerificationStatus,
-} from '@prisma/client';
-import { Exclude } from 'class-transformer';
+import { Profession, DocVerificationStatus } from '@prisma/client';
+import { Exclude, Type } from 'class-transformer';
 import { ArrayNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { SpecializationEntity } from './specialization.entity';
 
 export class DocProfileEntity {
   constructor(partial: Partial<DocProfileEntity>) {
@@ -20,6 +18,7 @@ export class DocProfileEntity {
 
   lastName: string | null;
 
+  @ApiProperty({ enum: Profession, enumName: 'Profession', nullable: true })
   profession: Profession | null;
 
   rate: number | null;
@@ -29,7 +28,9 @@ export class DocProfileEntity {
   sessionPricePln: number | null;
 
   @ArrayNotEmpty()
-  specializations: Specialization[];
+  @ApiProperty({ type: () => [SpecializationEntity] })
+  @Type(() => SpecializationEntity)
+  specializations: SpecializationEntity[];
 
   @Exclude()
   createdAt: Date;
@@ -37,6 +38,10 @@ export class DocProfileEntity {
   @Exclude()
   updatedAt: Date;
 
+  @ApiProperty({
+    enum: DocVerificationStatus,
+    enumName: 'DocVerificationStatus',
+  })
   verificationStatus: DocVerificationStatus;
 
   @Exclude()

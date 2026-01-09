@@ -42,13 +42,24 @@ export class MatchesService {
           },
         },
       },
+      include: {
+        user: {
+          include: {
+            avatar: true,
+          },
+        },
+      },
     });
 
     if (!docProfiles.length) {
       return newProfiles;
     }
 
-    return docProfiles;
+    return docProfiles.map((docProfile) => ({
+      ...docProfile.user,
+      avatar: docProfile.user.avatar,
+      docProfile,
+    }));
   }
 
   async searchDocsWithSlots(dto: SearchMatchesDto) {

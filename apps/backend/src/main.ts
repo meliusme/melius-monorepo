@@ -4,6 +4,7 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
 import { AppHttpExceptionFilter } from './common/errors/app-expection.filter';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +19,16 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: 'Content-Type, Accept',
   });
+
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('Melius API')
+    .setDescription('Melius backend API')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

@@ -35,6 +35,9 @@ export class ProfilesService {
         },
         published: true,
       },
+      include: {
+        problems: true,
+      },
     });
   }
 
@@ -88,6 +91,9 @@ export class ProfilesService {
         specializations: {
           set: updateDocProfileDto.specializations.map((id) => ({ id })),
         },
+      },
+      include: {
+        specializations: true,
       },
     });
   }
@@ -210,7 +216,11 @@ export class ProfilesService {
         },
       },
       include: {
-        docProfile: true,
+        docProfile: {
+          include: {
+            specializations: true,
+          },
+        },
         avatar: true,
       },
       take: 3,

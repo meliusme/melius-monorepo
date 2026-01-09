@@ -23,7 +23,8 @@
     "prisma:generate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma generate'",
     "prisma:studio": "./prisma-studio.sh",
     "prisma:push": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma db push'",
-    "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'"
+    "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'",
+    "openapi:yaml": "node scripts/export-openapi-yaml.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.965.0",
@@ -39,6 +40,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.9",
     "@nestjs/schedule": "^6.0.1",
+    "@nestjs/swagger": "^11.2.4",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
     "@sendgrid/mail": "^8.1.6",

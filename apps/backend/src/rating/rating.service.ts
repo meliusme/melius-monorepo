@@ -114,6 +114,9 @@ export class RatingService {
           rate: avgAndCount._avg.rate,
           ratesLot: avgAndCount._count.rate,
         },
+        include: {
+          specializations: true,
+        },
       });
 
       return updatedDocProfile;

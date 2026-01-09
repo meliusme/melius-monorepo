@@ -9,8 +9,24 @@
         "include": "email/templates/**/*.hbs",
         "outDir": "dist/src"
       },
-      { "include": "i18n/**/*", "outDir": "dist/src" }
+      {
+        "include": "i18n/**/*",
+        "outDir": "dist/src"
+      }
     ],
-    "watchAssets": true
+    "watchAssets": true,
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "classValidatorShim": true,
+          "introspectComments": true,
+          "dtoFileNameSuffix": [
+            ".dto.ts",
+            ".entity.ts"
+          ]
+        }
+      }
+    ]
   }
 }

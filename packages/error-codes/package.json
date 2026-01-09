@@ -1,0 +1,7 @@
+{
+  "name": "@melius/error-codes",
+  "version": "0.1.0",
+  "scripts": {
+    "generate": "node generate.js"
+  }
+}

@@ -1,0 +1,1558 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - App
+  /auth/login:
+    post:
+      operationId: AuthController_login
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+      tags:
+        - Auth
+  "/auth/register-light":
+    post:
+      operationId: AuthController_registerLight
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterLightDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+      tags:
+        - Auth
+  "/auth/set-password":
+    post:
+      operationId: AuthController_setPassword
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+      tags:
+        - Auth
+  /auth/refresh:
+    post:
+      operationId: AuthController_refresh
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Auth
+  /auth/logout:
+    post:
+      operationId: AuthController_logout
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Auth
+  /users:
+    post:
+      operationId: UsersController_create
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponseDto"
+      tags:
+        - Users
+    get:
+      operationId: UsersController_findAll
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponseDto"
+      tags:
+        - Users
+  /users/me:
+    get:
+      operationId: UsersController_me
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponseDto"
+      tags:
+        - Users
+  "/users/{id}":
+    get:
+      operationId: UsersController_findOne
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponseDto"
+      tags:
+        - Users
+    patch:
+      operationId: UsersController_update
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponseDto"
+      tags:
+        - Users
+    delete:
+      operationId: UsersController_remove
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - Users
+  /users/avatar:
+    post:
+      operationId: UsersController_addAvatar
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarResponseDto"
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarResponseDto"
+      tags:
+        - Users
+  "/users/avatar/{userId}":
+    delete:
+      operationId: UsersController_deleteAvatar
+      parameters:
+        -
+          name: userId
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Users
+  /email/confirm:
+    post:
+      operationId: EmailController_confirmEmail
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmEmailDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+      tags:
+        - Email
+  "/email/resend-confirm":
+    post:
+      operationId: EmailController_resendConfirmationMail
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Email
+  /email/password:
+    post:
+      operationId: EmailController_sendPasswordLink
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Email
+  "/email/password-change":
+    patch:
+      operationId: EmailController_changePassword
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - Email
+  /profiles/user:
+    put:
+      operationId: ProfilesController_updateUserProfile
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponseDto"
+      tags:
+        - Profiles
+    get:
+      operationId: ProfilesController_getUserProfile
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithProfileResponseDto"
+      tags:
+        - Profiles
+  /profiles/doc:
+    put:
+      operationId: ProfilesController_updateDocProfile
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocProfileDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocProfileResponseDto"
+      tags:
+        - Profiles
+    get:
+      operationId: ProfilesController_getDocProfile
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocWithProfileResponseDto"
+      tags:
+        - Profiles
+  /profiles/doc/submit:
+    post:
+      operationId: ProfilesController_submitDocProfile
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocProfileResponseDto"
+      tags:
+        - Profiles
+  /profiles/admin:
+    post:
+      operationId: ProfilesController_updateAdminProfile
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAdminProfileDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProfileResponseDto"
+      tags:
+        - Profiles
+  /profiles/rate:
+    post:
+      operationId: ProfilesController_addDocRate
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocRateDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocProfileResponseDto"
+      tags:
+        - Profiles
+  "/profiles/doc/{docId}/ratings":
+    get:
+      operationId: ProfilesController_getDocRatings
+      parameters:
+        -
+          name: docId
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocRatingsResponseDto"
+      tags:
+        - Profiles
+  /meetings:
+    post:
+      operationId: MeetingsController_createMeeting
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMeetingDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingResponseDto"
+      tags:
+        - Meetings
+  /meetings/me:
+    get:
+      operationId: MeetingsController_getMyMeetings
+      parameters:
+        -
+          name: scope
+          required: false
+          in: query
+          schema:
+            $ref: "#/components/schemas/MeetingScopeEnum"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MeetingResponseDto"
+      tags:
+        - Meetings
+  /meetings/doc:
+    get:
+      operationId: MeetingsController_getDocMeetingsList
+      parameters:
+        -
+          name: scope
+          required: true
+          in: query
+          schema:
+            type: string
+        -
+          name: page
+          required: true
+          in: query
+          schema:
+            type: string
+        -
+          name: limit
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocMeetingsListResponseDto"
+      tags:
+        - Meetings
+  "/meetings/{id}/cancel":
+    post:
+      operationId: MeetingsController_cancelMyMeeting
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingResponseDto"
+      tags:
+        - Meetings
+  "/meetings/doc/{id}/cancel":
+    post:
+      operationId: MeetingsController_cancelAsDoc
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingResponseDto"
+      tags:
+        - Meetings
+  /payments/webhook:
+    post:
+      operationId: PaymentsController_handleStripeWebhook
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentWebhookReceivedDto"
+      tags:
+        - Payments
+  /payments/checkout:
+    post:
+      operationId: PaymentsController_createCheckoutSession
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckoutSessionDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResponseDto"
+      tags:
+        - Payments
+  /payments/p24/start:
+    post:
+      operationId: PaymentsController_startP24
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckoutSessionDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/P24StartResponseDto"
+      tags:
+        - Payments
+  /payments/p24/webhook:
+    post:
+      operationId: PaymentsController_handleP24Webhook
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentWebhookReceivedDto"
+      tags:
+        - Payments
+  /matches:
+    get:
+      operationId: MatchesController_getMatchedDocs
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocWithProfilePublicResponseDto"
+      tags:
+        - Matches
+  /matches/problems:
+    get:
+      operationId: MatchesController_getProblems
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProblemEntity"
+      tags:
+        - Matches
+  "/matches/search-with-slots":
+    post:
+      operationId: MatchesController_searchDocsWithSlots
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchMatchesDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchMatchesResultDto"
+      tags:
+        - Matches
+  /availability:
+    post:
+      operationId: AvailabilityController_create
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAvailabilityDto"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilitySlotEntity"
+      tags:
+        - Availability
+  /availability/my:
+    get:
+      operationId: AvailabilityController_mySlots
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilitySlotEntity"
+      tags:
+        - Availability
+  "/availability/doc/{docId}":
+    get:
+      operationId: AvailabilityController_freeSlots
+      parameters:
+        -
+          name: docId
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilitySlotEntity"
+      tags:
+        - Availability
+  "/availability/{slotId}":
+    delete:
+      operationId: AvailabilityController_remove
+      parameters:
+        -
+          name: slotId
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilitySlotEntity"
+      tags:
+        - Availability
+info:
+  title: Melius API
+  description: Melius backend API
+  version: "1.0"
+  contact:
+    {}
+tags:
+  []
+servers:
+  []
+components:
+  schemas:
+    LoginDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required:
+        - email
+        - password
+    Role:
+      type: string
+      enum:
+        - user
+        - doc
+        - admin
+    AuthResponseDto:
+      type: object
+      properties:
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        userId:
+          type: number
+      required:
+        - role
+        - userId
+    RegisterLightDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        consentTerms:
+          type: boolean
+        consentAdult:
+          type: boolean
+        consentHealthData:
+          type: boolean
+      required:
+        - email
+        - consentTerms
+        - consentAdult
+        - consentHealthData
+    SetPasswordDto:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 8
+      required:
+        - password
+    OkResponseDto:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+    Language:
+      type: string
+      enum:
+        - pl
+        - en
+    CreateUserDto:
+      type: object
+      properties:
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        language:
+          allOf:
+            -
+              $ref: "#/components/schemas/Language"
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        consentTerms:
+          type: boolean
+        consentAdult:
+          type: boolean
+        consentHealthData:
+          type: boolean
+      required:
+        - email
+        - password
+        - consentTerms
+        - consentAdult
+        - consentHealthData
+    UserResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        email:
+          type: string
+      required:
+        - id
+        - role
+        - email
+    UpdateUserDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required:
+        - email
+        - password
+    AvatarResponseDto:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    ConfirmEmailDto:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    EmailDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+    ChangePasswordDto:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+      required:
+        - token
+        - password
+    UpdateUserProfileDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        problems:
+          minItems: 1
+          type: array
+          items:
+            type: number
+      required:
+        - firstName
+        - lastName
+        - problems
+    ProblemEntity:
+      type: object
+      properties:
+        id:
+          type: number
+        problemKey:
+          type: string
+      required:
+        - id
+        - problemKey
+    UserProfileResponseDto:
+      type: object
+      properties:
+        userId:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProblemEntity"
+      required:
+        - userId
+        - firstName
+        - lastName
+        - problems
+    Profession:
+      type: string
+      enum:
+        - psychologist
+        - psychotherapist
+        - sexologist
+    UpdateDocProfileDto:
+      type: object
+      properties:
+        profession:
+          allOf:
+            -
+              $ref: "#/components/schemas/Profession"
+        firstName:
+          type: string
+        lastName:
+          type: string
+        sessionPricePln:
+          type: number
+          minimum: 50
+          maximum: 1000
+        specializations:
+          minItems: 1
+          type: array
+          items:
+            type: number
+        docTermsAccepted:
+          type: boolean
+      required:
+        - profession
+        - firstName
+        - lastName
+        - specializations
+    SpecializationEntity:
+      type: object
+      properties:
+        id:
+          type: number
+        specializationKey:
+          type: string
+      required:
+        - id
+        - specializationKey
+    DocVerificationStatus:
+      type: string
+      enum:
+        - draft
+        - submitted
+        - approved
+        - rejected
+    DocProfileResponseDto:
+      type: object
+      properties:
+        docId:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profession:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/Profession"
+        rate:
+          type: number
+          nullable: true
+        ratesLot:
+          type: number
+          nullable: true
+        sessionPricePln:
+          type: number
+          nullable: true
+        specializations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpecializationEntity"
+        verificationStatus:
+          allOf:
+            -
+              $ref: "#/components/schemas/DocVerificationStatus"
+        rejectionReason:
+          type: string
+          nullable: true
+      required:
+        - docId
+        - firstName
+        - lastName
+        - profession
+        - rate
+        - ratesLot
+        - sessionPricePln
+        - specializations
+        - verificationStatus
+        - rejectionReason
+    UpdateAdminProfileDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+      required:
+        - firstName
+        - lastName
+    AdminProfileResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        userId:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        createdAt:
+          format: "date-time"
+          type: string
+        updatedAt:
+          format: "date-time"
+          type: string
+      required:
+        - id
+        - userId
+        - firstName
+        - lastName
+        - createdAt
+        - updatedAt
+    UserWithProfileResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        email:
+          type: string
+        avatar:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/AvatarResponseDto"
+        userProfile:
+          $ref: "#/components/schemas/UserProfileResponseDto"
+      required:
+        - id
+        - role
+        - email
+        - avatar
+        - userProfile
+    DocWithProfileResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        email:
+          type: string
+        avatar:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/AvatarResponseDto"
+        docProfile:
+          $ref: "#/components/schemas/DocProfileResponseDto"
+      required:
+        - id
+        - role
+        - email
+        - avatar
+        - docProfile
+    CreateDocRateDto:
+      type: object
+      properties:
+        docId:
+          type: number
+          minimum: 1
+        meetingId:
+          type: number
+          minimum: 1
+        rate:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 1000
+      required:
+        - docId
+        - meetingId
+        - rate
+    DocRatingUserDto:
+      type: object
+      properties:
+        id:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      required:
+        - id
+        - firstName
+        - lastName
+    DocRatingItemDto:
+      type: object
+      properties:
+        id:
+          type: number
+        rate:
+          type: number
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          format: "date-time"
+          type: string
+        user:
+          $ref: "#/components/schemas/DocRatingUserDto"
+      required:
+        - id
+        - rate
+        - comment
+        - createdAt
+        - user
+    DocRatingsResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocRatingItemDto"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required:
+        - items
+        - total
+        - page
+        - limit
+    CreateMeetingDto:
+      type: object
+      properties:
+        slotId:
+          type: number
+        clientMessage:
+          type: string
+          maxLength: 1000
+      required:
+        - slotId
+    MeetingStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - cancelled_by_user
+        - cancelled_by_doc
+        - cancelled_by_system
+        - completed
+    MeetingResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        startTime:
+          format: "date-time"
+          type: string
+        endTime:
+          format: "date-time"
+          type: string
+        status:
+          allOf:
+            -
+              $ref: "#/components/schemas/MeetingStatus"
+        clientMessage:
+          type: string
+          nullable: true
+        createdAt:
+          format: "date-time"
+          type: string
+        updatedAt:
+          format: "date-time"
+          type: string
+      required:
+        - id
+        - startTime
+        - endTime
+        - status
+        - clientMessage
+        - createdAt
+        - updatedAt
+    MeetingScopeEnum:
+      type: string
+      enum:
+        - upcoming
+        - past
+        - all
+    DocMeetingListItemDto:
+      type: object
+      properties:
+        id:
+          type: number
+        startTime:
+          type: string
+          format: "date-time"
+        endTime:
+          type: string
+          format: "date-time"
+        status:
+          allOf:
+            -
+              $ref: "#/components/schemas/MeetingStatus"
+        paid:
+          type: boolean
+        clientName:
+          type: string
+          nullable: true
+        clientMessage:
+          type: string
+          nullable: true
+      required:
+        - id
+        - startTime
+        - endTime
+        - status
+        - paid
+        - clientName
+        - clientMessage
+    DocMeetingsListResponseDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocMeetingListItemDto"
+        page:
+          type: number
+        limit:
+          type: number
+        total:
+          type: number
+      required:
+        - items
+        - page
+        - limit
+        - total
+    PaymentWebhookReceivedDto:
+      type: object
+      properties:
+        received:
+          type: boolean
+      required:
+        - received
+    CreateCheckoutSessionDto:
+      type: object
+      properties:
+        meetingId:
+          type: number
+      required:
+        - meetingId
+    CheckoutSessionResponseDto:
+      type: object
+      properties:
+        url:
+          type: string
+        sessionId:
+          type: string
+      required:
+        - url
+        - sessionId
+    P24StartResponseDto:
+      type: object
+      properties:
+        url:
+          type: string
+        token:
+          type: string
+        sessionId:
+          type: string
+      required:
+        - url
+        - token
+        - sessionId
+    DocProfilePublicResponseDto:
+      type: object
+      properties:
+        docId:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profession:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/Profession"
+        rate:
+          type: number
+          nullable: true
+        ratesLot:
+          type: number
+          nullable: true
+        sessionPricePln:
+          type: number
+          nullable: true
+      required:
+        - docId
+        - firstName
+        - lastName
+        - profession
+        - rate
+        - ratesLot
+        - sessionPricePln
+    DocWithProfilePublicResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+        role:
+          allOf:
+            -
+              $ref: "#/components/schemas/Role"
+        email:
+          type: string
+        avatar:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/AvatarResponseDto"
+        docProfile:
+          $ref: "#/components/schemas/DocProfilePublicResponseDto"
+      required:
+        - id
+        - role
+        - email
+        - avatar
+        - docProfile
+    SearchMatchesDto:
+      type: object
+      properties:
+        problemId:
+          type: number
+        from:
+          type: string
+        to:
+          type: string
+      required:
+        - problemId
+        - from
+        - to
+    SearchMatchesUserDto:
+      type: object
+      properties:
+        id:
+          type: number
+        email:
+          type: string
+        language:
+          allOf:
+            -
+              $ref: "#/components/schemas/Language"
+      required:
+        - id
+        - email
+        - language
+    AvailabilitySlotEntity:
+      type: object
+      properties:
+        id:
+          type: number
+        docId:
+          type: number
+        startTime:
+          format: "date-time"
+          type: string
+        endTime:
+          format: "date-time"
+          type: string
+        booked:
+          type: boolean
+      required:
+        - id
+        - docId
+        - startTime
+        - endTime
+        - booked
+    SearchMatchesResultDto:
+      type: object
+      properties:
+        id:
+          type: number
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        profession:
+          nullable: true
+          allOf:
+            -
+              $ref: "#/components/schemas/Profession"
+        rate:
+          type: number
+          nullable: true
+        ratesLot:
+          type: number
+          nullable: true
+        sessionPricePln:
+          type: number
+          nullable: true
+        isApproved:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/SearchMatchesUserDto"
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailabilitySlotEntity"
+      required:
+        - id
+        - firstName
+        - lastName
+        - profession
+        - rate
+        - ratesLot
+        - sessionPricePln
+        - isApproved
+        - user
+        - slots
+    CreateAvailabilityDto:
+      type: object
+      properties:
+        startTime:
+          type: string
+        endTime:
+          type: string
+      required:
+        - startTime
+        - endTime

@@ -1,10 +1,12 @@
 import { Language, Role, User } from '@prisma/client';
 import { Exclude } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UserEntity implements User {
   constructor(partial: Partial<UserEntity>) {
     Object.assign(this, partial);
   }
+  @ApiProperty({ enum: Role, enumName: 'Role' })
   role: Role;
 
   id: number;
@@ -20,6 +22,7 @@ export class UserEntity implements User {
   password: string;
 
   @Exclude()
+  @ApiProperty({ enum: Language, enumName: 'Language' })
   language: Language;
 
   @Exclude()

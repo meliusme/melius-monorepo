@@ -1,5 +1,6 @@
-import { Body, Controller, Patch, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Patch, Post, Req, Res, HttpCode } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { ApiOkResponse } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from './email.service';
 import { ConfirmEmailDto } from './dtos/confirm-email.dto';
@@ -7,6 +8,8 @@ import { EmailDto } from './dtos/email.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { AuthService } from '../auth/auth.service';
 import { setAuthCookies } from '../auth/utils/auth.utils';
+import { AuthResponseDto } from '../auth/dto/auth-response.dto';
+import { OkResponseDto } from '../common/dtos/ok-response.dto';
 
 @Controller('email')
 export class EmailController {
@@ -17,6 +20,8 @@ export class EmailController {
   ) {}
 
   @Post('confirm')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AuthResponseDto })
   async confirmEmail(
     @Req() req: Request,
     @Body() confirmEmailDto: ConfirmEmailDto,
@@ -43,17 +48,26 @@ export class EmailController {
   }
 
   @Post('resend-confirm')
+  @HttpCode(200)
+  @ApiOkResponse({ type: OkResponseDto })
   async resendConfirmationMail(@Body() resendEmailDto: EmailDto) {
     await this.emailService.resendConfirmationLink(resendEmailDto.email);
+    return { ok: true };
   }
 
   @Post('password')
+  @HttpCode(200)
+  @ApiOkResponse({ type: OkResponseDto })
   async sendPasswordLink(@Body() emailDto: EmailDto) {
     await this.emailService.sendPasswordLink(emailDto.email);
+    return { ok: true };
   }
 
   @Patch('password-change')
+  @HttpCode(200)
+  @ApiOkResponse({ type: OkResponseDto })
   async changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     await this.emailService.changePassword(changePasswordDto);
+    return { ok: true };
   }
 }
