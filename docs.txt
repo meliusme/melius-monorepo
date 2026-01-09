@@ -235,7 +235,7 @@ POST /profiles/doc/submit (wymaga JWT + doc role)
 - Zwraca: Zaktualizowany profil terapeuty
 - Logika: Przesyła profil terapeuty do weryfikacji (verificationStatus=submitted)
 - Walidacja: Wymaga wypełnienia firstName, lastName, profession, sessionPricePln,
-  specializations oraz docTermsAccepted=true
+  specializations, docTermsAccepted=true oraz co najmniej 1 dokumentu weryfikacyjnego
 - docTermsAccepted: akceptacja regulaminu dla terapeutów (wymagana przed submit)
 
 POST /profiles/admin (wymaga JWT + admin role)
@@ -348,7 +348,7 @@ ENDPOINTY:
 ----------
 
 POST /meetings (wymaga JWT + user role)
-- Body: CreateMeetingDto (docId, slotId, clientMessage?)
+- Body: CreateMeetingDto (slotId, clientMessage?)
 - Zwraca: Utworzone spotkanie
 - Logika: 
   1. Sprawdza czy slot jest wolny
@@ -556,6 +556,7 @@ GET /doc/calendar/week (wymaga JWT + doc role)
 POST /doc/verification-documents (wymaga JWT + doc role)
 - Body: Multipart form-data z plikiem (pdf/jpg/png, limit 10MB)
 - Zwraca: Metadane dokumentu (id, originalName, mimeType, sizeBytes, uploadedAt)
+- Wymagane przed wysłaniem profilu do weryfikacji
 
 GET /doc/verification-documents (wymaga JWT + doc role)
 - Zwraca: Lista dokumentów weryfikacyjnych
@@ -634,16 +635,17 @@ FLOW PACJENTA (USER):
    POST /auth/register-light
    PUT /profiles/user { firstName, lastName, problems }
 
-2. Wyszukiwanie terapeutów:
-   GET /matches -> dopasowani terapeuci
-   POST /matches/search-with-slots -> z wolnymi terminami
+2. Wyszukiwanie terapeutów (ultra lekkie):
    GET /matches/problems -> lista problemów
+   POST /matches/search-with-slots { problemId, from, to }
+   -> zwraca listę terapeutów wraz z wolnymi slotami w danym oknie czasu
+   -> user wybiera terapeute i konkretny slot z listy
 
 3. Sprawdzanie dostępności:
    GET /availability/doc/:docId -> wolne sloty
 
 4. Rezerwacja spotkania:
-   POST /meetings { docId, slotId, clientMessage? }
+   POST /meetings { slotId, clientMessage? }
    -> Tworzy Meeting (status=pending)
    -> Rezerwuje slot (booked=true)
 
@@ -683,7 +685,7 @@ FLOW TERAPEUTY (DOC):
      sessionPricePln, specializations[], docTermsAccepted
    }
 
-3. Dodanie dokumentów weryfikacyjnych (opcjonalnie/na żądanie admina):
+3. Dodanie dokumentów weryfikacyjnych (wymagane):
    POST /doc/verification-documents (multipart)
    GET /doc/verification-documents
 
@@ -929,7 +931,7 @@ PRZYKŁAD: Tworzenie spotkania
 ------------------------------
 
 1. Request: POST /meetings
-   Body: { docId: 5, slotId: 42, clientMessage: "Witam" }
+   Body: { slotId: 42, clientMessage: "Witam" }
 
 2. MeetingsController.createMeeting()
    - Weryfikuje JWT (JwtAuthGuard)

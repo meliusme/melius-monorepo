@@ -103,6 +103,7 @@ export class ProfilesService {
         sessionPricePln: true,
         verificationStatus: true,
         docTermsAccepted: true,
+        docVerificationDocuments: { select: { id: true } },
         specializations: { select: { id: true } },
       },
     });
@@ -140,6 +141,8 @@ export class ProfilesService {
     if (!doc.sessionPricePln) missing.push('sessionPricePln');
     if (!doc.specializations?.length) missing.push('specializations');
     if (!doc.docTermsAccepted) missing.push('docTermsAccepted');
+    if (!doc.docVerificationDocuments?.length)
+      missing.push('verificationDocuments');
 
     if (missing.length) {
       throwAppError(
