@@ -17,14 +17,7 @@
     "test:watch": "jest --watch --maxWorkers=1",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed.ts'",
-    "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && tsx prisma/seed2.ts'",
-    "prisma:generate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma generate'",
-    "prisma:studio": "./prisma-studio.sh",
-    "prisma:push": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma db push'",
-    "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'",
-    "openapi:yaml": "node scripts/export-openapi-yaml.mjs"
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.965.0",
@@ -41,6 +34,7 @@
     "@nestjs/platform-express": "^11.1.9",
     "@nestjs/schedule": "^6.0.1",
     "@nestjs/swagger": "^11.2.4",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
     "@sendgrid/mail": "^8.1.6",
