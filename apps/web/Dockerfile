@@ -49,6 +49,7 @@ WORKDIR /app/apps/web
 # Set environment variable for Next.js
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV BACKEND_URL=http://backend:3000
 
 # Expose port
 EXPOSE 3001

@@ -176,6 +176,10 @@ docker compose up --build
 
 All environment variables are defined in the root `.env` file. Make sure this file exists with all required variables before starting the services.
 
+For the Next.js web container, set:
+
+- `BACKEND_URL=http://backend:3000` (server-side BFF target inside Docker)
+
 ## Network
 
 All services run on a shared Docker network called `melius-network`, allowing them to communicate using service names (e.g., `backend` can connect to `db` using the hostname `db`).
