@@ -23,6 +23,9 @@ RUN pnpm build
 # Production stage
 FROM node:22-alpine
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -46,9 +49,18 @@ COPY --from=builder /app/apps/web/next-env.d.ts ./apps/web/
 
 WORKDIR /app/apps/web
 
+# Create non-root user and set ownership
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
 # Set environment variable for Next.js
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV BACKEND_URL=http://backend:3000
 
 # Expose port
 EXPOSE 3001

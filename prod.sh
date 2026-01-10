@@ -9,8 +9,7 @@ case "$1" in
     docker compose up -d
     echo "✅ Services started!"
     echo "   Backend:  http://localhost:3000"
-    echo "   Frontend: http://localhost:3001"
-    echo "   pgAdmin:  http://localhost:5050"
+    echo "   Frontend: Deployed on Vercel (see VERCEL_DEPLOYMENT.md)"
     ;;
   build)
     echo "🔨 Building and starting production environment..."

@@ -1,0 +1,4 @@
+generated/i18n.generated.ts
+src/generated/i18n.generated.ts
+dist
+node_modules

@@ -9,7 +9,7 @@ const backendPath = path.join(
 );
 const webPath = path.join(
   __dirname,
-  '../../apps/web/app/lib/api/error-codes.generated.ts',
+  '../../apps/web/src/generated/error-codes.generated.ts',
 );
 
 const entries = Object.entries(errorCodes)
@@ -32,4 +32,4 @@ fs.writeFileSync(webPath, content);
 
 console.log('✅ Generated error codes:');
 console.log('  - apps/backend/src/common/errors/error-codes.generated.ts');
-console.log('  - apps/web/app/lib/api/error-codes.generated.ts');
+console.log('  - apps/web/src/generated/error-codes.generated.ts');

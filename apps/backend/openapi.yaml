@@ -866,6 +866,12 @@ components:
     CreateUserDto:
       type: object
       properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
         role:
           allOf:
             -
@@ -874,12 +880,6 @@ components:
           allOf:
             -
               $ref: "#/components/schemas/Language"
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          minLength: 8
         consentTerms:
           type: boolean
         consentAdult:
@@ -916,9 +916,6 @@ components:
         password:
           type: string
           minLength: 8
-      required:
-        - email
-        - password
     AvatarResponseDto:
       type: object
       properties:
@@ -1007,14 +1004,14 @@ components:
     UpdateDocProfileDto:
       type: object
       properties:
-        profession:
-          allOf:
-            -
-              $ref: "#/components/schemas/Profession"
         firstName:
           type: string
         lastName:
           type: string
+        profession:
+          allOf:
+            -
+              $ref: "#/components/schemas/Profession"
         sessionPricePln:
           type: number
           minimum: 50
@@ -1027,9 +1024,9 @@ components:
         docTermsAccepted:
           type: boolean
       required:
-        - profession
         - firstName
         - lastName
+        - profession
         - specializations
     SpecializationEntity:
       type: object
@@ -1370,7 +1367,7 @@ components:
       type: object
       properties:
         meetingId:
-          type: number
+          type: integer
       required:
         - meetingId
     CheckoutSessionResponseDto:
@@ -1457,11 +1454,13 @@ components:
       type: object
       properties:
         problemId:
-          type: number
+          type: integer
         from:
           type: string
+          format: "date-time"
         to:
           type: string
+          format: "date-time"
       required:
         - problemId
         - from
@@ -1551,8 +1550,10 @@ components:
       properties:
         startTime:
           type: string
+          format: "date-time"
         endTime:
           type: string
+          format: "date-time"
       required:
         - startTime
         - endTime

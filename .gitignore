@@ -9,4 +9,10 @@ pnpm-debug.log
 /apps/web/out
 /coverage
 /pgdata
+
+# Environment files (NEVER commit these!)
 .env
+.env.local
+.env.production
+.env.development
+*.env.local

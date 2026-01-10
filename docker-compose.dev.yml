@@ -33,12 +33,13 @@ services:
       - ./:/app
       - /app/node_modules
       - /app/apps/backend/node_modules
+      - pnpm-store:/root/.local/share/pnpm/store
     depends_on:
       db:
         condition: service_healthy
     networks:
       - melius-network
-    command: sh -c "apk add --no-cache openssl libc6-compat python3 make g++ && npm install -g pnpm && cd /app && pnpm install && cd /app/apps/backend && pnpm exec prisma generate && pnpm start:dev"
+    command: sh -c "apk add --no-cache openssl libc6-compat python3 make g++ && npm install -g pnpm && cd /app && pnpm install --ignore-scripts=false && npm rebuild bcrypt --build-from-source && cd /app/apps/backend && pnpm exec prisma generate && pnpm start:dev"
 
   web:
     image: node:22-alpine
@@ -48,13 +49,14 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3000
+      - BACKEND_URL=http://backend:3000
       - PORT=3001
     volumes:
       - ./:/app
       - /app/node_modules
       - /app/apps/web/node_modules
       - /app/apps/web/.next
+      - pnpm-store:/root/.local/share/pnpm/store
     depends_on:
       - backend
     networks:
@@ -74,6 +76,8 @@ services:
       - db
     networks:
       - melius-network
+volumes:
+  pnpm-store:
 
 networks:
   melius-network:
