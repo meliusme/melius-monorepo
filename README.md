@@ -1,70 +1,195 @@
 # Melius Monorepo
 
-This repository houses both the NestJS backend and Next.js frontend in a single pnpm workspace with full Docker support.
+Monorepo with backend (NestJS) and frontend (Next.js) in pnpm workspace.
 
-## Layout
+**Structure:**
 
-- `apps/backend` – NestJS API with Prisma ORM, JWT auth, AWS S3, and email services
-- `apps/web` – Next.js 16 frontend with Turbopack
-- `docker-compose.yml` – Production Docker setup
-- `docker-compose.dev.yml` – Development setup with hot reload
+- `apps/backend` – NestJS API + Prisma + PostgreSQL
+- `apps/web` – Next.js 16 frontend
 
-## Quick Start
+**Stack:** NestJS, Prisma, PostgreSQL 17, Next.js, TypeScript, Docker
 
-### Docker (Recommended)
+---
 
-**Development mode** (with hot reload):
+## 🚀 Development
 
 ```bash
-./dev.sh up        # Start all services
-./dev.sh logs      # View logs
-./dev.sh down      # Stop services
+./dev.sh up      # Start (hot reload)
+./dev.sh down    # Stop
 ```
 
-**Production mode**:
+**URLs:**
 
-```bash
-./prod.sh build    # Build and start
-./prod.sh logs     # View logs
-./prod.sh down     # Stop services
-```
-
-Services:
-
-- Backend API: http://localhost:3000
+- Backend: http://localhost:3000
 - Frontend: http://localhost:3001
-- PostgreSQL: localhost:5432
 - pgAdmin: http://localhost:5050
 
-### Local Development (without Docker)
+**Notes:**
 
-1. Install dependencies: `pnpm install` (this runs `prepare`, which sets up Husky automatically)
-2. Set up PostgreSQL 17 locally
-3. Configure `.env` in backend directory
-4. Run Prisma migrations: `cd apps/backend && pnpm exec prisma migrate deploy`
-5. Start backend: `pnpm dev:backend`
-6. Start frontend: `pnpm dev:web`
+- Hot reload enabled for backend and frontend
+- pgAdmin credentials: admin@admin.com / pgadmin4
+- Husky pre-commit hooks run automatically after `pnpm install`
 
-## Useful Scripts
+---
 
-- `pnpm build` – Build both apps
-- `pnpm lint` – Lint backend and frontend
-- `pnpm test` – Run backend tests
-- `pnpm --filter @melius/backend <script>` – Run backend-specific command
-- `pnpm --filter @melius/web <script>` – Run frontend-specific command
+## 🐳 Production
 
-## Docker Setup
+### 1. Backend Configuration
 
-The project uses **Node.js 22-alpine** with multi-stage builds for optimized production images:
+```bash
+# Create .env.production
+cp .env.production.example .env.production
 
-- Backend: NestJS with Prisma Client generation
-- Frontend: Next.js with production optimizations
-- Database: PostgreSQL 17 with automatic migrations on startup
+# Generate secrets
+openssl rand -base64 48  # JWT_SECRET
+openssl rand -base64 48  # JWT_REFRESH_SECRET
+openssl rand -base64 48  # JWT_EMAIL_SECRET
+openssl rand -base64 32  # POSTGRES_PASSWORD
 
-See `DOCKER.md` for detailed Docker documentation and `DEVELOPMENT.md` for development workflow guides.
+# Edit .env.production and fill ALL variables
+vim .env.production
+```
 
-## Notes
+**IMPORTANT:**
 
-- Backend coverage output: `coverage/backend`
-- Prisma schema: `apps/backend/prisma/schema.prisma`
-- Environment variables required in root `.env` for Docker setup
+- `.env.production` is in .gitignore - DO NOT commit!
+- `CLIENT_URL=https://melius-app.com` (for CORS)
+
+### 2. Deploy Backend (Railway)
+
+1. Connect GitHub repo to Railway
+2. Select `apps/backend` as root directory
+3. Add all environment variables from `.env.production.example`
+4. Add custom domain: `api.melius-app.com`
+
+Railway auto-detects Dockerfile and deploys automatically.
+
+### 3. Deploy Frontend (Vercel)
+
+1. Connect GitHub repo to Vercel
+2. Set Root Directory: `apps/web`
+3. Add environment variables:
+   ```bash
+   NEXT_PUBLIC_BACKEND_URL=https://api.melius-app.com
+   BACKEND_URL=https://api.melius-app.com
+   ```
+4. Add custom domain: `melius-app.com`
+
+Vercel auto-detects Next.js and deploys automatically from Git push.
+
+---
+
+## 📦 Production Setup
+
+```
+Frontend (melius-app.com)
+    ↓ Vercel
+    - Next.js
+    - Auto-deploy from Git
+
+Backend (api.melius-app.com)
+    ↓ Railway
+    - NestJS (Docker)
+    - PostgreSQL 17 (Railway service)
+    - Auto-deploy from Git
+```
+
+**DNS Configuration:**
+
+- `melius-app.com` → Vercel (CNAME)
+- `api.melius-app.com` → Railway (CNAME)
+
+### 4. Local Production Testing (Optional)
+
+Test production build locally with Docker before Railway deploy:
+
+```bash
+# Setup environment
+cp .env.production.example .env.production
+vim .env.production  # Fill with test values
+
+# Run with Docker Compose
+docker compose --env-file .env.production up --build -d
+
+# Or use helper script
+./prod.sh build
+```
+
+---
+
+## 🛠️ Commands
+
+### Docker Development
+
+```bash
+./dev.sh up       # Start all services with hot reload
+./dev.sh down     # Stop all services
+./dev.sh logs     # View logs (optional: logs backend/web)
+./dev.sh restart  # Restart services
+./dev.sh ps       # Check status
+```
+
+### Package.json Scripts
+
+```bash
+pnpm install              # Install dependencies
+pnpm build                # Build all apps
+pnpm lint                 # Lint backend and frontend
+pnpm test                 # Run backend tests
+pnpm gen:openapi          # Generate OpenAPI types
+```
+
+### Prisma (Database)
+
+```bash
+# Seeding
+pnpm db:seed:all              # Run both seeds (seed + seed2)
+
+# Migrations
+pnpm prisma:migrate           # Create and apply migration
+pnpm prisma:migrate:create    # Create migration only (no apply)
+pnpm prisma:migrate:deploy    # Apply pending migrations
+pnpm prisma:migrate:reset     # Reset database and apply all migrations
+pnpm prisma:status            # Check migration status
+
+# Schema & Client
+pnpm prisma:generate          # Generate Prisma Client
+pnpm prisma:format            # Format schema file
+pnpm prisma:validate          # Validate schema
+pnpm prisma:push              # Push schema changes to DB (no migration)
+
+# Tools
+pnpm prisma:studio            # Open Prisma Studio (port 5556)
+pnpm db:clean                 # Truncate all tables
+```
+
+---
+
+## 🔐 Environment Variables
+
+**Backend (Railway):**
+
+Set these in Railway dashboard (see `.env.production.example` for all variables):
+
+- `JWT_SECRET` / `JWT_REFRESH_SECRET` / `JWT_EMAIL_SECRET` - min 32 chars each
+- `POSTGRES_PASSWORD` - PostgreSQL password (if using external DB)
+- `AWS_*` - S3 credentials for file uploads
+- `CLIENT_URL` - Frontend URL for CORS (https://melius-app.com)
+- `RESEND_API_KEY` - Email service API key
+- `RESEND_*` - Email templates and sender info
+- `GOOGLE_AUTH_*` - OAuth credentials
+- `STRIPE_*` - Payment keys and webhook secret
+- `P24_*` - Przelewy24 payment gateway (optional)
+
+**Note:** `DATABASE_URL` is auto-injected by Railway PostgreSQL service
+
+**Frontend (Vercel):**
+
+- `NEXT_PUBLIC_BACKEND_URL` - Backend API URL (https://api.melius-app.com)
+- `BACKEND_URL` - (optional) for server-side calls
+
+**Generate secure secrets:**
+
+```bash
+openssl rand -base64 48
+```

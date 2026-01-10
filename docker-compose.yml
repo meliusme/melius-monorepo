@@ -39,20 +39,44 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?schema=public
       - PORT=3000
+      - NODE_ENV=production
+      # JWT
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_TIME=${JWT_SECRET_TIME}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_REFRESH_SECRET_TIME=${JWT_REFRESH_SECRET_TIME}
+      - JWT_EMAIL_SECRET=${JWT_EMAIL_SECRET}
+      - JWT_EMAIL_SECRET_TIME=${JWT_EMAIL_SECRET_TIME:-600}
+      # AWS S3
       - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}
+      # Application
       - CLIENT_URL=${CLIENT_URL}
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-no-reply@melius-app.com}
+      - RESEND_FROM_NAME=${RESEND_FROM_NAME:-Melius}
+      - RESEND_REGISTER_TEMPLATE_ALIAS=${RESEND_REGISTER_TEMPLATE_ALIAS}
+      - RESEND_PASSWORD_TEMPLATE_ALIAS=${RESEND_PASSWORD_TEMPLATE_ALIAS}
+      - RESEND_MEETING_TEMPLATE_ALIAS=${RESEND_MEETING_TEMPLATE_ALIAS}
+      # Google OAuth
       - GOOGLE_AUTH_CLIENT_ID=${GOOGLE_AUTH_CLIENT_ID}
       - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
+      # Stripe
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-      - NODE_ENV=production
+      # Przelewy24 (optional)
+      - P24_MERCHANT_ID=${P24_MERCHANT_ID}
+      - P24_POS_ID=${P24_POS_ID}
+      - P24_API_KEY=${P24_API_KEY}
+      - P24_CRC=${P24_CRC}
+      - P24_BASE_URL=${P24_BASE_URL:-https://secure.przelewy24.pl/api/v1}
+      - P24_GATEWAY_URL=${P24_GATEWAY_URL:-https://secure.przelewy24.pl/trnRequest}
+      - P24_RETURN_URL=${P24_RETURN_URL}
+      - P24_STATUS_URL=${P24_STATUS_URL}
+      - P24_REFUND_STATUS_URL=${P24_REFUND_STATUS_URL}
     depends_on:
       db:
         condition: service_healthy
