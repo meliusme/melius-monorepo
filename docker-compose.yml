@@ -82,7 +82,7 @@ services:
         condition: service_healthy
     networks:
       - melius-network
-    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+    command: sh -c "node dist/src/main.js"
     healthcheck:
       test:
         [
