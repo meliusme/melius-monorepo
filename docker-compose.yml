@@ -8,9 +8,10 @@ services:
       - POSTGRES_USER=postgres
     container_name: postgres
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - postgres-data:/var/lib/postgresql/data
+    # Port is not exposed externally for security - only accessible within Docker network
+    expose:
+      - "5432"
     networks:
       - melius-network
     healthcheck:
@@ -18,6 +19,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
   backend:
     build:
@@ -43,43 +52,39 @@ services:
       - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - NODE_ENV=production
     depends_on:
       db:
         condition: service_healthy
     networks:
       - melius-network
     command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 1G
 
-  web:
-    build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
-    container_name: melius-web
-    restart: always
-    ports:
-      - "3001:3001"
-    environment:
-      - BACKEND_URL=http://backend:3000
-      - PORT=3001
-    depends_on:
-      - backend
-    networks:
-      - melius-network
-
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    container_name: nest-pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=pgadmin4
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
-    networks:
-      - melius-network
+  # Note: Frontend is deployed on Vercel (not in Docker)
+  # Frontend URL should be set in CLIENT_URL environment variable
 
 networks:
   melius-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

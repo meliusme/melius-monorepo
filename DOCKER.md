@@ -6,10 +6,11 @@ This document explains how to run the entire Melius application stack using Dock
 
 The Docker Compose setup includes:
 
-- **PostgreSQL 17**: Database server (port 5432)
+- **PostgreSQL 17**: Database server (internal only, port 5432)
 - **Backend (NestJS)**: API server (port 3000)
-- **Web (Next.js)**: Frontend application (port 3001)
-- **pgAdmin**: Database management UI (port 5050)
+- **pgAdmin**: Database management UI (port 5050) - _development only_
+
+**Note**: Frontend (Next.js) is deployed separately on **Vercel** - see [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)
 
 ## Prerequisites
 
@@ -56,16 +57,24 @@ For local development with automatic code reloading:
 
 For production deployment with optimized Docker images:
 
-1. **Build and start all services:**
+1. **Setup environment variables:**
 
    ```bash
-   docker compose up --build
+   # Copy example file and configure your secrets
+   cp .env.production.example .env.production
+   # Edit .env.production with your actual values
    ```
 
-2. **Run in detached mode (background):**
+2. **Build and start all services:**
 
    ```bash
-   docker compose up --build -d
+   docker compose --env-file .env.production up --build -d
+   ```
+
+   Or use the helper script:
+
+   ```bash
+   ./prod.sh build
    ```
 
 3. **View logs:**
@@ -80,24 +89,47 @@ For production deployment with optimized Docker images:
    docker compose logs -f db
    ```
 
-4. **Stop all services:**
+4. **Check service health:**
+
+   ```bash
+   docker compose ps
+   ```
+
+5. **Stop all services:**
 
    ```bash
    docker compose down
    ```
 
-5. **Stop and remove volumes (clean slate):**
+6. **Stop and remove volumes (clean slate):**
    ```bash
    docker compose down -v
    ```
 
+## Production Security Features 🔒
+
+The production setup includes:
+
+- ✅ **Non-root users**: All containers run as non-root (user nodejs with UID 1001)
+- ✅ **Resource limits**: CPU and memory limits prevent resource exhaustion
+- ✅ **Health checks**: Automatic health monitoring for all services
+- ✅ **Docker volumes**: PostgreSQL data stored in managed Docker volume
+- ✅ **Internal networking**: PostgreSQL port not exposed externally
+- ✅ **Production dependencies**: Only production dependencies installed
+- ✅ **No debug tools**: pgAdmin removed from production stack
+
 ## Access Points
 
-Once running, you can access:
+### Development Mode
 
-- **Frontend**: http://localhost:3001
+- **Frontend**: http://localhost:3001 (via docker-compose.dev.yml)
 - **Backend API**: http://localhost:3000
 - **pgAdmin**: http://localhost:5050 (admin@admin.com / pgadmin4)
+
+### Production Mode
+
+- **Backend API**: http://localhost:3000
+- **Frontend**: Deployed on Vercel (see [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md))
 
 ## Database Migrations
 
