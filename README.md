@@ -38,7 +38,7 @@ Services:
 
 ### Local Development (without Docker)
 
-1. Install dependencies: `pnpm install`
+1. Install dependencies: `pnpm install` (this runs `prepare`, which sets up Husky automatically)
 2. Set up PostgreSQL 17 locally
 3. Configure `.env` in backend directory
 4. Run Prisma migrations: `cd apps/backend && pnpm exec prisma migrate deploy`

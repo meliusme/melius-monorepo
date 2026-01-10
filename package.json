@@ -13,10 +13,12 @@
     "dev:web": "pnpm --filter @melius/web dev",
     "build": "pnpm --filter @melius/backend build && pnpm --filter @melius/web build",
     "lint": "pnpm --filter @melius/backend lint && pnpm --filter @melius/web lint",
+    "lint-staged": "lint-staged",
     "test": "pnpm --filter @melius/backend test",
     "gen:error-codes": "node packages/error-codes/generate.js",
     "gen:openapi": "cd apps/web && pnpm openapi-typescript http://localhost:3000/api-json -o src/generated/openapi.ts && cd ../backend && node scripts/export-openapi-yaml.mjs",
     "postinstall": "pnpm gen:error-codes",
+    "prepare": "husky",
     "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed.ts'",
     "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed2.ts'",
     "prisma:format": "cd apps/backend && npx prisma format --schema prisma/schema.prisma",
@@ -31,5 +33,19 @@
     "prisma:status": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma migrate status --config prisma/prisma.config.ts' && cd apps/backend && npx prisma migrate status --config prisma/prisma.config.ts",
     "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'",
     "db:seed:all": "pnpm seed && pnpm seed2"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "pnpm -C apps/web exec prettier --write",
+      "pnpm -C apps/web exec eslint --fix"
+    ],
+    "apps/backend/**/*.{js,jsx,ts,tsx,json,md}": [
+      "pnpm -C apps/backend exec prettier --write",
+      "pnpm -C apps/backend exec eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
   }
 }
