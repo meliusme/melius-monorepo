@@ -15,7 +15,7 @@
     "lint": "pnpm --filter @melius/backend lint && pnpm --filter @melius/web lint",
     "test": "pnpm --filter @melius/backend test",
     "gen:error-codes": "node packages/error-codes/generate.js",
-    "gen:openapi": "cd apps/web && pnpm openapi-typescript http://localhost:3000/api-json -o app/lib/api/openapi.ts && cd ../backend && node scripts/export-openapi-yaml.mjs",
+    "gen:openapi": "cd apps/web && pnpm openapi-typescript http://localhost:3000/api-json -o src/generated/openapi.ts && cd ../backend && node scripts/export-openapi-yaml.mjs",
     "postinstall": "pnpm gen:error-codes",
     "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed.ts'",
     "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed2.ts'",
