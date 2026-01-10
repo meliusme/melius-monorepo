@@ -14,9 +14,7 @@ export default async function SearchPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const problemId = searchParams.problemId
-    ? Number(searchParams.problemId)
-    : undefined;
+  const problemId = searchParams.problemId ? Number(searchParams.problemId) : undefined;
 
   const data = await backendFetch<SearchResponse>({
     method: 'POST',
