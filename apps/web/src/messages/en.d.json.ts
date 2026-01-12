@@ -7,6 +7,24 @@ declare const messages: {
     "title": "Available problem areas",
     "lede": "Fetched from the backend as a server component."
   },
+  "Problems": {
+    "mood_disorders": "Mood",
+    "anxiety_disorders": "Anxiety",
+    "anxiety_and_phobias": "Fear & phobias",
+    "trauma": "Trauma",
+    "sleep_disorders": "Sleep",
+    "addictions": "Addictions",
+    "eating_disorders": "Eating & body image",
+    "personality_disorders": "Self & identity",
+    "family_and_relationship_issues": "Relationships & family",
+    "life_crises": "Life crisis",
+    "developmental_issues": "Childhood & development",
+    "sexuality_and_related_issues": "Sex & intimacy",
+    "lgbtqia_specific_issues": "LGBTQIA+",
+    "personal_development": "Growth",
+    "career_development": "Career",
+    "neurobiological_disorders": "Neurology"
+  },
   "Errors": {
     "EMAIL_EXISTS": "Email address already exists",
     "EMAIL_TOKEN_EXPIRED": "Email verification token has expired",

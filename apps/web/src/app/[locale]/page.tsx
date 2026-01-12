@@ -10,6 +10,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   setRequestLocale(locale);
 
   const t = await getTranslations('Home');
+  const tProblems = await getTranslations('Problems');
   const tErrors = await getTranslations('Errors');
 
   const { data: problems, error: errorMessage } = await safeFetch(
@@ -39,7 +40,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         ) : (
           problems.map((problem) => (
             <article key={problem.id} className="card">
-              <h3>{problem.problemKey}</h3>
+              <h3>{tProblems(problem.problemKey as any)}</h3>
               <p>ID: {problem.id}</p>
             </article>
           ))

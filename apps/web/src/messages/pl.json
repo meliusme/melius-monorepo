@@ -1,8 +1,26 @@
 {
   "Home": {
     "eyebrow": "Problemy",
-    "title": "Dostepne obszary problemow",
+    "title": "Dostępne obszary problemów",
     "lede": "Pobrane z backendu jako komponent serwerowy."
+  },
+  "Problems": {
+    "mood_disorders": "Nastrój",
+    "anxiety_disorders": "Lęk i niepokój",
+    "anxiety_and_phobias": "Lęk i fobie",
+    "trauma": "Trauma",
+    "sleep_disorders": "Sen",
+    "addictions": "Uzależnienia",
+    "eating_disorders": "Jedzenie i ciało",
+    "personality_disorders": "Tożsamość i osobowość",
+    "family_and_relationship_issues": "Relacje i rodzina",
+    "life_crises": "Kryzys życiowy",
+    "developmental_issues": "Rozwój dziecka",
+    "sexuality_and_related_issues": "Seksualność i bliskość",
+    "lgbtqia_specific_issues": "LGBTQIA+",
+    "personal_development": "Samorozwój",
+    "career_development": "Kariera",
+    "neurobiological_disorders": "Neurologia"
   },
   "Errors": {
     "EMAIL_EXISTS": "Adres email już istnieje",
