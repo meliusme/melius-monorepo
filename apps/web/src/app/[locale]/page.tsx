@@ -40,7 +40,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         ) : (
           problems.map((problem) => (
             <article key={problem.id} className="card">
-              <h3>{tProblems(problem.problemKey as any)}</h3>
+              <h3>{tProblems(problem.problemKey)}</h3>
               <p>ID: {problem.id}</p>
             </article>
           ))
