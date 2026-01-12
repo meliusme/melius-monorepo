@@ -35,7 +35,12 @@ export class UpdateDocProfileDto {
   @Min(50)
   @Max(1000)
   @ApiPropertyOptional({ minimum: 50, maximum: 1000 })
-  sessionPricePln?: number;
+  unitAmount?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  currency?: string;
 
   @IsArray()
   @ArrayNotEmpty()

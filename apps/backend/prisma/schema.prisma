@@ -100,20 +100,20 @@ model User {
 }
 
 model UserProfile {
-  id        Int       @id @default(autoincrement())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int       @unique
-  firstName String?
-  lastName  String?
-  published Boolean   @default(false)
-  consentTerms      Boolean @default(false)
-  consentAdult      Boolean @default(false)
-  consentHealthData Boolean @default(false)
-  createdAt DateTime  @default(now()) @db.Timestamptz
-  updatedAt DateTime  @updatedAt @db.Timestamptz
-  meetings  Meeting[]
-  problems  Problem[]
-  ratings   Rating[]
+  id                Int       @id @default(autoincrement())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            Int       @unique
+  firstName         String?
+  lastName          String?
+  published         Boolean   @default(false)
+  consentTerms      Boolean   @default(false)
+  consentAdult      Boolean   @default(false)
+  consentHealthData Boolean   @default(false)
+  createdAt         DateTime  @default(now()) @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @db.Timestamptz
+  meetings          Meeting[]
+  problems          Problem[]
+  ratings           Rating[]
 }
 
 model DocProfile {
@@ -125,7 +125,8 @@ model DocProfile {
   profession               Profession?
   rate                     Float?
   ratesLot                 Int?
-  sessionPricePln          Int?
+  unitAmount               Int?
+  currency                 String                    @default("PLN")
   createdAt                DateTime                  @default(now()) @db.Timestamptz
   updatedAt                DateTime                  @updatedAt @db.Timestamptz
   docTermsAccepted         Boolean                   @default(false)

@@ -106,7 +106,7 @@ export class ProfilesService {
         firstName: true,
         lastName: true,
         profession: true,
-        sessionPricePln: true,
+        unitAmount: true,
         verificationStatus: true,
         docTermsAccepted: true,
         docVerificationDocuments: { select: { id: true } },
@@ -144,7 +144,7 @@ export class ProfilesService {
     if (!doc.firstName) missing.push('firstName');
     if (!doc.lastName) missing.push('lastName');
     if (!doc.profession) missing.push('profession');
-    if (!doc.sessionPricePln) missing.push('sessionPricePln');
+    if (!doc.unitAmount) missing.push('unitAmount');
     if (!doc.specializations?.length) missing.push('specializations');
     if (!doc.docTermsAccepted) missing.push('docTermsAccepted');
     if (!doc.docVerificationDocuments?.length)

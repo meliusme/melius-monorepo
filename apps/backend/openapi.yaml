@@ -14,6 +14,16 @@ paths:
                 type: string
       tags:
         - App
+  /health:
+    get:
+      operationId: AppController_getHealth
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - App
   /auth/login:
     post:
       operationId: AuthController_login
@@ -1012,10 +1022,12 @@ components:
           allOf:
             -
               $ref: "#/components/schemas/Profession"
-        sessionPricePln:
+        unitAmount:
           type: number
           minimum: 50
           maximum: 1000
+        currency:
+          type: string
         specializations:
           minItems: 1
           type: array
@@ -1067,7 +1079,7 @@ components:
         ratesLot:
           type: number
           nullable: true
-        sessionPricePln:
+        unitAmount:
           type: number
           nullable: true
         specializations:
@@ -1081,6 +1093,8 @@ components:
         rejectionReason:
           type: string
           nullable: true
+        currency:
+          type: string
       required:
         - docId
         - firstName
@@ -1088,10 +1102,11 @@ components:
         - profession
         - rate
         - ratesLot
-        - sessionPricePln
+        - unitAmount
         - specializations
         - verificationStatus
         - rejectionReason
+        - currency
     UpdateAdminProfileDto:
       type: object
       properties:
@@ -1415,9 +1430,11 @@ components:
         ratesLot:
           type: number
           nullable: true
-        sessionPricePln:
+        unitAmount:
           type: number
           nullable: true
+        currency:
+          type: string
       required:
         - docId
         - firstName
@@ -1425,7 +1442,8 @@ components:
         - profession
         - rate
         - ratesLot
-        - sessionPricePln
+        - unitAmount
+        - currency
     DocWithProfilePublicResponseDto:
       type: object
       properties:
@@ -1465,27 +1483,10 @@ components:
         - problemId
         - from
         - to
-    SearchMatchesUserDto:
-      type: object
-      properties:
-        id:
-          type: number
-        email:
-          type: string
-        language:
-          allOf:
-            -
-              $ref: "#/components/schemas/Language"
-      required:
-        - id
-        - email
-        - language
     AvailabilitySlotEntity:
       type: object
       properties:
         id:
-          type: number
-        docId:
           type: number
         startTime:
           format: "date-time"
@@ -1493,14 +1494,10 @@ components:
         endTime:
           format: "date-time"
           type: string
-        booked:
-          type: boolean
       required:
         - id
-        - docId
         - startTime
         - endTime
-        - booked
     SearchMatchesResultDto:
       type: object
       properties:
@@ -1523,13 +1520,23 @@ components:
         ratesLot:
           type: number
           nullable: true
-        sessionPricePln:
+        unitAmount:
           type: number
           nullable: true
+        currency:
+          type: string
         isApproved:
           type: boolean
-        user:
-          $ref: "#/components/schemas/SearchMatchesUserDto"
+        avatar:
+          type: object
+          nullable: true
+          properties:
+            url:
+              type: string
+        language:
+          allOf:
+            -
+              $ref: "#/components/schemas/Language"
         slots:
           type: array
           items:
@@ -1541,9 +1548,11 @@ components:
         - profession
         - rate
         - ratesLot
-        - sessionPricePln
+        - unitAmount
+        - currency
         - isApproved
-        - user
+        - avatar
+        - language
         - slots
     CreateAvailabilityDto:
       type: object

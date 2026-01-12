@@ -2,17 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Language, Profession } from '@prisma/client';
 import { AvailabilitySlotEntity } from '../../availability/entities/availability.entity';
 
-export class SearchMatchesUserDto {
-  @ApiProperty()
-  id: number;
-
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty({ enum: Language, enumName: 'Language' })
-  language: Language;
-}
-
 export class SearchMatchesResultDto {
   @ApiProperty()
   id: number;
@@ -33,13 +22,25 @@ export class SearchMatchesResultDto {
   ratesLot: number | null;
 
   @ApiProperty({ nullable: true })
-  sessionPricePln: number | null;
+  unitAmount: number | null;
+
+  @ApiProperty()
+  currency: string;
 
   @ApiProperty()
   isApproved: boolean;
 
-  @ApiProperty({ type: () => SearchMatchesUserDto })
-  user: SearchMatchesUserDto;
+  @ApiProperty({
+    nullable: true,
+    type: 'object',
+    properties: {
+      url: { type: 'string' },
+    },
+  })
+  avatar: { url: string } | null;
+
+  @ApiProperty({ enum: Language, enumName: 'Language' })
+  language: Language;
 
   @ApiProperty({ type: () => [AvailabilitySlotEntity] })
   slots: AvailabilitySlotEntity[];

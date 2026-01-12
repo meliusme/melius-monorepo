@@ -25,7 +25,8 @@ export class DocProfileEntity {
 
   ratesLot: number | null;
 
-  sessionPricePln: number | null;
+  unitAmount: number | null;
+  currency: string;
 
   @ArrayNotEmpty()
   @ApiProperty({ type: () => [SpecializationEntity] })

@@ -21,5 +21,6 @@ export class DocProfilePublicResponseDto {
   ratesLot: number | null;
 
   @ApiProperty({ nullable: true })
-  sessionPricePln: number | null;
+  unitAmount: number | null;
+  currency: string;
 }

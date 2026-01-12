@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AppController_getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -683,7 +699,8 @@ export interface components {
             firstName: string;
             lastName: string;
             profession: components["schemas"]["Profession"];
-            sessionPricePln?: number;
+            unitAmount?: number;
+            currency?: string;
             specializations: number[];
             docTermsAccepted?: boolean;
         };
@@ -700,10 +717,11 @@ export interface components {
             profession: components["schemas"]["Profession"] | null;
             rate: number | null;
             ratesLot: number | null;
-            sessionPricePln: number | null;
+            unitAmount: number | null;
             specializations: components["schemas"]["SpecializationEntity"][];
             verificationStatus: components["schemas"]["DocVerificationStatus"];
             rejectionReason: string | null;
+            currency: string;
         };
         UpdateAdminProfileDto: {
             firstName: string;
@@ -818,7 +836,8 @@ export interface components {
             profession: components["schemas"]["Profession"] | null;
             rate: number | null;
             ratesLot: number | null;
-            sessionPricePln: number | null;
+            unitAmount: number | null;
+            currency: string;
         };
         DocWithProfilePublicResponseDto: {
             id: number;
@@ -834,19 +853,12 @@ export interface components {
             /** Format: date-time */
             to: string;
         };
-        SearchMatchesUserDto: {
-            id: number;
-            email: string;
-            language: components["schemas"]["Language"];
-        };
         AvailabilitySlotEntity: {
             id: number;
-            docId: number;
             /** Format: date-time */
             startTime: string;
             /** Format: date-time */
             endTime: string;
-            booked: boolean;
         };
         SearchMatchesResultDto: {
             id: number;
@@ -855,9 +867,13 @@ export interface components {
             profession: components["schemas"]["Profession"] | null;
             rate: number | null;
             ratesLot: number | null;
-            sessionPricePln: number | null;
+            unitAmount: number | null;
+            currency: string;
             isApproved: boolean;
-            user: components["schemas"]["SearchMatchesUserDto"];
+            avatar: {
+                url?: string;
+            } | null;
+            language: components["schemas"]["Language"];
             slots: components["schemas"]["AvailabilitySlotEntity"][];
         };
         CreateAvailabilityDto: {
@@ -891,6 +907,23 @@ export interface operations {
                 content: {
                     "application/json": string;
                 };
+            };
+        };
+    };
+    AppController_getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

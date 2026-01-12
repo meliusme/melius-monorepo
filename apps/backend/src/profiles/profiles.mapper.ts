@@ -36,7 +36,8 @@ export const toDocProfileResponse = (
   profession: profile.profession,
   rate: profile.rate,
   ratesLot: profile.ratesLot,
-  sessionPricePln: profile.sessionPricePln,
+  unitAmount: profile.unitAmount,
+  currency: profile.currency,
   specializations: profile.specializations.map(
     (specialization) => new SpecializationEntity(specialization),
   ),
@@ -53,11 +54,15 @@ export const toDocProfilePublicResponse = (
   profession: profile.profession,
   rate: profile.rate,
   ratesLot: profile.ratesLot,
-  sessionPricePln: profile.sessionPricePln,
+  unitAmount: profile.unitAmount,
+  currency: profile.currency,
 });
 
 export const toUserWithProfileResponse = (
-  user: User & { avatar: Avatar | null; userProfile: UserProfile & { problems: Problem[] } },
+  user: User & {
+    avatar: Avatar | null;
+    userProfile: UserProfile & { problems: Problem[] };
+  },
 ): UserWithProfileResponseDto => ({
   ...toUserResponse(user),
   avatar: toAvatarResponse(user.avatar),
@@ -65,7 +70,10 @@ export const toUserWithProfileResponse = (
 });
 
 export const toDocWithProfileResponse = (
-  user: User & { avatar: Avatar | null; docProfile: DocProfile & { specializations: Specialization[] } },
+  user: User & {
+    avatar: Avatar | null;
+    docProfile: DocProfile & { specializations: Specialization[] };
+  },
 ): DocWithProfileResponseDto => ({
   ...toUserResponse(user),
   avatar: toAvatarResponse(user.avatar),

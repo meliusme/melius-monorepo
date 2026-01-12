@@ -226,10 +226,7 @@ export class PaymentsService {
     const resp = await this.p24Post<{
       data?: { status?: boolean; message?: string }[];
       responseCode?: number;
-    }>(
-      '/transaction/refund',
-      payload,
-    );
+    }>('/transaction/refund', payload);
 
     const first = resp?.data?.[0];
     return first?.status ? 'success' : 'failed';
@@ -448,8 +445,9 @@ export class PaymentsService {
         'This therapist profile is not published',
       );
 
-    const pricePln = meeting.doc.sessionPricePln;
-    if (pricePln == null || pricePln <= 0)
+    const unitAmount = meeting.doc.unitAmount;
+    const currency = meeting.doc.currency || 'PLN';
+    if (unitAmount == null || unitAmount <= 0)
       throwAppError(
         ErrorCode.SESSION_PRICE_NOT_SET,
         HttpStatus.BAD_REQUEST,
@@ -490,8 +488,7 @@ export class PaymentsService {
       );
     }
 
-    const amount = Math.round(pricePln * 100); // cents
-    const currency = 'PLN';
+    const amount = Math.round(unitAmount * 100); // cents
 
     // Simple protection: reuse existing pending P24 payment for this meeting
     const existing = await this.prisma.payment.findFirst({
@@ -659,9 +656,10 @@ export class PaymentsService {
       );
     }
 
-    const pricePln = meeting.doc.sessionPricePln;
+    const unitAmount = meeting.doc.unitAmount;
+    const currency = meeting.doc.currency || 'PLN';
 
-    if (pricePln == null || pricePln <= 0) {
+    if (unitAmount == null || unitAmount <= 0) {
       throwAppError(
         ErrorCode.MEETING_NOT_FOUND,
         HttpStatus.BAD_REQUEST,
@@ -688,8 +686,7 @@ export class PaymentsService {
       );
     }
 
-    const unitAmount = Math.round(pricePln * 100);
-    const currency = 'pln';
+    const amount = Math.round(unitAmount * 100);
 
     if (!meeting.user?.user?.email) {
       throwAppError(
@@ -730,8 +727,8 @@ export class PaymentsService {
       line_items: [
         {
           price_data: {
-            currency,
-            unit_amount: unitAmount,
+            currency: currency.toLowerCase(),
+            unit_amount: amount,
             product_data: {
               name: 'Sesja terapeutyczna',
               description:
