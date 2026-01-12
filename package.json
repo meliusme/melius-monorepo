@@ -20,7 +20,8 @@
     "postinstall": "pnpm gen:error-codes",
     "prepare": "husky",
     "seed": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed.ts'",
-    "seed2": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed2.ts'",
+    "seed:matches": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed2.ts'",
+    "seed:docs": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec ts-node --transpile-only prisma/seed-docs.ts'",
     "prisma:format": "cd apps/backend && npx prisma format --schema prisma/schema.prisma",
     "prisma:generate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma generate --config prisma/prisma.config.ts' && cd apps/backend && npx prisma generate --config prisma/prisma.config.ts",
     "prisma:migrate": "docker exec -it melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma migrate dev --config prisma/prisma.config.ts' && cd apps/backend && npx prisma generate --config prisma/prisma.config.ts",
@@ -32,7 +33,8 @@
     "prisma:validate": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma validate --config prisma/prisma.config.ts' && cd apps/backend && npx prisma validate --config prisma/prisma.config.ts",
     "prisma:status": "docker exec melius-backend-dev sh -c 'cd /app/apps/backend && pnpm exec prisma migrate status --config prisma/prisma.config.ts' && cd apps/backend && npx prisma migrate status --config prisma/prisma.config.ts",
     "db:clean": "docker exec -it postgres psql -U postgres -d postgres -c 'TRUNCATE TABLE \"User\", \"UserProfile\", \"DocProfile\", \"AdminProfile\", \"Meeting\", \"Payment\", \"AvailabilitySlot\", \"Rating\" CASCADE;'",
-    "db:seed:all": "pnpm seed && pnpm seed2"
+    "db:clean:docs": "docker exec -it postgres psql -U postgres -d postgres -c 'DELETE FROM \"AvailabilitySlot\"; DELETE FROM \"DocProfile\"; DELETE FROM \"User\" WHERE role = '\\''doc'\\''';'",
+    "db:seed:all": "pnpm seed && pnpm seed:matches && pnpm seed:docs"
   },
   "lint-staged": {
     "apps/web/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
