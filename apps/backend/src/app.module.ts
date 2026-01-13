@@ -12,9 +12,10 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { MatchesModule } from './matches/matches.module';
 import { join } from 'path';
-import { PrismaService } from './prisma/prisma.service';
 import { AvailabilityModule } from './availability/availability.module';
 import { PaymentsModule } from './payments/payments.module';
+import { DocModule } from './doc/doc.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -27,6 +28,8 @@ import { PaymentsModule } from './payments/payments.module';
     ProfilesModule,
     MeetingsModule,
     MatchesModule,
+    DocModule,
+    AdminModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -54,6 +57,6 @@ import { PaymentsModule } from './payments/payments.module';
     PaymentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService],
 })
 export class AppModule {}

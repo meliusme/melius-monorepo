@@ -712,6 +712,151 @@ paths:
                   $ref: "#/components/schemas/SearchMatchesResultDto"
       tags:
         - Matches
+  /doc/calendar/week:
+    get:
+      operationId: DocController_getWeekCalendar
+      parameters:
+        -
+          name: from
+          required: true
+          in: query
+          schema:
+            type: string
+        -
+          name: to
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags:
+        - doc
+  "/doc/verification-documents":
+    post:
+      operationId: DocController_uploadVerificationDocument
+      parameters:
+        []
+      requestBody:
+        required: true
+        content:
+          "multipart/form-data":
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "PDF, JPG or PNG file (max 10MB)"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationDocumentResponseDto"
+        "201":
+          description: ""
+      tags:
+        - doc
+    get:
+      operationId: DocController_listVerificationDocuments
+      parameters:
+        []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VerificationDocumentResponseDto"
+      tags:
+        - doc
+  "/doc/verification-documents/{id}":
+    delete:
+      operationId: DocController_deleteVerificationDocument
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - doc
+  "/admin/documents/{id}/url":
+    get:
+      operationId: AdminController_getDocumentUrl
+      parameters:
+        -
+          name: id
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentUrlResponseDto"
+      tags:
+        - admin
+  "/admin/docs/{docProfileId}/approve":
+    post:
+      operationId: AdminController_approveDoc
+      parameters:
+        -
+          name: docProfileId
+          required: true
+          in: path
+          schema:
+            type: number
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - admin
+  "/admin/docs/{docProfileId}/reject":
+    post:
+      operationId: AdminController_rejectDoc
+      parameters:
+        -
+          name: docProfileId
+          required: true
+          in: path
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectDocDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponseDto"
+      tags:
+        - admin
   /availability:
     post:
       operationId: AvailabilityController_create
@@ -1554,6 +1699,44 @@ components:
         - avatar
         - language
         - slots
+    VerificationDocumentResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Document ID
+          example: 1
+        key:
+          type: string
+          description: S3 key for the document
+          example: "doc-verification/123/uuid.pdf"
+        createdAt:
+          format: "date-time"
+          type: string
+          description: Upload timestamp
+          example: "2026-01-13T12:00:00.000Z"
+      required:
+        - id
+        - key
+        - createdAt
+    DocumentUrlResponseDto:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Temporary signed URL to access the document
+          example: "https://s3.amazonaws.com/bucket/doc-verification/123/file.pdf?..."
+      required:
+        - url
+    RejectDocDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Reason for rejecting the document verification
+          example: Document is not clear enough
+      required:
+        - reason
     CreateAvailabilityDto:
       type: object
       properties:

@@ -548,6 +548,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/doc/calendar/week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocController_getWeekCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doc/verification-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DocController_listVerificationDocuments"];
+        put?: never;
+        post: operations["DocController_uploadVerificationDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/doc/verification-documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DocController_deleteVerificationDocument"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/documents/{id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdminController_getDocumentUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/docs/{docProfileId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AdminController_approveDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/docs/{docProfileId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AdminController_rejectDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/availability": {
         parameters: {
             query?: never;
@@ -875,6 +971,38 @@ export interface components {
             } | null;
             language: components["schemas"]["Language"];
             slots: components["schemas"]["AvailabilitySlotEntity"][];
+        };
+        VerificationDocumentResponseDto: {
+            /**
+             * @description Document ID
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description S3 key for the document
+             * @example doc-verification/123/uuid.pdf
+             */
+            key: string;
+            /**
+             * Format: date-time
+             * @description Upload timestamp
+             * @example 2026-01-13T12:00:00.000Z
+             */
+            createdAt: string;
+        };
+        DocumentUrlResponseDto: {
+            /**
+             * @description Temporary signed URL to access the document
+             * @example https://s3.amazonaws.com/bucket/doc-verification/123/file.pdf?...
+             */
+            url: string;
+        };
+        RejectDocDto: {
+            /**
+             * @description Reason for rejecting the document verification
+             * @example Document is not clear enough
+             */
+            reason: string;
         };
         CreateAvailabilityDto: {
             /** Format: date-time */
@@ -1722,6 +1850,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchMatchesResultDto"][];
+                };
+            };
+        };
+    };
+    DocController_getWeekCalendar: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocController_listVerificationDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDocumentResponseDto"][];
+                };
+            };
+        };
+    };
+    DocController_uploadVerificationDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description PDF, JPG or PNG file (max 10MB)
+                     */
+                    file?: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDocumentResponseDto"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocController_deleteVerificationDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponseDto"];
+                };
+            };
+        };
+    };
+    AdminController_getDocumentUrl: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUrlResponseDto"];
+                };
+            };
+        };
+    };
+    AdminController_approveDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                docProfileId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponseDto"];
+                };
+            };
+        };
+    };
+    AdminController_rejectDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                docProfileId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectDocDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResponseDto"];
                 };
             };
         };
