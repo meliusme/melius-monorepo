@@ -1,6 +1,6 @@
-import { backendFetch } from 'src/lib/api/server/backend';
-import { bffJson } from 'src/lib/api/server/bff';
-import type { ApiResponse } from 'src/lib/api/types';
+import { backendFetch } from '@lib/api/server/backend';
+import { bffJson } from '@lib/api/server/bff';
+import type { ApiResponse } from '@lib/api/types';
 
 type MeResponse = ApiResponse<'/users/me', 'get'>;
 

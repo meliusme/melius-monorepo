@@ -4,7 +4,7 @@ import { Montserrat } from 'next/font/google';
 import { setRequestLocale, getMessages } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
-import '../globals.scss';
+import 'src/styles/globals.scss';
 import Providers from '../providers';
 import { routing } from '../../i18n/routing';
 

@@ -1,4 +1,4 @@
-import type { paths } from 'src/generated/openapi';
+import type { paths } from '@generated/openapi';
 
 export type ApiResponse<
   P extends keyof paths,
@@ -7,7 +7,11 @@ export type ApiResponse<
   responses: { 200: { content: { 'application/json': infer R } } };
 }
   ? R
-  : never;
+  : paths[P][M] extends {
+        responses: { 201: { content: { 'application/json': infer R } } };
+      }
+    ? R
+    : never;
 
 export type ApiRequestBody<
   P extends keyof paths,

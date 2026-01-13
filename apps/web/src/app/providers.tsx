@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { AbstractIntlMessages } from 'next-intl';
 import { NextIntlClientProvider } from 'next-intl';
-import { createQueryClient } from './lib/query/client';
+import { createQueryClient } from '@lib/query-client';
 
 type ProvidersProps = {
   children: ReactNode;

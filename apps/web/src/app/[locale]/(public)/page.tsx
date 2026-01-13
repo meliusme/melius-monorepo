@@ -1,7 +1,7 @@
-import { backendFetch } from 'src/lib/api/server/backend';
-import type { ApiResponse } from 'src/lib/api/types';
+import { backendFetch } from '@lib/api/server/backend';
+import type { ApiResponse } from '@lib/api/types';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { safeFetch } from 'src/lib/safe-fetch';
+import { safeFetch } from '@lib/api/server/safe-fetch';
 
 type ProblemsResponse = ApiResponse<'/matches/problems', 'get'>;
 

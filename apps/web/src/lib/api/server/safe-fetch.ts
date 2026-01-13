@@ -1,4 +1,4 @@
-import { getErrorMessage } from './errors';
+import { getErrorMessage } from '@lib/errors';
 
 /**
  * Safe wrapper for fetch operations with error handling

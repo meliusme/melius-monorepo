@@ -1,6 +1,6 @@
-import { backendFetch } from 'src/lib/api/server/backend';
-import { bffJson } from 'src/lib/api/server/bff';
-import type { ApiRequestBody, ApiResponse } from 'src/lib/api/types';
+import { backendFetch } from '@lib/api/server/backend';
+import { bffJson } from '@lib/api/server/bff';
+import type { ApiRequestBody, ApiResponse } from '@lib/api/types';
 
 type AddRateRequest = ApiRequestBody<'/profiles/rate', 'post'>;
 type AddRateResponse = ApiResponse<'/profiles/rate', 'post'>;

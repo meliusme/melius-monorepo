@@ -1,4 +1,4 @@
-import { ErrorCode } from 'src/generated/error-codes.generated';
+import { ErrorCode } from '@generated/error-codes.generated';
 
 export type ApiErrorShape = {
   code?: string;

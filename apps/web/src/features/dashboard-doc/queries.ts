@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { ApiResponse } from 'src/lib/api/types';
+import type { ApiResponse } from '@lib/api/types';
 
 type DocMeetingsResponse = ApiResponse<'/meetings/doc', 'get'>;
 

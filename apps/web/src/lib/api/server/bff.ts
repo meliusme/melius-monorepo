@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { ApiErrorShape } from 'src/lib/errors';
-import { extractErrorCode } from 'src/lib/errors';
+import type { ApiErrorShape } from '@lib/errors';
+import { extractErrorCode } from '@lib/errors';
 
 export async function bffJson<T>(promise: Promise<T>) {
   try {
