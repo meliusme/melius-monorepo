@@ -20,6 +20,7 @@ import { Role, User } from '@prisma/client';
 import { DocService } from './doc.service';
 import { VerificationDocumentResponseDto } from './dto/verification-document-response.dto';
 import { OkResponseDto } from '../common/dtos/ok-response.dto';
+import { WeekCalendarResponseDto } from './dto/week-calendar-response.dto';
 
 @ApiTags('doc')
 @Controller('doc')
@@ -29,6 +30,7 @@ export class DocController {
   constructor(private readonly docService: DocService) {}
 
   @Get('calendar/week')
+  @ApiOkResponse({ type: WeekCalendarResponseDto })
   getWeekCalendar(
     @CurrentUser() user: User,
     @Query('from') from: string,

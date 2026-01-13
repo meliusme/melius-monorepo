@@ -13,7 +13,7 @@ paths:
               schema:
                 type: string
       tags:
-        - App
+        - app
   /health:
     get:
       operationId: AppController_getHealth
@@ -22,8 +22,12 @@ paths:
       responses:
         "200":
           description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponseDto"
       tags:
-        - App
+        - app
   /auth/login:
     post:
       operationId: AuthController_login
@@ -731,6 +735,10 @@ paths:
       responses:
         "200":
           description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeekCalendarResponseDto"
       tags:
         - doc
   "/doc/verification-documents":
@@ -945,6 +953,20 @@ servers:
   []
 components:
   schemas:
+    HealthResponseDto:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+          description: Health status of the application
+        timestamp:
+          type: string
+          example: "2026-01-13T12:00:00.000Z"
+          description: Current server timestamp
+      required:
+        - status
+        - timestamp
     LoginDto:
       type: object
       properties:
@@ -1699,6 +1721,99 @@ components:
         - avatar
         - language
         - slots
+    CalendarRangeDto:
+      type: object
+      properties:
+        from:
+          type: string
+          example: "2026-01-13T00:00:00.000Z"
+        to:
+          type: string
+          example: "2026-01-20T00:00:00.000Z"
+      required:
+        - from
+        - to
+    CalendarSlotDto:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        startTime:
+          type: string
+          example: "2026-01-13T09:00:00.000Z"
+        endTime:
+          type: string
+          example: "2026-01-13T10:00:00.000Z"
+        booked:
+          type: boolean
+          example: false
+        meetingId:
+          type: number
+          nullable: true
+          example: 123
+      required:
+        - id
+        - startTime
+        - endTime
+        - booked
+        - meetingId
+    CalendarMeetingDto:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        slotId:
+          type: number
+          nullable: true
+          example: 10
+        startTime:
+          type: string
+          example: "2026-01-13T09:00:00.000Z"
+        endTime:
+          type: string
+          example: "2026-01-13T10:00:00.000Z"
+        status:
+          type: string
+          example: confirmed
+        paid:
+          type: boolean
+          example: true
+        clientName:
+          type: string
+          nullable: true
+          example: John Doe
+        clientMessage:
+          type: string
+          nullable: true
+          example: I have back pain
+      required:
+        - id
+        - slotId
+        - startTime
+        - endTime
+        - status
+        - paid
+        - clientName
+        - clientMessage
+    WeekCalendarResponseDto:
+      type: object
+      properties:
+        range:
+          $ref: "#/components/schemas/CalendarRangeDto"
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarSlotDto"
+        meetings:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarMeetingDto"
+      required:
+        - range
+        - slots
+        - meetings
     VerificationDocumentResponseDto:
       type: object
       properties:

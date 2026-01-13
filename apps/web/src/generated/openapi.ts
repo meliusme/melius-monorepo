@@ -712,6 +712,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        HealthResponseDto: {
+            /**
+             * @description Health status of the application
+             * @example ok
+             */
+            status: string;
+            /**
+             * @description Current server timestamp
+             * @example 2026-01-13T12:00:00.000Z
+             */
+            timestamp: string;
+        };
         LoginDto: {
             /** Format: email */
             email: string;
@@ -972,6 +984,47 @@ export interface components {
             language: components["schemas"]["Language"];
             slots: components["schemas"]["AvailabilitySlotEntity"][];
         };
+        CalendarRangeDto: {
+            /** @example 2026-01-13T00:00:00.000Z */
+            from: string;
+            /** @example 2026-01-20T00:00:00.000Z */
+            to: string;
+        };
+        CalendarSlotDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 2026-01-13T09:00:00.000Z */
+            startTime: string;
+            /** @example 2026-01-13T10:00:00.000Z */
+            endTime: string;
+            /** @example false */
+            booked: boolean;
+            /** @example 123 */
+            meetingId: number | null;
+        };
+        CalendarMeetingDto: {
+            /** @example 1 */
+            id: number;
+            /** @example 10 */
+            slotId: number | null;
+            /** @example 2026-01-13T09:00:00.000Z */
+            startTime: string;
+            /** @example 2026-01-13T10:00:00.000Z */
+            endTime: string;
+            /** @example confirmed */
+            status: string;
+            /** @example true */
+            paid: boolean;
+            /** @example John Doe */
+            clientName: string | null;
+            /** @example I have back pain */
+            clientMessage: string | null;
+        };
+        WeekCalendarResponseDto: {
+            range: components["schemas"]["CalendarRangeDto"];
+            slots: components["schemas"]["CalendarSlotDto"][];
+            meetings: components["schemas"]["CalendarMeetingDto"][];
+        };
         VerificationDocumentResponseDto: {
             /**
              * @description Document ID
@@ -1051,7 +1104,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthResponseDto"];
+                };
             };
         };
     };
@@ -1870,7 +1925,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["WeekCalendarResponseDto"];
+                };
             };
         };
     };
