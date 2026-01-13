@@ -1,0 +1,87 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1.2rem;
+}
+
+.presets {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.preset {
+  @include border;
+  background: transparent;
+  color: $black;
+  height: 3.6rem;
+  padding: 0 1.2rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+}
+
+.active {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px $black;
+}
+
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.label {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  @include border;
+  height: 4rem;
+  padding: 0 4rem 0 1rem;
+  font-size: 1.6rem;
+  background: transparent;
+  color: $black;
+  flex: 1;
+  outline: none;
+
+  &::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0;
+    width: 4rem;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.icon {
+  position: absolute;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  pointer-events: none;
+  color: $black;
+}

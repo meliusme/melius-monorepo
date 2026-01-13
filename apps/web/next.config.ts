@@ -8,6 +8,19 @@ const withNextIntl = createNextIntlPlugin({
   },
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  sassOptions: {
+    includePaths: ['./src'],
+    additionalData: `@use "@/styles/variables.scss" as *; @use "@/styles/mixins.scss" as *;`,
+  },
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['turbopack-inline-svg-loader'],
+        as: '*.js',
+      },
+    },
+  },
+};
 
 export default withNextIntl(nextConfig);

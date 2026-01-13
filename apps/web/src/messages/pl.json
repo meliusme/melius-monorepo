@@ -22,6 +22,14 @@
     "career_development": "Kariera",
     "neurobiological_disorders": "Neurologia"
   },
+  "DateRangePicker": {
+    "today": "Dzisiaj",
+    "tomorrow": "Jutro",
+    "nextWeek": "W przyszłym tygodniu",
+    "range": "Zakres",
+    "from": "Od",
+    "to": "Do"
+  },
   "Errors": {
     "EMAIL_EXISTS": "Adres email już istnieje",
     "EMAIL_TOKEN_EXPIRED": "Token weryfikacyjny wygasł",

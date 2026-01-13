@@ -25,6 +25,14 @@ declare const messages: {
     "career_development": "Career",
     "neurobiological_disorders": "Neurology"
   },
+  "DateRangePicker": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "nextWeek": "Next week",
+    "range": "Range",
+    "from": "From",
+    "to": "To"
+  },
   "Errors": {
     "EMAIL_EXISTS": "Email address already exists",
     "EMAIL_TOKEN_EXPIRED": "Email verification token has expired",

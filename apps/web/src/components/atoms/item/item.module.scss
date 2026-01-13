@@ -1,0 +1,64 @@
+.item {
+  @include border;
+  padding: 2rem;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+
+  display: grid;
+  grid-template-columns: 1fr 3rem;
+  align-items: center;
+  column-gap: 1rem;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+}
+
+.selected {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px $black;
+  background-color: transparent;
+}
+
+.title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.select {
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid $black;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+}
+
+.selection {
+  background-color: $black;
+  width: 2rem;
+  height: 2rem;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+}

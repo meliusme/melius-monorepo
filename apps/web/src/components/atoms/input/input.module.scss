@@ -1,0 +1,100 @@
+@mixin labelUp {
+  top: 0;
+  font-size: 1.4rem;
+  background-color: $canvas;
+  padding: 0.5rem;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.wrapper {
+  display: flex;
+  position: relative;
+}
+
+.label {
+  position: absolute;
+  font-size: 1.6rem;
+  font-weight: 600;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  transition: 0.2s ease-in-out all;
+  pointer-events: none;
+}
+
+.control {
+  @include border;
+  color: $black;
+  background-color: transparent;
+  height: 4rem;
+  font-size: 1.6rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  outline: none;
+  font-weight: 500;
+}
+
+.withEye {
+  padding-right: 3.2rem;
+}
+
+.large {
+  height: 5rem;
+}
+
+.controlError {
+  border-color: red;
+}
+
+.wrapper:focus-within .label {
+  @include labelUp;
+}
+
+.hasValue {
+  @include labelUp;
+}
+
+/* textarea */
+textarea.control {
+  height: auto;
+  min-height: 8rem;
+  padding-top: 1.2rem;
+  padding-bottom: 1.2rem;
+  resize: vertical;
+}
+
+.eye {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.errors {
+  margin-top: 0.6rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: red;
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5rem;
+}
+
+.errorLine {
+  opacity: 0;
+  animation: fadeIn 0.2s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
