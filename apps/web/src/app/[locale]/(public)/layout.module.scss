@@ -1,0 +1,19 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: transparent;
+  padding: 2rem;
+}
+
+.logoContainer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.logo {
+  height: 2.5rem;
+  width: auto;
+}

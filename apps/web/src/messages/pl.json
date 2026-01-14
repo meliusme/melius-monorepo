@@ -2,7 +2,9 @@
   "Home": {
     "eyebrow": "Problemy",
     "title": "Dostępne obszary problemów",
-    "lede": "Pobrane z backendu jako komponent serwerowy."
+    "lede": "Pobrane z backendu jako komponent serwerowy.",
+    "problemsHeader": "W czym Ci pomóc?",
+    "problemsSubheader": "Nie musi być idealnie — po prostu wybierz coś, co pasuje."
   },
   "Problems": {
     "mood_disorders": "Nastrój",

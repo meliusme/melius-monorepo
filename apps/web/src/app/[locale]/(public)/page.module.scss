@@ -1,0 +1,62 @@
+.homeContainer {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+  gap: 4rem;
+  padding: 2rem;
+}
+
+.heroSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  svg,
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.problemsSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  padding-right: 2rem;
+}
+
+.headerSection {
+  text-align: right;
+  margin-bottom: 3rem;
+}
+
+.header {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: $black;
+  text-transform: uppercase;
+}
+
+.subheader {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 768px) {
+  .homeContainer {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .heroSection,
+  .problemsSection {
+    flex: none;
+  }
+}

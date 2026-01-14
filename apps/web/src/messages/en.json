@@ -2,7 +2,9 @@
   "Home": {
     "eyebrow": "Problems",
     "title": "Available problem areas",
-    "lede": "Fetched from the backend as a server component."
+    "lede": "Fetched from the backend as a server component.",
+    "problemsHeader": "How can I help you?",
+    "problemsSubheader": "It doesn't have to be perfect — just pick something that fits."
   },
   "Problems": {
     "mood_disorders": "Mood",
