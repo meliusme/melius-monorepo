@@ -1,5 +1,5 @@
 import type { Story } from '@ladle/react';
-import { Button } from './button';
+import Button from './button';
 
 export const Primary: Story = () => (
   <Button label="Primary Button" onClick={() => console.log('clicked')} />
@@ -22,25 +22,13 @@ export const Tertiary: Story = () => (
 );
 
 export const Large: Story = () => (
-  <Button
-    label="Large Button"
-    onClick={() => console.log('clicked')}
-    large
-  />
+  <Button label="Large Button" onClick={() => console.log('clicked')} large />
 );
 
 export const Disabled: Story = () => (
-  <Button
-    label="Disabled Button"
-    onClick={() => console.log('clicked')}
-    disabled
-  />
+  <Button label="Disabled Button" onClick={() => console.log('clicked')} disabled />
 );
 
 export const WithCustomWidth: Story = () => (
-  <Button
-    label="Custom Width"
-    onClick={() => console.log('clicked')}
-    width={300}
-  />
+  <Button label="Custom Width" onClick={() => console.log('clicked')} width={300} />
 );

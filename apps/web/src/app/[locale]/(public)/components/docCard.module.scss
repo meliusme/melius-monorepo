@@ -1,0 +1,130 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.avatar {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.star {
+  width: 1.8rem;
+  height: 1.8rem;
+  color: #ffd700;
+}
+
+.rateValue {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: $black;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: center;
+  text-align: center;
+}
+
+.name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: $black;
+  margin: 0;
+}
+
+.profession {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0;
+}
+
+.sessionInfo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $black;
+  margin: 0;
+}
+
+.slots {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-height: 30rem;
+  overflow-y: auto;
+  padding: 0.4rem;
+
+  // Firefox scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+
+  // Webkit browsers (Chrome, Safari, Edge)
+  &::-webkit-scrollbar {
+    width: 0.6rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 0.3rem;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.18);
+    }
+  }
+
+  @media (max-width: 768px) {
+    max-height: 25rem;
+  }
+}
+
+.dateGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.dateHeader {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: $black;
+  padding: 0.4rem 0;
+}
+
+.timeSlots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.8rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.slotButton {
+  font-size: 1.4rem;
+  height: 3.2rem;
+  padding: 0.6rem 1rem;
+}

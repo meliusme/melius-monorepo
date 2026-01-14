@@ -20,9 +20,9 @@ if (typeof document !== 'undefined') {
 
 export const Provider: GlobalProvider = ({ children, globalState }) => {
   try {
-    // Get locale from story name or default to 'en'
+    // Get locale from story name or default to 'pl'
     const storyName = globalState.story || '';
-    const locale = storyName.toLowerCase().includes('polish') ? 'pl' : 'en';
+    const locale = storyName.toLowerCase().includes('english') ? 'en' : 'pl';
     const messages = locale === 'pl' ? plMessages : enMessages;
 
     return (

@@ -30,6 +30,11 @@
     "from": "Od",
     "to": "Do"
   },
+  "DocCard": {
+    "psychologist": "Psycholog",
+    "psychotherapist": "Psychoterapeuta",
+    "sexologist": "Seksuolog"
+  },
   "Errors": {
     "EMAIL_EXISTS": "Adres email już istnieje",
     "EMAIL_TOKEN_EXPIRED": "Token weryfikacyjny wygasł",

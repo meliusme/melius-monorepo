@@ -9,6 +9,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@lib': path.resolve(__dirname, './src/lib'),
+      'next/image': path.resolve(__dirname, './.ladle/UnoptimizedImage.tsx'),
+      'next/link': path.resolve(__dirname, './.ladle/UnoptimizedLink.tsx'),
     },
   },
   css: {

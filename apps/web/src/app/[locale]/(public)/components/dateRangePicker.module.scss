@@ -6,8 +6,8 @@
 
 .presets {
   display: flex;
+  flex-direction: column;
   gap: 0.8rem;
-  flex-wrap: wrap;
 }
 
 .preset {
@@ -35,8 +35,8 @@
 }
 
 .range {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 

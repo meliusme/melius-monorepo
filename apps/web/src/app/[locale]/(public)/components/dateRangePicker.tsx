@@ -2,9 +2,17 @@
 
 import { useMemo, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  format,
+  addDays as addDaysFns,
+  startOfDay,
+  endOfDay,
+  nextMonday,
+} from 'date-fns';
 import styles from './dateRangePicker.module.scss';
 import Icon from '@/components/atoms/icon/icon';
 import CalendarIcon from '@/assets/icons/calendar.svg';
+import Button from '@/components/atoms/button/button';
 
 export type RangePreset = 'today' | 'tomorrow' | 'nextWeek' | 'range';
 
@@ -20,17 +28,12 @@ type DateRangePickerProps = {
   maxRangeDays?: number; // e.g. 30
 };
 
-function toISODate(d: Date) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+function toISODate(d: Date): string {
+  return format(d, 'yyyy-MM-dd');
 }
 
-function addDays(d: Date, days: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + days);
-  return x;
+function addDays(d: Date, days: number): Date {
+  return addDaysFns(d, days);
 }
 
 function parseLocalDate(isoString: string): Date {
@@ -44,9 +47,7 @@ function parseLocalDate(isoString: string): Date {
  * @example toStartOfDayISO('2026-01-13') => '2026-01-12T23:00:00.000Z' (when local is UTC+1)
  */
 export function toStartOfDayISO(dateISO: string): string {
-  const date = parseLocalDate(dateISO);
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString();
+  return startOfDay(parseLocalDate(dateISO)).toISOString();
 }
 
 /**
@@ -54,9 +55,7 @@ export function toStartOfDayISO(dateISO: string): string {
  * @example toEndOfDayISO('2026-01-13') => '2026-01-13T22:59:59.999Z' (when local is UTC+1)
  */
 export function toEndOfDayISO(dateISO: string): string {
-  const date = parseLocalDate(dateISO);
-  date.setHours(23, 59, 59, 999);
-  return date.toISOString();
+  return endOfDay(parseLocalDate(dateISO)).toISOString();
 }
 
 /**
@@ -72,15 +71,11 @@ export function toAPIDateRange(value: DateRangeValue) {
   };
 }
 
-function startOfNextWeek(d: Date) {
-  // Monday as start of the week
-  const x = new Date(d);
-  const day = x.getDay(); // 0 Sunday, 1 Monday...
-  const diffToMon = day === 0 ? 1 : 8 - day; // days until next Monday
-  return addDays(x, diffToMon);
+function startOfNextWeek(d: Date): Date {
+  return nextMonday(d);
 }
 
-function endOfWeekFromMonday(monday: Date) {
+function endOfWeekFromMonday(monday: Date): Date {
   return addDays(monday, 6);
 }
 
@@ -162,14 +157,14 @@ export function DateRangePicker({
     <div className={styles.root}>
       <div className={styles.presets}>
         {(['today', 'tomorrow', 'nextWeek', 'range'] as const).map((p) => (
-          <button
+          <Button
             key={p}
             type="button"
-            className={`${styles.preset} ${preset === p ? styles.active : ''}`}
+            label={t(p)}
             onClick={() => applyPreset(p)}
-          >
-            {t(p)}
-          </button>
+            variant={preset === p ? 'primary' : 'secondary'}
+            fullWidth
+          />
         ))}
       </div>
 

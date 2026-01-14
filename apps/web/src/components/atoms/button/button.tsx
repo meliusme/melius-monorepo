@@ -10,17 +10,19 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   onClick: () => void;
   variant?: ButtonVariant;
   width?: number;
+  fullWidth?: boolean;
   large?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
 }
 
-export function Button({
+export default function Button({
   type = 'button',
   label,
   onClick,
   variant = 'primary',
   width,
+  fullWidth = false,
   large = false,
   disabled = false,
   icon,
@@ -33,6 +35,7 @@ export function Button({
     variant === 'tertiary' ? styles.tertiary : '',
     large ? styles.large : '',
     disabled ? styles.disabled : '',
+    fullWidth ? styles.fullWidth : '',
     className ?? '',
   ]
     .filter(Boolean)

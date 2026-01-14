@@ -4,15 +4,15 @@ import Image from 'next/image';
 import { useEffect, useId, useState } from 'react';
 import styles from './avatar.module.scss';
 import Icon from '@/components/atoms/icon/icon';
-import NoAvatarIcon from '@/assets/icons/no-avatar.svg';
+import NoAvatarIcon from '@/assets/illustrations/no-avatar.svg';
 
 type AvatarProps = {
   avatarUrl?: string;
   name: string;
-  sizeRem?: number; // domyślnie 15rem
+  sizeRem?: number; // domyślnie 8rem
 };
 
-export function Avatar({ avatarUrl, name, sizeRem = 15 }: AvatarProps) {
+export default function Avatar({ avatarUrl, name, sizeRem = 8 }: AvatarProps) {
   const [open, setOpen] = useState(false);
   const titleId = useId();
 
@@ -46,10 +46,9 @@ export function Avatar({ avatarUrl, name, sizeRem = 15 }: AvatarProps) {
           <Image
             src={avatarUrl}
             alt={name}
-            width={512}
-            height={512}
+            width={sizePx}
+            height={sizePx}
             className={styles.image}
-            priority={false}
             sizes={`${sizePx}px`}
           />
         ) : (

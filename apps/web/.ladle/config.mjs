@@ -6,4 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default {
   stories: 'src/**/*.stories.{tsx,jsx}',
   viteConfig: path.resolve(__dirname, '../vite.config.ts'),
+  addons: {
+    a11y: {
+      enabled: false,
+    },
+  },
 };
