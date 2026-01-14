@@ -129,3 +129,142 @@ export const WithoutCallback: Story = () => (
     <DocCard doc={mockDoc} />
   </div>
 );
+
+export const MobileView: Story = () => (
+  <div style={{ maxWidth: '375px', margin: '0 auto' }}>
+    <DocCard doc={mockDoc} onSlotSelect={(id) => alert(`Selected slot ${id}`)} />
+  </div>
+);
+MobileView.meta = {
+  width: 375,
+};
+
+export const MobileViewManySlots: Story = () => (
+  <div style={{ maxWidth: '375px', margin: '0 auto' }}>
+    <DocCard doc={mockDocManySlots} onSlotSelect={(id) => alert(`Selected slot ${id}`)} />
+  </div>
+);
+MobileViewManySlots.meta = {
+  width: 375,
+};
+
+export const MobileViewMultipleDays: Story = () => {
+  const multiDayDoc: SearchMatchResult = {
+    ...mockDoc,
+    slots: [
+      // Day 1
+      {
+        id: 1,
+        startTime: '2026-01-15T09:00:00.000Z',
+        endTime: '2026-01-15T09:50:00.000Z',
+      },
+      {
+        id: 2,
+        startTime: '2026-01-15T10:00:00.000Z',
+        endTime: '2026-01-15T10:50:00.000Z',
+      },
+      {
+        id: 3,
+        startTime: '2026-01-15T11:00:00.000Z',
+        endTime: '2026-01-15T11:50:00.000Z',
+      },
+      {
+        id: 4,
+        startTime: '2026-01-15T14:00:00.000Z',
+        endTime: '2026-01-15T14:50:00.000Z',
+      },
+      {
+        id: 5,
+        startTime: '2026-01-15T15:00:00.000Z',
+        endTime: '2026-01-15T15:50:00.000Z',
+      },
+      {
+        id: 6,
+        startTime: '2026-01-15T16:00:00.000Z',
+        endTime: '2026-01-15T16:50:00.000Z',
+      },
+      // Day 2
+      {
+        id: 7,
+        startTime: '2026-01-16T09:00:00.000Z',
+        endTime: '2026-01-16T09:50:00.000Z',
+      },
+      {
+        id: 8,
+        startTime: '2026-01-16T10:00:00.000Z',
+        endTime: '2026-01-16T10:50:00.000Z',
+      },
+      {
+        id: 9,
+        startTime: '2026-01-16T11:00:00.000Z',
+        endTime: '2026-01-16T11:50:00.000Z',
+      },
+      {
+        id: 10,
+        startTime: '2026-01-16T13:00:00.000Z',
+        endTime: '2026-01-16T13:50:00.000Z',
+      },
+      {
+        id: 11,
+        startTime: '2026-01-16T14:00:00.000Z',
+        endTime: '2026-01-16T14:50:00.000Z',
+      },
+      {
+        id: 12,
+        startTime: '2026-01-16T15:00:00.000Z',
+        endTime: '2026-01-16T15:50:00.000Z',
+      },
+      // Day 3
+      {
+        id: 13,
+        startTime: '2026-01-17T10:00:00.000Z',
+        endTime: '2026-01-17T10:50:00.000Z',
+      },
+      {
+        id: 14,
+        startTime: '2026-01-17T11:00:00.000Z',
+        endTime: '2026-01-17T11:50:00.000Z',
+      },
+      {
+        id: 15,
+        startTime: '2026-01-17T14:00:00.000Z',
+        endTime: '2026-01-17T14:50:00.000Z',
+      },
+      {
+        id: 16,
+        startTime: '2026-01-17T15:00:00.000Z',
+        endTime: '2026-01-17T15:50:00.000Z',
+      },
+      // Day 4
+      {
+        id: 17,
+        startTime: '2026-01-18T09:00:00.000Z',
+        endTime: '2026-01-18T09:50:00.000Z',
+      },
+      {
+        id: 18,
+        startTime: '2026-01-18T10:00:00.000Z',
+        endTime: '2026-01-18T10:50:00.000Z',
+      },
+      {
+        id: 19,
+        startTime: '2026-01-18T13:00:00.000Z',
+        endTime: '2026-01-18T13:50:00.000Z',
+      },
+      {
+        id: 20,
+        startTime: '2026-01-18T14:00:00.000Z',
+        endTime: '2026-01-18T14:50:00.000Z',
+      },
+    ],
+  };
+
+  return (
+    <div style={{ maxWidth: '375px', margin: '0 auto' }}>
+      <DocCard doc={multiDayDoc} onSlotSelect={(id) => alert(`Selected slot ${id}`)} />
+    </div>
+  );
+};
+MobileViewMultipleDays.meta = {
+  width: 375,
+};

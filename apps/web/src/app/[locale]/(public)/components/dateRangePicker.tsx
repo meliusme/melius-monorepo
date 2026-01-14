@@ -1,17 +1,26 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   format,
   addDays as addDaysFns,
   startOfDay,
   endOfDay,
   nextMonday,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addMonths,
+  isSameDay,
+  isWithinInterval,
+  isBefore,
+  isAfter,
 } from 'date-fns';
+import { enUS, pl } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import styles from './dateRangePicker.module.scss';
-import Icon from '@/components/atoms/icon/icon';
-import CalendarIcon from '@/assets/icons/calendar.svg';
 import Button from '@/components/atoms/button/button';
 
 export type RangePreset = 'today' | 'tomorrow' | 'nextWeek' | 'range';
@@ -96,15 +105,31 @@ function clampRange(fromISO: string, toISO: string, maxDays: number) {
   return { fromISO: toISODate(a), toISO: toISODate(b) };
 }
 
+function getCalendarDays(referenceDate: Date, weekStartsOn: 0 | 1 = 1) {
+  const monthStart = startOfMonth(referenceDate);
+  const monthEnd = endOfMonth(referenceDate);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn });
+
+  const days: Date[] = [];
+  let current = calendarStart;
+  while (current <= calendarEnd) {
+    days.push(current);
+    current = addDays(current, 1);
+  }
+  return days;
+}
+
 export function DateRangePicker({
   value,
   onChange,
   maxRangeDays = 30,
 }: DateRangePickerProps) {
   const t = useTranslations('DateRangePicker');
-
-  const fromInputRef = useRef<HTMLInputElement>(null);
-  const toInputRef = useRef<HTMLInputElement>(null);
+  const locale = useLocale();
+  const dfLocale: Locale = locale === 'pl' ? pl : enUS;
+  // Week starts on Monday (1) for PL, Sunday (0) for EN
+  const weekStartsOn = locale === 'pl' ? 1 : 0;
 
   // Derive current state from value prop (controlled) or default to today
   // Fresh Date() here ensures midnight rollover works correctly if page stays open
@@ -116,15 +141,9 @@ export function DateRangePicker({
 
   const { preset, fromISO, toISO } = current;
 
-  // Sync external value changes to input elements (for RHF integration)
-  useEffect(() => {
-    if (fromInputRef.current && fromInputRef.current.value !== fromISO) {
-      fromInputRef.current.value = fromISO;
-    }
-    if (toInputRef.current && toInputRef.current.value !== toISO) {
-      toInputRef.current.value = toISO;
-    }
-  }, [fromISO, toISO]);
+  // Calendar state
+  const [displayMonth, setDisplayMonth] = useState<Date>(() => parseLocalDate(fromISO));
+  const [selectingFrom, setSelectingFrom] = useState<Date | null>(null);
 
   function emit(nextPreset: RangePreset, nextFrom: string, nextTo: string) {
     const clamped = clampRange(nextFrom, nextTo, maxRangeDays);
@@ -149,9 +168,56 @@ export function DateRangePicker({
       return emit('nextWeek', toISODate(mon), toISODate(sun));
     }
 
-    // range: keep current values
+    // range: reset selection state and wait for user to select range
+    setSelectingFrom(null);
+    setDisplayMonth(parseLocalDate(fromISO));
     return emit('range', fromISO, toISO);
   }
+
+  function handleDayClick(day: Date) {
+    const dayISO = toISODate(day);
+
+    if (!selectingFrom) {
+      // First click - start selection
+      setSelectingFrom(day);
+      emit('range', dayISO, dayISO);
+    } else {
+      // Second click - complete selection
+      const fromDate = selectingFrom;
+      const toDate = day;
+
+      if (isBefore(toDate, fromDate)) {
+        // If user clicked earlier date, swap them
+        emit('range', toISODate(toDate), toISODate(fromDate));
+      } else {
+        emit('range', toISODate(fromDate), toISODate(toDate));
+      }
+      setSelectingFrom(null);
+    }
+  }
+
+  const calendarDays = useMemo(
+    () => getCalendarDays(displayMonth, weekStartsOn),
+    [displayMonth, weekStartsOn],
+  );
+  const fromDate = parseLocalDate(fromISO);
+  const toDate = parseLocalDate(toISO);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const maxDate = useMemo(() => addDays(today, maxRangeDays - 1), [today, maxRangeDays]);
+
+  // Check if navigation buttons should be disabled
+  const isPrevMonthDisabled = useMemo(() => {
+    const prevMonth = addMonths(displayMonth, -1);
+    return endOfMonth(prevMonth) < today;
+  }, [displayMonth, today]);
+
+  const isNextMonthDisabled = useMemo(() => {
+    const nextMonth = addMonths(displayMonth, 1);
+    return startOfMonth(nextMonth) > maxDate;
+  }, [displayMonth, maxDate]);
+
+  const dateFormat = locale === 'pl' ? 'd MMM yyyy' : 'MMM d, yyyy';
+  const monthYearFormat = locale === 'pl' ? 'LLLL yyyy' : 'MMMM yyyy';
 
   return (
     <div className={styles.root}>
@@ -169,46 +235,90 @@ export function DateRangePicker({
       </div>
 
       {preset === 'range' ? (
-        <div className={styles.range}>
-          <label className={styles.field}>
-            <span className={styles.label}>{t('from')}</span>
-            <div className={styles.inputWrapper}>
-              <input
-                ref={fromInputRef}
-                className={styles.input}
-                type="date"
-                defaultValue={fromISO}
-                onBlur={(e) => {
-                  const v = e.target.value;
-                  if (v && v.length === 10 && v !== fromISO) {
-                    emit('range', v, toISO);
-                  }
-                }}
-                max={toISO}
-              />
-              <Icon src={CalendarIcon} className={styles.icon} />
-            </div>
-          </label>
+        <div className={`${styles.calendar} ${selectingFrom ? styles.selecting : ''}`}>
+          <div className={styles.calendarHeader}>
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
+              disabled={isPrevMonthDisabled}
+              aria-label="Previous month"
+            >
+              ←
+            </button>
+            <span className={styles.monthYear}>
+              {format(displayMonth, monthYearFormat, { locale: dfLocale })}
+            </span>
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
+              disabled={isNextMonthDisabled}
+              aria-label="Next month"
+            >
+              →
+            </button>
+          </div>
 
-          <label className={styles.field}>
-            <span className={styles.label}>{t('to')}</span>
-            <div className={styles.inputWrapper}>
-              <input
-                ref={toInputRef}
-                className={styles.input}
-                type="date"
-                defaultValue={toISO}
-                onBlur={(e) => {
-                  const v = e.target.value;
-                  if (v && v.length === 10 && v !== toISO) {
-                    emit('range', fromISO, v);
-                  }
-                }}
-                min={fromISO}
-              />
-              <Icon src={CalendarIcon} className={styles.icon} />
+          <div className={styles.weekDays}>
+            {Array.from({ length: 7 }, (_, i) => {
+              const date = addDays(startOfWeek(displayMonth, { weekStartsOn }), i);
+              return (
+                <div key={i} className={styles.weekDay}>
+                  {format(date, 'EEE', { locale: dfLocale })}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className={styles.days}>
+            {calendarDays.map((day, idx) => {
+              // Show selection when:
+              // - not in range mode, OR
+              // - selection started (selectingFrom is set), OR
+              // - range was already selected (from !== to or selection completed)
+              const showSelection =
+                preset !== 'range' || selectingFrom !== null || fromISO !== toISO;
+              const isSelected =
+                showSelection && (isSameDay(day, fromDate) || isSameDay(day, toDate));
+              const isInRange =
+                showSelection &&
+                fromDate &&
+                toDate &&
+                isWithinInterval(day, { start: fromDate, end: toDate });
+              const isOutsideMonth =
+                day < startOfMonth(displayMonth) || day > endOfMonth(displayMonth);
+              const isToday = isSameDay(day, today);
+              const isDisabled =
+                isOutsideMonth || isBefore(day, today) || isAfter(day, maxDate);
+              const isSelectingStart = selectingFrom && isSameDay(day, selectingFrom);
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`${styles.day} ${isSelected ? styles.daySelected : ''} ${isInRange && !isSelected ? styles.dayInRange : ''} ${isDisabled ? styles.dayDisabled : ''} ${isToday ? styles.dayToday : ''} ${isSelectingStart && !isSelected ? styles.daySelecting : ''}`}
+                  onClick={() => handleDayClick(day)}
+                  disabled={isDisabled}
+                >
+                  {format(day, 'd')}
+                </button>
+              );
+            })}
+          </div>
+
+          {(selectingFrom !== null || fromISO !== toISO) && (
+            <div className={styles.selectedRange}>
+              <span className={styles.rangeLabel}>{t('from')}:</span>
+              <span className={styles.rangeValue}>
+                {format(fromDate, dateFormat, { locale: dfLocale })}
+              </span>
+              <span className={styles.rangeLabel}>{t('to')}:</span>
+              <span className={styles.rangeValue}>
+                {format(toDate, dateFormat, { locale: dfLocale })}
+              </span>
             </div>
-          </label>
+          )}
         </div>
       ) : null}
     </div>

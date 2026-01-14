@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { format, differenceInMinutes } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useMemo, useState, useEffect } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import { differenceInMinutes } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
+import { enUS, pl } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 import type { components } from '@/generated/openapi';
 import Card from '@/components/atoms/card/card';
 import Button from '@/components/atoms/button/button';
@@ -19,12 +21,14 @@ type DocCardProps = {
   onSlotSelect?: (slotId: number) => void;
 };
 
-function formatDate(isoString: string): string {
-  return format(new Date(isoString), 'dd.MM', { locale: pl });
+function formatDate(isoString: string, dfLocale: Locale, timeZone: string): string {
+  return formatInTimeZone(new Date(isoString), timeZone, 'EEE dd.MM', {
+    locale: dfLocale,
+  });
 }
 
-function formatTime(isoString: string): string {
-  return format(new Date(isoString), 'HH:mm', { locale: pl });
+function formatTime(isoString: string, dfLocale: Locale, timeZone: string): string {
+  return formatInTimeZone(new Date(isoString), timeZone, 'HH:mm', { locale: dfLocale });
 }
 
 function calculateSessionDuration(startTime: string, endTime: string): number {
@@ -37,6 +41,16 @@ function formatPrice(amount: number, currency: string): string {
 
 export function DocCard({ doc, onSlotSelect }: DocCardProps) {
   const t = useTranslations('DocCard');
+  const locale = useLocale();
+  const dfLocale = locale === 'pl' ? pl : enUS;
+
+  // Auto-detect user's timezone
+  const [timeZone, setTimeZone] = useState<string>('UTC');
+
+  useEffect(() => {
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setTimeZone(userTimeZone);
+  }, []);
 
   const sessionDuration = useMemo(() => {
     if (doc.slots.length > 0) {
@@ -49,14 +63,17 @@ export function DocCard({ doc, onSlotSelect }: DocCardProps) {
   const slotsByDate = useMemo(() => {
     const grouped = new Map<string, Slot[]>();
     doc.slots.forEach((slot) => {
-      const dateKey = formatDate(slot.startTime);
+      const dateKey = formatDate(slot.startTime, dfLocale, timeZone);
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, []);
       }
       grouped.get(dateKey)!.push(slot);
     });
     return grouped;
-  }, [doc.slots]);
+  }, [doc.slots, dfLocale, timeZone]);
+
+  const dates = useMemo(() => Array.from(slotsByDate.keys()), [slotsByDate]);
+  const [activeDate, setActiveDate] = useState<string>(dates[0] || '');
 
   const professionLabel = doc.profession ? t(doc.profession) : '';
   const fullName = `${doc.firstName || ''} ${doc.lastName || ''}`.trim();
@@ -82,7 +99,8 @@ export function DocCard({ doc, onSlotSelect }: DocCardProps) {
           </p>
         </div>
 
-        <div className={styles.slots}>
+        {/* Desktop: show all dates vertically */}
+        <div className={styles.slotsDesktop}>
           {Array.from(slotsByDate.entries()).map(([date, dateSlots]) => (
             <div key={date} className={styles.dateGroup}>
               <div className={styles.dateHeader}>{date}</div>
@@ -90,7 +108,7 @@ export function DocCard({ doc, onSlotSelect }: DocCardProps) {
                 {dateSlots.map((slot) => (
                   <Button
                     key={slot.id}
-                    label={formatTime(slot.startTime)}
+                    label={formatTime(slot.startTime, dfLocale, timeZone)}
                     onClick={() => onSlotSelect?.(slot.id)}
                     variant="primary"
                     className={styles.slotButton}
@@ -99,6 +117,35 @@ export function DocCard({ doc, onSlotSelect }: DocCardProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Mobile: horizontal date scroll + 3-column grid */}
+        <div className={styles.slotsMobile}>
+          <div className={styles.dateScroll}>
+            {dates.map((date) => (
+              <button
+                key={date}
+                className={`${styles.dateChip} ${activeDate === date ? styles.dateChipActive : ''}`}
+                onClick={() => setActiveDate(date)}
+              >
+                {date}
+              </button>
+            ))}
+          </div>
+
+          {activeDate && slotsByDate.has(activeDate) && (
+            <div className={styles.timeSlotsGrid}>
+              {slotsByDate.get(activeDate)!.map((slot) => (
+                <Button
+                  key={slot.id}
+                  label={formatTime(slot.startTime, dfLocale, timeZone)}
+                  onClick={() => onSlotSelect?.(slot.id)}
+                  variant="primary"
+                  className={styles.slotButton}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Card>

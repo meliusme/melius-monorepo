@@ -10,78 +10,221 @@
   gap: 0.8rem;
 }
 
-.preset {
+// Calendar styles - mobile first
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  padding: 1.6rem;
   @include border;
-  background: transparent;
-  color: $black;
-  height: 3.6rem;
-  padding: 0 1.2rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.03);
-  }
+  background-color: $canvas;
+  transition: box-shadow 0.3s ease;
 }
 
-.active {
-  border-color: transparent;
-  box-shadow: 0 0 0 2px $black;
+.selecting {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 }
 
-.range {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.label {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.inputWrapper {
-  position: relative;
+.calendarHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
 }
 
-.input {
+.navButton {
   @include border;
-  height: 4rem;
-  padding: 0 4rem 0 1rem;
-  font-size: 1.6rem;
   background: transparent;
   color: $black;
-  flex: 1;
-  outline: none;
+  width: 3.6rem;
+  height: 3.6rem;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  &::-webkit-calendar-picker-indicator {
-    position: absolute;
-    right: 0;
-    width: 4rem;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
+  &:hover {
+    background-color: $canvas-dark;
+  }
+
+  &:active {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 }
 
-.icon {
-  position: absolute;
-  right: 1rem;
-  width: 2rem;
-  height: 2rem;
-  pointer-events: none;
+.monthYear {
+  font-size: 1.6rem;
+  font-weight: 700;
   color: $black;
+  text-align: center;
+  flex: 1;
+}
+
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.weekDay {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+  padding: 0.6rem;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+}
+
+.day {
+  @include border;
+  aspect-ratio: 1;
+  min-height: 4rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  background: transparent;
+  color: $black;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+.daySelected {
+  background-color: $black;
+  color: $canvas;
+  border-color: $black;
+
+  &:hover:not(:disabled) {
+    background-color: $black-opacity !important;
+    color: $canvas !important;
+  }
+}
+
+.dayInRange {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.dayDisabled {
+  color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.02);
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dayToday {
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3) inset;
+}
+
+.daySelecting {
+  position: relative;
+  animation: pulseRing 1.5s ease-in-out infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid $black;
+    border-radius: 1rem;
+    pointer-events: none;
+  }
+}
+
+@keyframes pulseRing {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.selectedRange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 1.4rem;
+}
+
+.rangeLabel {
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.rangeValue {
+  font-weight: 600;
+  color: $black;
+  margin-right: 1.2rem;
+}
+
+// Responsive - tablet and up
+@media (min-width: 768px) {
+  .calendar {
+    padding: 2rem;
+  }
+
+  .navButton {
+    width: 4rem;
+    height: 4rem;
+    font-size: 2.4rem;
+  }
+
+  .monthYear {
+    font-size: 1.8rem;
+  }
+
+  .weekDay {
+    font-size: 1.3rem;
+    padding: 0.8rem;
+  }
+
+  .day {
+    min-height: 4.8rem;
+    font-size: 1.5rem;
+  }
+
+  .selectedRange {
+    font-size: 1.5rem;
+  }
+}
+
+// Responsive - desktop
+@media (min-width: 1024px) {
+  .calendar {
+    padding: 2.4rem;
+  }
+
+  .day {
+    min-height: 5.2rem;
+    font-size: 1.6rem;
+  }
 }
