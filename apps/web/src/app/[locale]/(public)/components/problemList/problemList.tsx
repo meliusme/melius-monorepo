@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Item } from '@/components/atoms/item/item';
+import Item from '@/components/atoms/item/item';
 import styles from './problemList.module.scss';
 
 export type Problem = {
@@ -12,13 +11,19 @@ export type Problem = {
 type ProblemListProps = {
   problems: Problem[];
   translations: Record<string, string>;
+  selectedProblemId: number | null;
+  onProblemSelect: (problemId: number | null) => void;
 };
 
-export default function ProblemList({ problems, translations }: ProblemListProps) {
-  const [selectedProblemId, setSelectedProblemId] = useState<number | null>(null);
-
+export default function ProblemList({
+  problems,
+  translations,
+  selectedProblemId,
+  onProblemSelect,
+}: ProblemListProps) {
   const handleProblemClick = (problemId: number) => {
-    setSelectedProblemId(problemId === selectedProblemId ? null : problemId);
+    const newValue = problemId === selectedProblemId ? null : problemId;
+    onProblemSelect(newValue);
   };
 
   return (

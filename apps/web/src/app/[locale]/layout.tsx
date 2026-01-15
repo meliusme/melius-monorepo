@@ -41,8 +41,8 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={montserrat.variable}>
-      <body>
+    <html lang={locale} className={montserrat.variable} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers locale={locale} messages={messages}>
           {children}
         </Providers>

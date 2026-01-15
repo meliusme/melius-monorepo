@@ -1,0 +1,91 @@
+@import '@/styles/variables';
+
+.docCardList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.carouselContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.navButton {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 2px solid $black;
+  background: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $black;
+    color: white;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.cardWrapper {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 2px solid $black;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.2);
+  }
+}
+
+.indicatorActive {
+  background: $black;
+}
+
+.counter {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  .navButton {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+}

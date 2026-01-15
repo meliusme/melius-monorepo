@@ -1,10 +1,15 @@
 {
   "Home": {
-    "eyebrow": "Problemy",
-    "title": "Dostępne obszary problemów",
-    "lede": "Pobrane z backendu jako komponent serwerowy.",
     "problemsHeader": "W czym Ci pomóc?",
-    "problemsSubheader": "Nie musi być idealnie — po prostu wybierz coś, co pasuje."
+    "problemsSubheader": "Nie musi być idealnie — po prostu wybierz coś, co pasuje.",
+    "selectDateButton": "Wybierz termin",
+    "backButton": "Wstecz",
+    "searchingButton": "Szukam...",
+    "searchTherapistButton": "Wyszukaj terapeutę",
+    "docEmptyState": "Brak dostępnych terapeutów w wybranym terminie",
+    "docPrevAria": "Poprzedni terapeuta",
+    "docNextAria": "Następny terapeuta",
+    "docIndicatorAria": "Przejdź do terapeuty {index}"
   },
   "Problems": {
     "mood_disorders": "Nastrój",

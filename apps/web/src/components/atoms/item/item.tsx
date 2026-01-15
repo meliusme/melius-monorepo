@@ -6,7 +6,7 @@ interface ItemProps {
   onClick: () => void;
 }
 
-export function Item({ title, selected, onClick }: ItemProps) {
+export default function Item({ title, selected, onClick }: ItemProps) {
   return (
     <div
       role="button"

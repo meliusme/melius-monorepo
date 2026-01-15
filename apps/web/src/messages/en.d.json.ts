@@ -3,11 +3,16 @@
 
 declare const messages: {
   "Home": {
-    "eyebrow": "Problems",
-    "title": "Available problem areas",
-    "lede": "Fetched from the backend as a server component.",
     "problemsHeader": "How can I help you?",
-    "problemsSubheader": "It doesn't have to be perfect — just pick something that fits."
+    "problemsSubheader": "It doesn't have to be perfect — just pick something that fits.",
+    "selectDateButton": "Select date",
+    "backButton": "Back",
+    "searchingButton": "Searching...",
+    "searchTherapistButton": "Search for therapist",
+    "docEmptyState": "No therapists available for the selected dates",
+    "docPrevAria": "Previous therapist",
+    "docNextAria": "Next therapist",
+    "docIndicatorAria": "Go to therapist {index}"
   },
   "Problems": {
     "mood_disorders": "Mood",

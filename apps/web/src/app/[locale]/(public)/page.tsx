@@ -1,18 +1,15 @@
 import { backendFetch } from '@lib/api/server/backend';
-import type { ApiResponse } from '@lib/api/types';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { safeFetch } from '@lib/api/server/safe-fetch';
-import ProblemList from './components/problemList/problemList';
+import type { ProblemsResponse } from '@/lib/types/api';
+import MatchStepper from './components/matchStepper/matchStepper';
 import HeadSvg from '@/assets/illustrations/head.svg';
 import styles from './page.module.scss';
-
-type ProblemsResponse = ApiResponse<'/matches/problems', 'get'>;
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations('Home');
   const tProblems = await getTranslations('Problems');
   const tErrors = await getTranslations('Errors');
 
@@ -38,19 +35,13 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <main className={styles.homeContainer}>
-      <section className={styles.problemsSection}>
-        <div className={styles.headerSection}>
-          <h1 className={styles.header}>{t('problemsHeader')}</h1>
-          <p className={styles.subheader}>{t('problemsSubheader')}</p>
+      {errorMessage ? (
+        <div>
+          <h3>{errorMessage}</h3>
         </div>
-        {errorMessage ? (
-          <div>
-            <h3>{errorMessage}</h3>
-          </div>
-        ) : (
-          <ProblemList problems={problems} translations={problemTranslations} />
-        )}
-      </section>
+      ) : (
+        <MatchStepper problems={problems} translations={problemTranslations} />
+      )}
       <section className={styles.heroSection}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={HeadSvg.src} alt="Hero illustration" />

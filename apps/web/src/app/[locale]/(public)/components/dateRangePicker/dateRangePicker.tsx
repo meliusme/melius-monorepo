@@ -4,9 +4,8 @@ import { useMemo, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
   format,
-  addDays as addDaysFns,
+  addDays,
   startOfDay,
-  endOfDay,
   nextMonday,
   startOfMonth,
   endOfMonth,
@@ -21,64 +20,15 @@ import {
 import { enUS, pl } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
 import styles from './dateRangePicker.module.scss';
-import Button from '@/components/atoms/button/button';
-
-export type RangePreset = 'today' | 'tomorrow' | 'nextWeek' | 'range';
-
-export type DateRangeValue = {
-  preset: RangePreset;
-  fromISO: string; // YYYY-MM-DD
-  toISO: string; // YYYY-MM-DD
-};
+import Item from '@/components/atoms/item/item';
+import { toISODate, parseLocalDate, toAPIDateRange } from '@/lib/utils/date';
+import type { DateRangeValue, RangePreset } from '@/lib/types/date';
 
 type DateRangePickerProps = {
   value?: DateRangeValue;
   onChange: (val: DateRangeValue) => void;
   maxRangeDays?: number; // e.g. 30
 };
-
-function toISODate(d: Date): string {
-  return format(d, 'yyyy-MM-dd');
-}
-
-function addDays(d: Date, days: number): Date {
-  return addDaysFns(d, days);
-}
-
-function parseLocalDate(isoString: string): Date {
-  // Parse YYYY-MM-DD locally to avoid timezone shifts
-  const [y, m, d] = isoString.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-/**
- * Convert YYYY-MM-DD to start of day in local timezone, then to UTC
- * @example toStartOfDayISO('2026-01-13') => '2026-01-12T23:00:00.000Z' (when local is UTC+1)
- */
-export function toStartOfDayISO(dateISO: string): string {
-  return startOfDay(parseLocalDate(dateISO)).toISOString();
-}
-
-/**
- * Convert YYYY-MM-DD to end of day in local timezone, then to UTC
- * @example toEndOfDayISO('2026-01-13') => '2026-01-13T22:59:59.999Z' (when local is UTC+1)
- */
-export function toEndOfDayISO(dateISO: string): string {
-  return endOfDay(parseLocalDate(dateISO)).toISOString();
-}
-
-/**
- * Convert DateRangeValue to API-ready date range with full ISO 8601 timestamps
- * Converts local dates to UTC preserving the user's timezone context
- * @example toAPIDateRange({ preset: 'today', fromISO: '2026-01-13', toISO: '2026-01-13' })
- *   => { from: '2026-01-12T23:00:00.000Z', to: '2026-01-13T22:59:59.999Z' } (when in UTC+1)
- */
-export function toAPIDateRange(value: DateRangeValue) {
-  return {
-    from: toStartOfDayISO(value.fromISO),
-    to: toEndOfDayISO(value.toISO),
-  };
-}
 
 function startOfNextWeek(d: Date): Date {
   return nextMonday(d);
@@ -120,7 +70,7 @@ function getCalendarDays(referenceDate: Date, weekStartsOn: 0 | 1 = 1) {
   return days;
 }
 
-export function DateRangePicker({
+export default function DateRangePicker({
   value,
   onChange,
   maxRangeDays = 30,
@@ -131,19 +81,23 @@ export function DateRangePicker({
   // Week starts on Monday (1) for PL, Sunday (0) for EN
   const weekStartsOn = locale === 'pl' ? 1 : 0;
 
-  // Derive current state from value prop (controlled) or default to today
-  // Fresh Date() here ensures midnight rollover works correctly if page stays open
-  const current = useMemo<DateRangeValue>(() => {
-    if (value) return value;
-    const today = toISODate(new Date());
-    return { preset: 'today', fromISO: today, toISO: today };
-  }, [value]);
-
-  const { preset, fromISO, toISO } = current;
+  // If no value provided, nothing is selected initially
+  const preset = value?.preset ?? null;
+  const fromISO = value?.fromISO ?? '';
+  const toISO = value?.toISO ?? '';
 
   // Calendar state
-  const [displayMonth, setDisplayMonth] = useState<Date>(() => parseLocalDate(fromISO));
+  const [displayMonth, setDisplayMonth] = useState<Date>(() => {
+    if (fromISO) return parseLocalDate(fromISO);
+    return new Date();
+  });
   const [selectingFrom, setSelectingFrom] = useState<Date | null>(null);
+
+  // Remember last range selection to restore when switching back to 'range'
+  const [lastRangeSelection, setLastRangeSelection] = useState<{
+    fromISO: string;
+    toISO: string;
+  } | null>(preset === 'range' && fromISO && toISO ? { fromISO, toISO } : null);
 
   function emit(nextPreset: RangePreset, nextFrom: string, nextTo: string) {
     const clamped = clampRange(nextFrom, nextTo, maxRangeDays);
@@ -168,10 +122,20 @@ export function DateRangePicker({
       return emit('nextWeek', toISODate(mon), toISODate(sun));
     }
 
-    // range: reset selection state and wait for user to select range
+    // range: restore last range selection if exists, otherwise start fresh
     setSelectingFrom(null);
-    setDisplayMonth(parseLocalDate(fromISO));
-    return emit('range', fromISO, toISO);
+    if (lastRangeSelection && lastRangeSelection.fromISO && lastRangeSelection.toISO) {
+      // Restore previous range selection
+      setDisplayMonth(parseLocalDate(lastRangeSelection.fromISO));
+      return onChange({
+        preset: 'range',
+        fromISO: lastRangeSelection.fromISO,
+        toISO: lastRangeSelection.toISO,
+      });
+    }
+    // No previous selection - start fresh
+    setDisplayMonth(new Date());
+    return onChange({ preset: 'range', fromISO: '', toISO: '' });
   }
 
   function handleDayClick(day: Date) {
@@ -182,16 +146,25 @@ export function DateRangePicker({
       setSelectingFrom(day);
       emit('range', dayISO, dayISO);
     } else {
-      // Second click - complete selection
+      // Second click - complete selection and save to lastRangeSelection
       const fromDate = selectingFrom;
       const toDate = day;
 
+      let finalFrom: string;
+      let finalTo: string;
+
       if (isBefore(toDate, fromDate)) {
         // If user clicked earlier date, swap them
-        emit('range', toISODate(toDate), toISODate(fromDate));
+        finalFrom = toISODate(toDate);
+        finalTo = toISODate(fromDate);
       } else {
-        emit('range', toISODate(fromDate), toISODate(toDate));
+        finalFrom = toISODate(fromDate);
+        finalTo = toISODate(toDate);
       }
+
+      // Save this selection for later restoration
+      setLastRangeSelection({ fromISO: finalFrom, toISO: finalTo });
+      emit('range', finalFrom, finalTo);
       setSelectingFrom(null);
     }
   }
@@ -200,9 +173,13 @@ export function DateRangePicker({
     () => getCalendarDays(displayMonth, weekStartsOn),
     [displayMonth, weekStartsOn],
   );
-  const fromDate = parseLocalDate(fromISO);
-  const toDate = parseLocalDate(toISO);
-  const today = useMemo(() => startOfDay(new Date()), []);
+
+  // Calculate today once per day (not per render) to avoid infinite re-renders in useMemo
+  const today = useMemo(() => {
+    const now = new Date();
+    return startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  }, []);
+
   const maxDate = useMemo(() => addDays(today, maxRangeDays - 1), [today, maxRangeDays]);
 
   // Check if navigation buttons should be disabled
@@ -223,13 +200,11 @@ export function DateRangePicker({
     <div className={styles.root}>
       <div className={styles.presets}>
         {(['today', 'tomorrow', 'nextWeek', 'range'] as const).map((p) => (
-          <Button
+          <Item
             key={p}
-            type="button"
-            label={t(p)}
+            title={t(p)}
+            selected={preset === p}
             onClick={() => applyPreset(p)}
-            variant={preset === p ? 'primary' : 'secondary'}
-            fullWidth
           />
         ))}
       </div>
@@ -273,16 +248,10 @@ export function DateRangePicker({
 
           <div className={styles.days}>
             {calendarDays.map((day, idx) => {
-              // Show selection when:
-              // - not in range mode, OR
-              // - selection started (selectingFrom is set), OR
-              // - range was already selected (from !== to or selection completed)
-              const showSelection =
-                preset !== 'range' || selectingFrom !== null || fromISO !== toISO;
-              const isSelected =
-                showSelection && (isSameDay(day, fromDate) || isSameDay(day, toDate));
+              const fromDate = fromISO ? parseLocalDate(fromISO) : day;
+              const toDate = toISO ? parseLocalDate(toISO) : day;
+              const isSelected = isSameDay(day, fromDate) || isSameDay(day, toDate);
               const isInRange =
-                showSelection &&
                 fromDate &&
                 toDate &&
                 isWithinInterval(day, { start: fromDate, end: toDate });
@@ -307,15 +276,19 @@ export function DateRangePicker({
             })}
           </div>
 
-          {(selectingFrom !== null || fromISO !== toISO) && (
+          {(selectingFrom !== null || (fromISO && toISO)) && (
             <div className={styles.selectedRange}>
               <span className={styles.rangeLabel}>{t('from')}:</span>
               <span className={styles.rangeValue}>
-                {format(fromDate, dateFormat, { locale: dfLocale })}
+                {format(fromISO ? parseLocalDate(fromISO) : displayMonth, dateFormat, {
+                  locale: dfLocale,
+                })}
               </span>
               <span className={styles.rangeLabel}>{t('to')}:</span>
               <span className={styles.rangeValue}>
-                {format(toDate, dateFormat, { locale: dfLocale })}
+                {format(toISO ? parseLocalDate(toISO) : displayMonth, dateFormat, {
+                  locale: dfLocale,
+                })}
               </span>
             </div>
           )}
