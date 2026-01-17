@@ -248,12 +248,16 @@ export default function DateRangePicker({
 
           <div className={styles.days}>
             {calendarDays.map((day, idx) => {
-              const fromDate = fromISO ? parseLocalDate(fromISO) : day;
-              const toDate = toISO ? parseLocalDate(toISO) : day;
-              const isSelected = isSameDay(day, fromDate) || isSameDay(day, toDate);
+              const fromDate = fromISO ? parseLocalDate(fromISO) : null;
+              const toDate = toISO ? parseLocalDate(toISO) : null;
+              const isSelected =
+                (fromDate && isSameDay(day, fromDate)) ||
+                (toDate && isSameDay(day, toDate));
               const isInRange =
                 fromDate &&
                 toDate &&
+                !isSameDay(day, fromDate) &&
+                !isSameDay(day, toDate) &&
                 isWithinInterval(day, { start: fromDate, end: toDate });
               const isOutsideMonth =
                 day < startOfMonth(displayMonth) || day > endOfMonth(displayMonth);

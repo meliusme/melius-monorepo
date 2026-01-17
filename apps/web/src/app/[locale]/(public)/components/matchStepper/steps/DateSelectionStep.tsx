@@ -41,6 +41,7 @@ export default function DateSelectionStep({
             onClick={onBack}
             variant="secondary"
             disabled={loading}
+            fullWidth
           />
           <Button
             label={loading ? searchingLabel : nextLabel}
@@ -48,7 +49,7 @@ export default function DateSelectionStep({
             disabled={
               dateRange === null || !dateRange.fromISO || !dateRange.toISO || loading
             }
-            large
+            fullWidth
           />
         </div>
       </div>

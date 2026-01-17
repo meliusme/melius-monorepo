@@ -34,7 +34,6 @@ export default function ProblemSelectionStep({
           onClick={onNext}
           disabled={selectedProblemId === null}
           fullWidth
-          large
         />
       </div>
     </>

@@ -1,16 +1,21 @@
 .homeContainer {
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   min-height: 100vh;
   gap: 4rem;
-  padding: 2rem;
+  padding: 0;
+  padding-top: calc(#{$header-height-mobile} + 1.5rem);
+  position: relative;
+  overflow: visible;
 }
 
 .heroSection {
-  flex: 1;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  padding: 0 2rem 2rem;
 
   svg,
   img {
@@ -20,13 +25,17 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .homeContainer {
-    flex-direction: column;
-    min-height: auto;
+    flex-direction: row;
+    min-height: 100vh;
+    padding: 2rem;
+    padding-top: calc(#{$header-height-desktop} + 2rem);
+    overflow-x: hidden;
   }
 
   .heroSection {
-    flex: none;
+    flex: 1;
+    padding: 0;
   }
 }

@@ -25,6 +25,11 @@ export default function DocCardList({
   getIndicatorAriaLabel,
 }: DocCardListProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : docs.length - 1));
@@ -34,10 +39,25 @@ export default function DocCardList({
     setCurrentIndex((prev) => (prev < docs.length - 1 ? prev + 1 : 0));
   };
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    if (direction === 'left') {
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
       handleNext();
-    } else {
+    } else if (isRightSwipe) {
       handlePrev();
     }
   };
@@ -61,7 +81,12 @@ export default function DocCardList({
           ←
         </button>
 
-        <div className={styles.cardWrapper}>
+        <div
+          className={styles.cardWrapper}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <DocCard doc={docs[currentIndex]} onSlotSelect={onSlotSelect} />
         </div>
 

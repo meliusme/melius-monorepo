@@ -4,7 +4,8 @@ import { Montserrat } from 'next/font/google';
 import { setRequestLocale, getMessages } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
-import 'src/styles/globals.scss';
+import '@/styles/globals.scss';
+import Header from '@/components/atoms/header/header';
 import Providers from '../providers';
 import { routing } from '../../i18n/routing';
 
@@ -43,6 +44,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={montserrat.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <Header />
         <Providers locale={locale} messages={messages}>
           {children}
         </Providers>
