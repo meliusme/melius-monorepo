@@ -6,21 +6,8 @@
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   width: 100%;
-}
-
-// Tablet and up
-@media (min-width: 768px) {
-  .problemList {
-    align-items: flex-end;
-  }
-
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    max-width: 480px;
-  }
 }

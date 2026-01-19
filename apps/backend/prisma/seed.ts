@@ -8,8 +8,8 @@ const prisma = new PrismaClient({ adapter });
 
 const problems = [
   { problemKey: 'mood_disorders' },
-  { problemKey: 'anxiety_and_phobias' },
-  { problemKey: 'anxiety_disorders' },
+  { problemKey: 'anxiety_and_panic' },
+  { problemKey: 'depression' },
   { problemKey: 'trauma' },
   { problemKey: 'eating_disorders' },
   { problemKey: 'personality_disorders' },
@@ -53,8 +53,11 @@ const specializations = [
 ];
 
 async function seedData() {
+  // Delete dependent records first to avoid foreign key constraint violations
+  await prisma.match.deleteMany();
   await prisma.problem.deleteMany();
   await prisma.specialization.deleteMany();
+  await prisma.$executeRaw`ALTER SEQUENCE "Match_id_seq" RESTART WITH 1;`;
   await prisma.$executeRaw`ALTER SEQUENCE "Problem_id_seq" RESTART WITH 1;`;
   await prisma.$executeRaw`ALTER SEQUENCE "Specialization_id_seq" RESTART WITH 1;`;
 

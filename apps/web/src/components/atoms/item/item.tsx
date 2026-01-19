@@ -1,12 +1,14 @@
+import { ReactNode } from 'react';
 import styles from './item.module.scss';
 
 interface ItemProps {
+  icon: ReactNode;
   title: string;
   selected: boolean;
   onClick: () => void;
 }
 
-export default function Item({ title, selected, onClick }: ItemProps) {
+export default function Item({ icon, title, selected, onClick }: ItemProps) {
   return (
     <div
       role="button"
@@ -21,11 +23,15 @@ export default function Item({ title, selected, onClick }: ItemProps) {
       className={`${styles.item} ${selected ? styles.selected : ''}`}
       aria-pressed={selected}
     >
-      <span className={styles.title}>{title}</span>
-
-      <div className={styles.select}>
-        {selected ? <div className={styles.selection} /> : null}
+      <div className={styles.iconWrapper}>
+        <div className={styles.icon}>{icon}</div>
       </div>
+
+      <div className={styles.content}>
+        <span className={styles.title}>{title}</span>
+      </div>
+
+      <div className={styles.select} />
     </div>
   );
 }

@@ -13,8 +13,8 @@
   },
   "Problems": {
     "mood_disorders": "Nastrój",
-    "anxiety_disorders": "Lęk i niepokój",
-    "anxiety_and_phobias": "Lęk i fobie",
+    "anxiety_and_panic": "Lęk i panika",
+    "depression": "Depresja",
     "trauma": "Trauma",
     "sleep_disorders": "Sen",
     "addictions": "Uzależnienia",

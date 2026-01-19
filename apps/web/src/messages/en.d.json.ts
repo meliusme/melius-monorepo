@@ -16,8 +16,8 @@ declare const messages: {
   },
   "Problems": {
     "mood_disorders": "Mood",
-    "anxiety_disorders": "Anxiety",
-    "anxiety_and_phobias": "Fear & phobias",
+    "anxiety_and_panic": "Anxiety & panic",
+    "depression": "Depression",
     "trauma": "Trauma",
     "sleep_disorders": "Sleep",
     "addictions": "Addictions",

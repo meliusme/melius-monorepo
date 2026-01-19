@@ -15,19 +15,19 @@ const problemSpecializations = [
   { problemKey: 'mood_disorders', specializationKey: 'mindfulness' },
 
   {
-    problemKey: 'anxiety_and_phobias',
+    problemKey: 'anxiety_and_panic',
     specializationKey: 'cognitive_behavioral_therapy',
   },
   {
-    problemKey: 'anxiety_and_phobias',
+    problemKey: 'anxiety_and_panic',
     specializationKey: 'dialectical_behavioral_therapy',
   },
 
   {
-    problemKey: 'anxiety_disorders',
+    problemKey: 'depression',
     specializationKey: 'cognitive_behavioral_therapy',
   },
-  { problemKey: 'anxiety_disorders', specializationKey: 'mindfulness' },
+  { problemKey: 'depression', specializationKey: 'mindfulness' },
 
   {
     problemKey: 'trauma',
@@ -120,7 +120,7 @@ const problemSpecializations = [
 
   { problemKey: 'mood_disorders', specializationKey: 'gestalt_therapy' },
   {
-    problemKey: 'anxiety_and_phobias',
+    problemKey: 'anxiety_and_panic',
     specializationKey: 'solution_focused_therapy',
   },
   { problemKey: 'life_crises', specializationKey: 'humanistic_therapy' },
