@@ -1,6 +1,7 @@
 import type { DateRangeValue } from '@/lib/types/date';
 import DateRangePicker from '../../dateRangePicker/dateRangePicker';
 import Button from '@/components/atoms/button/button';
+import StepWrapper from './StepWrapper';
 import styles from '../matchStepper.module.scss';
 
 type DateSelectionStepProps = {
@@ -13,6 +14,7 @@ type DateSelectionStepProps = {
   backLabel: string;
   nextLabel: string;
   searchingLabel: string;
+  image: string;
 };
 
 export default function DateSelectionStep({
@@ -25,9 +27,10 @@ export default function DateSelectionStep({
   backLabel,
   nextLabel,
   searchingLabel,
+  image,
 }: DateSelectionStepProps) {
   return (
-    <>
+    <StepWrapper stepNumber={2} image={image}>
       <DateRangePicker
         value={dateRange || undefined}
         onChange={onDateRangeChange}
@@ -53,6 +56,6 @@ export default function DateSelectionStep({
           />
         </div>
       </div>
-    </>
+    </StepWrapper>
   );
 }

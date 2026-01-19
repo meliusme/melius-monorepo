@@ -3,7 +3,6 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { safeFetch } from '@lib/api/server/safe-fetch';
 import type { ProblemsResponse } from '@/lib/types/api';
 import MatchStepper from './components/matchStepper/matchStepper';
-import HeadSvg from '@/assets/illustrations/head.svg';
 import styles from './page.module.scss';
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
@@ -35,10 +34,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <main className={styles.homeContainer}>
-      <section className={styles.heroSection}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={HeadSvg.src} alt="Hero illustration" />
-      </section>
       {errorMessage ? (
         <div>
           <h3>{errorMessage}</h3>

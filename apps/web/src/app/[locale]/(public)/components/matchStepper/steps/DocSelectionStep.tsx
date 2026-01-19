@@ -1,6 +1,7 @@
 import type { SearchWithSlotsResponse } from '@/lib/types/api';
 import DocCardList from '../../docCardList/docCardList';
 import Button from '@/components/atoms/button/button';
+import StepWrapper from './StepWrapper';
 import styles from '../matchStepper.module.scss';
 
 type DocSelectionStepProps = {
@@ -12,6 +13,7 @@ type DocSelectionStepProps = {
   prevAriaLabel: string;
   nextAriaLabel: string;
   getIndicatorAriaLabel: (index: number) => string;
+  image: string;
 };
 
 export default function DocSelectionStep({
@@ -23,9 +25,10 @@ export default function DocSelectionStep({
   prevAriaLabel,
   nextAriaLabel,
   getIndicatorAriaLabel,
+  image,
 }: DocSelectionStepProps) {
   return (
-    <>
+    <StepWrapper stepNumber={3} image={image} variables={{ count: docs.length }}>
       <DocCardList
         docs={docs}
         onSlotSelect={onSlotSelect}
@@ -37,6 +40,6 @@ export default function DocSelectionStep({
       <div className={styles.buttonContainer}>
         <Button label={backLabel} onClick={onBack} variant="secondary" />
       </div>
-    </>
+    </StepWrapper>
   );
 }

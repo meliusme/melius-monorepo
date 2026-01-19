@@ -3,12 +3,7 @@
 
 declare const messages: {
   "Home": {
-    "findClarity": "Find clarity,",
-    "findYourself": "find yourself.",
-    "initialDescription": "Connect with qualified therapists who understand your needs. Take the first step towards better mental health.",
     "startMatching": "Start matching",
-    "problemsHeader": "How can I help you?",
-    "problemsSubheader": "It doesn't have to be perfect — just pick something that fits.",
     "selectDateButton": "Select date",
     "backButton": "Back",
     "searchingButton": "Searching...",
@@ -17,6 +12,28 @@ declare const messages: {
     "docPrevAria": "Previous therapist",
     "docNextAria": "Next therapist",
     "docIndicatorAria": "Go to therapist {index}"
+  },
+  "Stepper": {
+    "step0": {
+      "header": "Find clarity with <em>the right support.</em>",
+      "subheader": "Answer a few thoughtful questions to get matched with a licensed therapist who truly fits your needs, personality, and preferences.",
+      "quote": "This isn't about changing who you are — it's about understanding yourself better."
+    },
+    "step1": {
+      "header": "What would you like to focus on?",
+      "subheader": "Select the option that feels closest to what you're experiencing right now.",
+      "quote": "Putting things into words is often the first step forward."
+    },
+    "step2": {
+      "header": "When are you <em>free</em>?",
+      "subheader": "Choose a preferred time range for your session.",
+      "quote": "Taking time for yourself is an important step."
+    },
+    "step3": {
+      "header": "Your Matches",
+      "subheader": "We found {count} specialists based on your needs.",
+      "quote": "Healing happens in connection. Finding someone who truly understands matters."
+    }
   },
   "Problems": {
     "mood_disorders": "Mood",

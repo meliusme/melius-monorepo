@@ -1,11 +1,6 @@
 {
   "Home": {
-    "findClarity": "Znajdź jasność,",
-    "findYourself": "znajdź siebie.",
-    "initialDescription": "Połącz się z wykwalifikowanymi terapeutami, którzy rozumieją Twoje potrzeby. Zrób pierwszy krok w stronę lepszego zdrowia psychicznego.",
     "startMatching": "Rozpocznij dopasowanie",
-    "problemsHeader": "W czym Ci pomóc?",
-    "problemsSubheader": "Nie musi być idealnie — po prostu wybierz coś, co pasuje.",
     "selectDateButton": "Wybierz termin",
     "backButton": "Wstecz",
     "searchingButton": "Szukam...",
@@ -14,6 +9,28 @@
     "docPrevAria": "Poprzedni terapeuta",
     "docNextAria": "Następny terapeuta",
     "docIndicatorAria": "Przejdź do terapeuty {index}"
+  },
+  "Stepper": {
+    "step0": {
+      "header": "Zacznij od <em>zrozumienia.</em>",
+      "subheader": "Odpowiedz na kilka przemyślanych pytań, aby dopasować Cię do licencjonowanego terapeuty, który naprawdę pasuje do Twoich potrzeb, osobowości i preferencji.",
+      "quote": "Możesz zacząć dokładnie tam, gdzie jesteś."
+    },
+    "step1": {
+      "header": "Na czym chcesz się skupić?",
+      "subheader": "Wybierz opcję, która najlepiej opisuje Twoją obecną sytuację.",
+      "quote": "Ujęcie tego w słowa często bywa pierwszym krokiem naprzód."
+    },
+    "step2": {
+      "header": "Kiedy masz <em>czas</em>?",
+      "subheader": "Wybierz preferowany przedział czasowy.",
+      "quote": "Znalezienie przestrzeni dla siebie ma znaczenie."
+    },
+    "step3": {
+      "header": "Twoje dopasowania",
+      "subheader": "Znaleźliśmy {count, plural, one {# specjalistę} few {# specjalistów} many {# specjalistów} other {# specjalisty}} na podstawie Twoich potrzeb.",
+      "quote": "Dobra relacja zaczyna się od bycia naprawdę zrozumianym."
+    }
   },
   "Problems": {
     "mood_disorders": "Nastrój",

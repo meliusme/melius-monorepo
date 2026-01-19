@@ -12,7 +12,16 @@ import ProblemSelectionStep from './steps/ProblemSelectionStep';
 import DateSelectionStep from './steps/DateSelectionStep';
 import DocSelectionStep from './steps/DocSelectionStep';
 import InitialStep from './steps/InitialStep';
+import HeadSvg from '@/assets/illustrations/head.svg';
 import styles from './matchStepper.module.scss';
+
+// Step images mapping
+const STEP_IMAGES: Record<number, string> = {
+  0: HeadSvg.src,
+  1: HeadSvg.src,
+  2: HeadSvg.src,
+  3: HeadSvg.src,
+};
 
 type MatchStepperProps = {
   problems: ProblemsResponse;
@@ -103,9 +112,11 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
   };
 
   const renderStep = () => {
+    const currentImage = STEP_IMAGES[currentStep];
+
     switch (currentStep) {
       case 0:
-        return <InitialStep onStart={() => setCurrentStep(1)} />;
+        return <InitialStep onStart={() => setCurrentStep(1)} image={currentImage} />;
 
       case 1:
         return (
@@ -116,6 +127,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             onProblemSelect={handleProblemSelect}
             onNext={handleNextToDatePicker}
             buttonLabel={t('selectDateButton')}
+            image={currentImage}
           />
         );
 
@@ -131,6 +143,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             backLabel={t('backButton')}
             nextLabel={t('searchTherapistButton')}
             searchingLabel={t('searchingButton')}
+            image={currentImage}
           />
         );
 
@@ -145,14 +158,11 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             prevAriaLabel={t('docPrevAria')}
             nextAriaLabel={t('docNextAria')}
             getIndicatorAriaLabel={(index) => t('docIndicatorAria', { index: index + 1 })}
+            image={currentImage}
           />
         );
     }
   };
 
-  return (
-    <section className={styles.problemsSection}>
-      <div className={styles.stepContent}>{renderStep()}</div>
-    </section>
-  );
+  return <>{renderStep()}</>;
 }

@@ -9,36 +9,11 @@
   overflow: hidden;
 }
 
-.heroSection {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc($header-height-mobile + 2rem) 2rem 2rem;
-  background-color: $canvas-light;
-  min-height: 40vh;
-
-  svg,
-  img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-}
-
 @media (min-width: 768px) {
   .homeContainer {
     flex-direction: row;
     min-height: 100vh;
     height: 100vh;
     overflow: hidden;
-  }
-
-  .heroSection {
-    flex: 1;
-    height: 100vh;
-    min-height: 100vh;
-    padding: calc($header-height-desktop + 4rem) 4rem 4rem;
-    border-right: 1px solid #f2efe8;
   }
 }

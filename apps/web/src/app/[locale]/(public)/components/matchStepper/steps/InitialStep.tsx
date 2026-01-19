@@ -3,24 +3,20 @@
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import Button from '@/components/atoms/button/button';
-import StepLabel from '@/components/atoms/stepLabel/stepLabel';
-import StepDescription from '@/components/atoms/stepDescription/stepDescription';
+import StepWrapper from './StepWrapper';
 import styles from './initialStep.module.scss';
 
 type InitialStepProps = {
   onStart: () => void;
+  image: string;
 };
 
-export default function InitialStep({ onStart }: InitialStepProps) {
+export default function InitialStep({ onStart, image }: InitialStepProps) {
   const t = useTranslations('Home');
 
   return (
-    <div className={styles.initialStep}>
-      <div className={styles.content}>
-        <StepLabel mainText={t('findClarity')} italicText={t('findYourself')} />
-        <StepDescription text={t('initialDescription')} />
-      </div>
-      <div className={styles.buttonContainer}>
+    <StepWrapper stepNumber={0} image={image}>
+      <div className={styles.buttonWrapper}>
         <Button
           label={t('startMatching')}
           onClick={onStart}
@@ -30,6 +26,6 @@ export default function InitialStep({ onStart }: InitialStepProps) {
           fullWidth
         />
       </div>
-    </div>
+    </StepWrapper>
   );
 }
