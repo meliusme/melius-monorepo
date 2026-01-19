@@ -1,5 +1,9 @@
 {
   "Home": {
+    "findClarity": "Znajdź jasność,",
+    "findYourself": "znajdź siebie.",
+    "initialDescription": "Połącz się z wykwalifikowanymi terapeutami, którzy rozumieją Twoje potrzeby. Zrób pierwszy krok w stronę lepszego zdrowia psychicznego.",
+    "startMatching": "Rozpocznij dopasowanie",
     "problemsHeader": "W czym Ci pomóc?",
     "problemsSubheader": "Nie musi być idealnie — po prostu wybierz coś, co pasuje.",
     "selectDateButton": "Wybierz termin",

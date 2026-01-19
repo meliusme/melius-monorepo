@@ -1,0 +1,41 @@
+.label {
+  width: 100%;
+  max-width: 100%;
+
+  .text {
+    color: #1a1a1a;
+    font-family: var(--font-display), serif;
+    font-size: 6rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 6rem;
+    margin: 0;
+    text-align: left;
+    width: 100%;
+  }
+
+  .textWrapper {
+    line-height: 6.6rem;
+    font-style: normal;
+  }
+
+  .span {
+    font-family: var(--font-display), serif;
+    font-style: italic;
+  }
+}
+
+@media (max-width: 768px) {
+  .label {
+    width: 100%;
+
+    .text {
+      font-size: 4rem;
+      line-height: 4rem;
+    }
+
+    .textWrapper {
+      line-height: 4.4rem;
+    }
+  }
+}

@@ -4,11 +4,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 1rem 0 8rem;
+  justify-content: center;
+  padding: calc($header-height-mobile + 2rem) 1rem 8rem;
   width: 100%;
   position: relative;
-  min-height: 0;
+  min-height: 100%;
+  background-color: $canvas-warm;
 }
 
 .headerSection {
@@ -52,7 +53,7 @@
   gap: 0.75rem;
   padding: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-  background: $canvas;
+  background: $canvas-warm;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   z-index: 100;
   width: 100%;
@@ -77,23 +78,12 @@
 // Tablet and up
 @media (min-width: 768px) {
   .problemsSection {
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 0 2rem 0 0;
-    overflow-y: visible;
-  }
-
-  .headerSection {
-    margin-bottom: 3rem;
-  }
-
-  .header {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .subheader {
-    font-size: 1.5rem;
+    padding: calc($header-height-desktop + 4rem) 4rem 4rem;
+    overflow-y: auto;
+    height: 100vh;
+    min-height: 100vh;
   }
 
   .stepContent {

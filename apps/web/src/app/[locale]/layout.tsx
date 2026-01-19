@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Montserrat } from 'next/font/google';
+import { Playfair_Display, Inter } from 'next/font/google';
 import { setRequestLocale, getMessages } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
@@ -9,7 +9,15 @@ import Header from '@/components/atoms/header/header';
 import Providers from '../providers';
 import { routing } from '../../i18n/routing';
 
-const montserrat = Montserrat({
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
@@ -42,7 +50,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={montserrat.variable} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${playfairDisplay.variable} ${inter.variable}`}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
         <Header />
         <Providers locale={locale} messages={messages}>

@@ -35,6 +35,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <main className={styles.homeContainer}>
+      <section className={styles.heroSection}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={HeadSvg.src} alt="Hero illustration" />
+      </section>
       {errorMessage ? (
         <div>
           <h3>{errorMessage}</h3>
@@ -42,10 +46,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       ) : (
         <MatchStepper problems={problems} translations={problemTranslations} />
       )}
-      <section className={styles.heroSection}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={HeadSvg.src} alt="Hero illustration" />
-      </section>
     </main>
   );
 }

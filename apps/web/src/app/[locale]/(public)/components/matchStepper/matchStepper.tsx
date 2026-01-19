@@ -11,6 +11,7 @@ import { defaultValues, type MatchStepperFormData } from './matchStepperSchema';
 import ProblemSelectionStep from './steps/ProblemSelectionStep';
 import DateSelectionStep from './steps/DateSelectionStep';
 import DocSelectionStep from './steps/DocSelectionStep';
+import InitialStep from './steps/InitialStep';
 import styles from './matchStepper.module.scss';
 
 type MatchStepperProps = {
@@ -21,7 +22,7 @@ type MatchStepperProps = {
 export default function MatchStepper({ problems, translations }: MatchStepperProps) {
   const t = useTranslations('Home');
   const tErrors = useTranslations('Errors');
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<0 | 1 | 2 | 3>(0);
   const [state, setState] = useState<MatchStepperFormData>(defaultValues);
   const [docs, setDocs] = useState<SearchWithSlotsResponse>([]);
   const [loading, setLoading] = useState(false);
@@ -103,6 +104,9 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
 
   const renderStep = () => {
     switch (currentStep) {
+      case 0:
+        return <InitialStep onStart={() => setCurrentStep(1)} />;
+
       case 1:
         return (
           <ProblemSelectionStep
@@ -148,11 +152,6 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
 
   return (
     <section className={styles.problemsSection}>
-      <div className={styles.headerSection}>
-        <h1 className={styles.header}>{t('problemsHeader')}</h1>
-        <p className={styles.subheader}>{t('problemsSubheader')}</p>
-      </div>
-
       <div className={styles.stepContent}>{renderStep()}</div>
     </section>
   );

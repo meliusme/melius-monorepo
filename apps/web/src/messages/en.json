@@ -1,5 +1,9 @@
 {
   "Home": {
+    "findClarity": "Find clarity,",
+    "findYourself": "find yourself.",
+    "initialDescription": "Connect with qualified therapists who understand your needs. Take the first step towards better mental health.",
+    "startMatching": "Start matching",
     "problemsHeader": "How can I help you?",
     "problemsSubheader": "It doesn't have to be perfect — just pick something that fits.",
     "selectDateButton": "Select date",
