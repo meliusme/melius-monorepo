@@ -14,6 +14,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   large?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
+  rounded?: boolean;
 }
 
 export default function Button({
@@ -26,6 +27,7 @@ export default function Button({
   large = false,
   disabled = false,
   icon,
+  rounded,
   className,
   ...rest
 }: ButtonProps) {
@@ -36,6 +38,8 @@ export default function Button({
     large ? styles.large : '',
     disabled ? styles.disabled : '',
     fullWidth ? styles.fullWidth : '',
+    rounded ? styles.rounded : '',
+    icon ? styles.withIcon : '',
     className ?? '',
   ]
     .filter(Boolean)

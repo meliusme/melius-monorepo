@@ -127,6 +127,8 @@ docker compose --env-file .env.production up --build -d
 ./dev.sh logs     # View logs (optional: logs backend/web)
 ./dev.sh restart  # Restart services
 ./dev.sh ps       # Check status
+
+# Backend container runs prisma migrate deploy on startup.
 ```
 
 ### Package.json Scripts

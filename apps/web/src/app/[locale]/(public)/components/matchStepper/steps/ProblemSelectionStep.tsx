@@ -1,5 +1,6 @@
 import type { ProblemsResponse } from '@/lib/types/api';
 import ProblemList from '../../problemList/problemList';
+import { ArrowRight } from 'lucide-react';
 import Button from '@/components/atoms/button/button';
 import styles from '../matchStepper.module.scss';
 
@@ -33,7 +34,10 @@ export default function ProblemSelectionStep({
           label={buttonLabel}
           onClick={onNext}
           disabled={selectedProblemId === null}
+          icon={<ArrowRight size={16} />}
           fullWidth
+          rounded
+          large
         />
       </div>
     </>

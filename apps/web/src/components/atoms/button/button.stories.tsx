@@ -1,4 +1,5 @@
 import type { Story } from '@ladle/react';
+import { ArrowRight, Send, Sparkles } from 'lucide-react';
 import Button from './button';
 
 export const Primary: Story = () => (
@@ -31,4 +32,39 @@ export const Disabled: Story = () => (
 
 export const WithCustomWidth: Story = () => (
   <Button label="Custom Width" onClick={() => console.log('clicked')} width={300} />
+);
+
+export const Rounded: Story = () => (
+  <Button label="Rounded Button" onClick={() => console.log('clicked')} rounded />
+);
+
+export const RoundedLarge: Story = () => (
+  <Button label="Large Rounded" onClick={() => console.log('clicked')} large rounded />
+);
+
+export const WithIcon: Story = () => (
+  <Button
+    label="Button with Icon"
+    onClick={() => console.log('clicked')}
+    icon={<ArrowRight size={16} />}
+  />
+);
+
+export const RoundedWithIcon: Story = () => (
+  <Button
+    label="Rounded with Icon"
+    onClick={() => console.log('clicked')}
+    rounded
+    icon={<Send size={16} />}
+  />
+);
+
+export const LargeRoundedWithIcon: Story = () => (
+  <Button
+    label="Large Rounded with Icon"
+    onClick={() => console.log('clicked')}
+    large
+    rounded
+    icon={<Sparkles size={20} />}
+  />
 );
