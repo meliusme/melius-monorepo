@@ -12,15 +12,18 @@ import ProblemSelectionStep from './steps/ProblemSelectionStep';
 import DateSelectionStep from './steps/DateSelectionStep';
 import DocSelectionStep from './steps/DocSelectionStep';
 import InitialStep from './steps/InitialStep';
-import HeadSvg from '@/assets/illustrations/head.svg';
+import Step0Svg from '@/assets/illustrations/step0.svg';
+import Step1Svg from '@/assets/illustrations/step1.svg';
+import Step2Svg from '@/assets/illustrations/step2.svg';
+import Step3Svg from '@/assets/illustrations/step3.svg';
 import styles from './matchStepper.module.scss';
 
 // Step images mapping
 const STEP_IMAGES: Record<number, string> = {
-  0: HeadSvg.src,
-  1: HeadSvg.src,
-  2: HeadSvg.src,
-  3: HeadSvg.src,
+  0: Step0Svg.src,
+  1: Step1Svg.src,
+  2: Step2Svg.src,
+  3: Step3Svg.src,
 };
 
 type MatchStepperProps = {
@@ -112,12 +115,11 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
   };
 
   const renderStep = () => {
-    const currentImage = STEP_IMAGES[currentStep];
+    const image = STEP_IMAGES[currentStep];
 
     switch (currentStep) {
       case 0:
-        return <InitialStep onStart={() => setCurrentStep(1)} image={currentImage} />;
-
+        return <InitialStep onStart={() => setCurrentStep(1)} image={image} />;
       case 1:
         return (
           <ProblemSelectionStep
@@ -129,7 +131,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             onNext={handleNextToDatePicker}
             backLabel={t('backButton')}
             buttonLabel={t('selectDateButton')}
-            image={currentImage}
+            image={image}
           />
         );
 
@@ -145,7 +147,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             backLabel={t('backButton')}
             nextLabel={t('searchTherapistButton')}
             searchingLabel={t('searchingButton')}
-            image={currentImage}
+            image={image}
           />
         );
 
@@ -160,7 +162,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             prevAriaLabel={t('docPrevAria')}
             nextAriaLabel={t('docNextAria')}
             getIndicatorAriaLabel={(index) => t('docIndicatorAria', { index: index + 1 })}
-            image={currentImage}
+            image={image}
           />
         );
     }
