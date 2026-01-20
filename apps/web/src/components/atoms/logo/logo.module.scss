@@ -1,14 +1,13 @@
-.header {
+.logoWrapper {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1000;
-  padding: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  pointer-events: none;
 }
 
 .logo {
@@ -20,10 +19,9 @@
   margin: 0;
 }
 
-// Tablet and up
 @include min-width-md {
-  .header {
-    padding: 2rem;
+  .logoWrapper {
+    top: 2rem;
   }
 
   .logo {

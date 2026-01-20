@@ -1,0 +1,16 @@
+.authControls {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@include min-width-md {
+  .authControls {
+    top: 2rem;
+    right: 2rem;
+  }
+}

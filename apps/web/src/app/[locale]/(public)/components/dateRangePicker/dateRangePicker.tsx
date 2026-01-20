@@ -174,6 +174,9 @@ export default function DateRangePicker({
 
   const dateFormat = locale === 'pl' ? 'd MMMM yyyy' : 'MMMM d, yyyy';
   const monthYearFormat = locale === 'pl' ? 'LLLL yyyy' : 'MMMM yyyy';
+  const isSingleDay =
+    Boolean(fromISO && toISO) &&
+    isSameDay(parseLocalDate(fromISO), parseLocalDate(toISO));
 
   return (
     <div className={styles.root}>
@@ -266,18 +269,29 @@ export default function DateRangePicker({
 
         {(selectingFrom !== null || (fromISO && toISO)) && (
           <div className={styles.selectedRange}>
-            <span className={styles.rangeLabel}>{t('from')}:</span>
-            <span className={styles.rangeValue}>
-              {format(fromISO ? parseLocalDate(fromISO) : displayMonth, dateFormat, {
-                locale: dfLocale,
-              })}
-            </span>
-            <span className={styles.rangeLabel}>{t('to')}:</span>
-            <span className={styles.rangeValue}>
-              {format(toISO ? parseLocalDate(toISO) : displayMonth, dateFormat, {
-                locale: dfLocale,
-              })}
-            </span>
+            {isSingleDay ? (
+              <>
+                <span className={styles.rangeLabel}>{t('selectedDate')}:</span>
+                <span className={styles.rangeValue}>
+                  {format(parseLocalDate(fromISO), dateFormat, { locale: dfLocale })}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.rangeLabel}>{t('from')}:</span>
+                <span className={styles.rangeValue}>
+                  {format(fromISO ? parseLocalDate(fromISO) : displayMonth, dateFormat, {
+                    locale: dfLocale,
+                  })}
+                </span>
+                <span className={styles.rangeLabel}>{t('to')}:</span>
+                <span className={styles.rangeValue}>
+                  {format(toISO ? parseLocalDate(toISO) : displayMonth, dateFormat, {
+                    locale: dfLocale,
+                  })}
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>

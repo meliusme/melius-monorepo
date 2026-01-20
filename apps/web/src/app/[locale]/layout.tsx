@@ -5,7 +5,8 @@ import { setRequestLocale, getMessages } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import '@/styles/globals.scss';
-import Header from '@/components/atoms/header/header';
+import Logo from '@/components/atoms/logo/logo';
+import AuthControls from '@/components/atoms/authControls/authControls';
 import Providers from '../providers';
 import { routing } from '../../i18n/routing';
 
@@ -56,8 +57,9 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
-        <Header />
         <Providers locale={locale} messages={messages}>
+          <Logo />
+          <AuthControls />
           {children}
         </Providers>
       </body>

@@ -38,20 +38,22 @@ export default function StepWrapper({
         )}
       </section>
       <section className={styles.contentSection}>
-        <div className={styles.headerContainer}>
-          <p className={styles.headerText}>
-            {t.rich(`${stepKey}.header`, {
-              em: (chunks) => <em>{chunks}</em>,
-            })}
-          </p>
-          <p className={styles.subheaderText}>
-            {t.rich(`${stepKey}.subheader`, {
-              em: (chunks) => <em>{chunks}</em>,
-              ...(variables || {}),
-            })}
-          </p>
+        <div className={styles.contentWrapper}>
+          <div className={styles.headerContainer}>
+            <p className={styles.headerText}>
+              {t.rich(`${stepKey}.header`, {
+                em: (chunks) => <em>{chunks}</em>,
+              })}
+            </p>
+            <p className={styles.subheaderText}>
+              {t.rich(`${stepKey}.subheader`, {
+                em: (chunks) => <em>{chunks}</em>,
+                ...(variables || {}),
+              })}
+            </p>
+          </div>
+          <div className={styles.stepContent}>{children}</div>
         </div>
-        <div className={styles.stepContent}>{children}</div>
       </section>
     </>
   );

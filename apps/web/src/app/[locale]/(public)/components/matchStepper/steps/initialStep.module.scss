@@ -3,9 +3,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100%;
-  padding: 1rem;
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
   background: linear-gradient(
     to top,
     $canvas-warm 60%,
@@ -16,13 +14,82 @@
 
   @include min-width-md {
     position: sticky;
-    bottom: 0;
-    left: auto;
-    right: auto;
-    width: auto;
-    padding: 2rem 0 0;
-    background: linear-gradient(to top, $canvas-warm 60%, rgba(249, 246, 240, 0) 100%);
+    padding: 0;
     margin-top: 2rem;
-    flex-shrink: 0;
+    background: linear-gradient(to top, $canvas-warm 60%, rgba(249, 246, 240, 0) 100%);
   }
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.6rem;
+  padding: 2rem 0;
+  margin-top: 2rem;
+  border-top: 0.1rem solid $border-subtle;
+  border-bottom: 0.1rem solid $border-subtle;
+
+  @include min-width-md {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.4rem;
+  }
+}
+
+.featureCard {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0;
+}
+
+.featureIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 0.1rem solid $border-subtle;
+  background-color: $white;
+  color: $ink;
+  flex-shrink: 0;
+}
+
+.featureText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.featureTitle {
+  margin: 0;
+  font-family: $font-sans;
+  font-size: $fs-1-3;
+  font-weight: 500;
+  line-height: 2rem;
+  color: $ink;
+
+  @include min-width-md {
+    font-size: $fs-1-4;
+  }
+}
+
+.featureSubtitle {
+  margin: 0;
+  font-family: $font-sans;
+  font-size: $fs-1-1;
+  line-height: 1.8rem;
+  color: $ink-muted-50;
+
+  @include min-width-md {
+    font-size: $fs-1-2;
+  }
+}
+
+.timeNote {
+  margin: 0.8rem 0 0;
+  font-family: $font-sans;
+  font-size: $fs-1-1;
+  color: $ink-muted-50;
+  text-align: center;
 }

@@ -1,6 +1,11 @@
 {
   "Home": {
     "startMatching": "Rozpocznij dopasowanie",
+    "matchTitle": "Dopasowanie",
+    "matchDesc": "W kilku prostych krokach",
+    "verifiedTitle": "Zweryfikowani",
+    "verifiedDesc": "Licencjonowani specjaliści",
+    "timeNote": "Zajmuje około 2 minuty • Bez rejestracji na start.",
     "selectDateButton": "Wybierz termin",
     "backButton": "Wstecz",
     "searchingButton": "Szukam...",
@@ -55,9 +60,14 @@
     "tomorrow": "Jutro",
     "nextWeek": "Przyszły tydzień",
     "quickSelect": "Szybki wybór",
+    "selectedDate": "Wybrany termin",
     "range": "Zakres",
     "from": "Od",
     "to": "Do"
+  },
+  "Header": {
+    "loginButton": "Zaloguj",
+    "userName": "Uzytkownik"
   },
   "DocCard": {
     "psychologist": "Psycholog",

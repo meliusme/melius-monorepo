@@ -1,14 +1,17 @@
 @import '@/styles/variables';
 
 .heroSection {
-  flex: none;
-  display: none; // Domyślnie ukryty
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: calc($header-height-mobile + 2rem) 2rem 2rem;
   background-color: $canvas-light;
   gap: 2rem;
+
+  &.showOnMobile {
+    display: flex;
+  }
 
   svg,
   img {
@@ -20,12 +23,10 @@
   @include min-width-md {
     display: flex;
     flex: 0 0 50%;
+    height: 100vh;
     padding: calc($header-height-desktop + 4rem) 4rem 4rem;
+    border-right: 1px solid #f2efe8;
   }
-}
-
-.showOnMobile {
-  display: flex;
 }
 
 .quote {
@@ -38,25 +39,39 @@
   margin: 0;
   max-width: 500px;
 
-  &::before,
-  &::after {
-    content: '';
+  @include min-width-md {
+    font-size: $fs-2-4;
   }
 }
 
 .contentSection {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  flex: 1;
   padding: calc($header-height-mobile + 1rem) 1rem 8rem;
-  width: 100%;
-  position: relative;
   background-color: $canvas-warm;
-  overflow: hidden; // Zapobiega scrollowaniu całej sekcji
+  overflow: hidden;
 
   @include min-width-md {
-    padding: calc($header-height-desktop + 4rem) 4rem 4rem;
     height: 100vh;
+    padding: calc($header-height-desktop + 4rem) 4rem 4rem;
+    align-items: center;
+    overflow-y: auto;
+  }
+}
+
+.contentWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  @include min-width-md {
+    flex: 0 1 auto;
+    margin: auto 0;
+    max-height: 100%;
+    max-width: 480px;
   }
 }
 
@@ -66,6 +81,11 @@
   gap: 1.5rem;
   margin-bottom: 1.5rem;
   flex-shrink: 0;
+
+  @include min-width-md {
+    gap: 2.4rem;
+    margin-bottom: 2rem;
+  }
 }
 
 .stepContent {
@@ -73,44 +93,55 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  flex: 1; // Bierze całą dostępną przestrzeń
-  overflow-y: auto; // Scrolluje tylko ta część
+  flex: 1;
+  overflow-y: auto;
   overflow-x: hidden;
-  min-height: 0; // Ważne dla flexbox overflow
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 
-  // Subtelny scrollbar
   &::-webkit-scrollbar {
-    width: 8px;
+    display: none;
   }
 
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  @include min-width-md {
+    flex: 0 1 auto;
+    gap: 2rem;
+    overflow-y: visible;
+    scrollbar-width: thin;
+    scrollbar-color: $black-15 transparent;
 
-  &::-webkit-scrollbar-thumb {
-    background-color: $black-15;
-    border-radius: 4px;
+    &::-webkit-scrollbar {
+      display: block;
+      width: 8px;
+    }
 
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.25);
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: $black-15;
+      border-radius: 4px;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.25);
+      }
     }
   }
-
-  // Firefox scrollbar
-  scrollbar-width: thin;
-  scrollbar-color: $black-15 transparent;
 }
 
 .headerText {
-  color: $ink;
+  margin: 0;
   font-family: $font-display;
   font-size: $fs-3;
-  font-weight: 400;
-  letter-spacing: 0;
   line-height: 3.3rem;
-  margin: 0;
-  text-align: left;
-  width: 100%;
+  color: $ink;
+
+  @include min-width-md {
+    font-size: $fs-6;
+    line-height: 6.6rem;
+  }
 
   em {
     font-style: italic;
@@ -118,54 +149,18 @@
 }
 
 .subheaderText {
-  color: #1a1a1a99;
+  margin: 0;
   font-family: $font-sans;
   font-size: $fs-1-4;
-  font-weight: 400;
-  letter-spacing: 0;
   line-height: 2.2rem;
-  margin: 0;
-  text-align: left;
-  max-width: 44.8rem;
+  color: #1a1a1a99;
+
+  @include min-width-md {
+    font-size: $fs-1-8;
+    line-height: 2.92rem;
+  }
 
   em {
     font-style: italic;
-  }
-}
-
-@include min-width-md {
-  .heroSection {
-    display: flex; // Zawsze widoczne na desktop
-    flex: 1;
-    height: 100vh;
-    min-height: 100vh;
-    padding: calc($header-height-desktop + 4rem) 4rem 4rem;
-    border-right: 1px solid #f2efe8;
-  }
-
-  .quote {
-    font-size: $fs-2-4;
-  }
-
-  .headerContainer {
-    gap: 2.4rem;
-    margin-bottom: 2rem;
-  }
-
-  .stepContent {
-    max-width: 480px;
-    gap: 2rem;
-    margin: 0;
-  }
-
-  .headerText {
-    font-size: $fs-6;
-    line-height: 6.6rem;
-    max-width: 480px;
-  }
-
-  .subheaderText {
-    font-size: $fs-1-8;
-    line-height: 2.92rem;
   }
 }

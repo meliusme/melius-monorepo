@@ -4,6 +4,11 @@
 declare const messages: {
   "Home": {
     "startMatching": "Start matching",
+    "matchTitle": "Matched for you",
+    "matchDesc": "In a few simple steps",
+    "verifiedTitle": "Verified",
+    "verifiedDesc": "Licensed specialists",
+    "timeNote": "Takes about 2 minutes • No registration to start.",
     "selectDateButton": "Select date",
     "backButton": "Back",
     "searchingButton": "Searching...",
@@ -58,9 +63,14 @@ declare const messages: {
     "tomorrow": "Tomorrow",
     "nextWeek": "Next week",
     "quickSelect": "Quick Select",
+    "selectedDate": "Selected date",
     "range": "Range",
     "from": "From",
     "to": "To"
+  },
+  "Header": {
+    "loginButton": "Log in",
+    "userName": "User"
   },
   "Errors": {
     "EMAIL_EXISTS": "Email address already exists",
