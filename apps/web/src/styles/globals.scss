@@ -2,14 +2,14 @@
 
 :root {
   color-scheme: light dark;
-  font-family: var(--font-sans), sans-serif;
+  font-family: $font-sans;
   color: #000;
   background-color: #fefff4;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --dp-font-family: var(--font-sans), -apple-system, blinkmacsystemfont, sans-serif;
+  --dp-font-family: $font-sans;
   --dp-border-radius: 1rem;
 }
 
@@ -42,7 +42,7 @@ ul {
 
 button {
   cursor: pointer;
-  font-family: var(--font-sans), sans-serif;
+  font-family: $font-sans;
 }
 
 *,

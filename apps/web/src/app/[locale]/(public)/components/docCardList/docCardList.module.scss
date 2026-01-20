@@ -20,7 +20,7 @@
   border: 2px solid $black;
   background: $canvas;
   color: $black;
-  font-size: 1.5rem;
+  font-size: $fs-1-5;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -78,7 +78,7 @@
 
 .counter {
   text-align: center;
-  font-size: 1rem;
+  font-size: $fs-1;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.7);
 }
@@ -87,10 +87,10 @@
   text-align: center;
   padding: 3rem 1rem;
   color: rgba(0, 0, 0, 0.6);
-  font-size: 1.125rem;
+  font-size: $fs-1-125;
 }
 
-@media (min-width: 768px) {
+@include min-width-md {
   .navButton {
     display: flex;
   }

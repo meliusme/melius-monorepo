@@ -1,6 +1,6 @@
 @mixin labelUp {
   top: 0;
-  font-size: 1.4rem;
+  font-size: $fs-1-4;
   background-color: $canvas;
   padding: 0.5rem;
 }
@@ -17,7 +17,7 @@
 
 .label {
   position: absolute;
-  font-size: 1.6rem;
+  font-size: $fs-1-6;
   font-weight: 600;
   top: 50%;
   left: 1rem;
@@ -31,7 +31,7 @@
   color: $black;
   background-color: transparent;
   height: 4rem;
-  font-size: 1.6rem;
+  font-size: $fs-1-6;
   padding-left: 1rem;
   padding-right: 1rem;
   outline: none;
@@ -80,7 +80,7 @@ textarea.control {
 
 .errors {
   margin-top: 0.6rem;
-  font-size: 1.2rem;
+  font-size: $fs-1-2;
   font-weight: 500;
   color: red;
   display: flex;

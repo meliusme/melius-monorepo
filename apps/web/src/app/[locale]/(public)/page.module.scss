@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-@media (min-width: 768px) {
+@include min-width-md {
   .homeContainer {
     flex-direction: row;
     min-height: 100vh;

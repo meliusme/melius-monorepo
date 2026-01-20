@@ -1,3 +1,6 @@
+@use 'sass:math';
+@use './variables' as *;
+
 @mixin border {
   border: 1px solid #000;
   border-radius: 1rem;
@@ -13,4 +16,129 @@
   row-gap: 2rem;
   align-items: center;
   display: flex;
+}
+
+@function shadow-length($value, $unit) {
+  @if $value == 0 {
+    @return 0;
+  }
+
+  @if $unit == rem {
+    @return math.div($value, 10) * 1rem;
+  }
+
+  @return #{$value}#{$unit};
+}
+
+@mixin shadow($x, $y, $blur, $spread: 0, $opacity, $color: $black, $unit: rem) {
+  $xv: shadow-length($x, $unit);
+  $yv: shadow-length($y, $unit);
+  $bv: shadow-length($blur, $unit);
+  $sv: shadow-length($spread, $unit);
+
+  box-shadow: $xv $yv $bv $sv rgba($color, math.div($opacity, 100));
+}
+
+@mixin px-to-vw($property, $value) {
+  @include max-width-xxxl {
+    #{$property}: calc(#{$value} / #{$xxxl} * 100vw);
+  }
+  @include min-width-xxxl {
+    #{$property}: #{$value}px;
+  }
+}
+
+@mixin padding-style {
+  @include px-to-vw(padding-left, 100);
+  @include px-to-vw(padding-right, 100);
+}
+
+@mixin page-container {
+  min-height: 100vh;
+  margin: 0 auto;
+
+  @include px-to-vw(padding, 100);
+}
+
+$xxxl: 1920;
+$xxl: 1440;
+$xl: 1280;
+$lg: 1024;
+$md: 768;
+$sm: 640;
+
+// min width
+
+@mixin min-width-xxxl() {
+  @media (min-width: #{$xxxl}px) {
+    @content;
+  }
+}
+
+@mixin min-width-xxl() {
+  @media (min-width: #{$xxl}px) {
+    @content;
+  }
+}
+
+@mixin min-width-xl() {
+  @media (min-width: #{$xl}px) {
+    @content;
+  }
+}
+
+@mixin min-width-lg() {
+  @media (min-width: #{$lg}px) {
+    @content;
+  }
+}
+
+@mixin min-width-md() {
+  @media (min-width: #{$md}px) {
+    @content;
+  }
+}
+
+@mixin min-width-sm() {
+  @media (min-width: #{$sm}px) {
+    @content;
+  }
+}
+
+// max width
+
+@mixin max-width-xxxl() {
+  @media (max-width: #{$xxxl - 1}px) {
+    @content;
+  }
+}
+
+@mixin max-width-xxl() {
+  @media (max-width: #{$xxl - 1}px) {
+    @content;
+  }
+}
+
+@mixin max-width-xl() {
+  @media (max-width: #{$xl - 1}px) {
+    @content;
+  }
+}
+
+@mixin max-width-lg() {
+  @media (max-width: #{$lg - 1}px) {
+    @content;
+  }
+}
+
+@mixin max-width-md() {
+  @media (max-width: #{$md - 1}px) {
+    @content;
+  }
+}
+
+@mixin max-width-sm() {
+  @media (max-width: #{$sm - 1}px) {
+    @content;
+  }
 }

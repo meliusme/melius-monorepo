@@ -11,45 +11,6 @@
   gap: 1rem;
 }
 
-.presetButton {
-  background-color: #ffffff;
-  border: 0.1rem solid rgba(26, 26, 26, 0.08);
-  border-radius: 1.8rem;
-  padding: 1.2rem 1.6rem;
-  font-size: 1.4rem;
-  line-height: 1.2;
-  font-weight: 500;
-  font-family: var(--font-sans), sans-serif;
-  color: $black;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
-  text-align: center;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.4);
-  }
-}
-
-.presetButtonSelected {
-  background-color: $black;
-  border-color: $black;
-  color: #ffffff;
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.15);
-
-  &:hover {
-    background-color: #333333;
-  }
-}
 
 // Calendar styles - mobile first
 .calendar {
@@ -58,8 +19,8 @@
   gap: 2.4rem;
   padding: 3.2rem 2.4rem;
   border-radius: 1.8rem;
-  background-color: #ffffff;
-  border: 0.1rem solid rgba(26, 26, 26, 0.08);
+  background-color: $white;
+  border: 0.1rem solid $border-subtle;
 }
 
 .calendarHeader {
@@ -70,9 +31,9 @@
 }
 
 .monthYear {
-  font-size: 2rem;
+  font-size: $fs-2;
   font-weight: 400;
-  font-family: var(--font-display), serif;
+  font-family: $font-display;
   color: $black;
   text-align: left;
   flex: 1;
@@ -124,7 +85,7 @@
 }
 
 .weekDay {
-  font-size: 1.1rem;
+  font-size: $fs-1-1;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.35);
   text-align: center;
@@ -143,7 +104,7 @@
   width: 5.2rem;
   height: 3.6rem;
   padding: 0;
-  font-size: 1.5rem;
+  font-size: $fs-1-5;
   font-weight: 400;
   background: transparent;
   color: $black;
@@ -163,14 +124,14 @@
 
 .daySelected {
   background-color: $black;
-  color: #ffffff;
+  color: $white;
   font-weight: 500;
   border-radius: 999px;
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.15);
+  @include shadow(0, 4, 12, 0, 15);
 
   &:hover:not(:disabled) {
     background-color: #333333;
-    color: #ffffff;
+    color: $white;
   }
 }
 
@@ -180,8 +141,8 @@
 }
 
 .dayDisabled {
-  color: rgba(0, 0, 0, 0.15);
-  background-color: #fff;
+  color: $black-15;
+  background-color: $white;
   box-shadow: none;
   cursor: not-allowed;
   pointer-events: none;
@@ -203,7 +164,7 @@
   gap: 0.8rem;
   padding-top: 1.6rem;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-  font-size: 1.4rem;
+  font-size: $fs-1-4;
 }
 
 .rangeLabel {
@@ -218,18 +179,18 @@
 }
 
 // Responsive - desktop
-@media (min-width: 1024px) {
+@include min-width-lg {
   .calendar {
     padding: 2.4rem;
   }
 
   .selectedRange {
-    font-size: 1.5rem;
+    font-size: $fs-1-5;
   }
 
   .day {
     width: 5.6rem;
     height: 4rem;
-    font-size: 1.6rem;
+    font-size: $fs-1-6;
   }
 }

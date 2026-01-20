@@ -21,6 +21,7 @@ import { enUS, pl } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './dateRangePicker.module.scss';
+import Button from '@/components/atoms/button/button';
 import Label from '@/components/atoms/label/label';
 import { toISODate, parseLocalDate } from '@/lib/utils/date';
 import type { DateRangeValue, RangePreset } from '@/lib/types/date';
@@ -179,14 +180,14 @@ export default function DateRangePicker({
       <Label text={t('quickSelect')} />
       <div className={styles.presets}>
         {(['today', 'tomorrow', 'nextWeek'] as const).map((p) => (
-          <button
+          <Button
             key={p}
             type="button"
-            className={`${styles.presetButton} ${preset === p ? styles.presetButtonSelected : ''}`}
+            variant="preset"
+            selected={preset === p}
             onClick={() => applyPreset(p)}
-          >
-            {t(p)}
-          </button>
+            label={t(p)}
+          />
         ))}
       </div>
 

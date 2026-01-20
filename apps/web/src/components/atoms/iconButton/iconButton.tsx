@@ -9,6 +9,7 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   onClick: () => void;
   icon?: ReactNode;
   disabled?: boolean;
+  disableTranslate?: boolean;
 };
 
 export default function IconButton({
@@ -17,10 +18,17 @@ export default function IconButton({
   onClick,
   icon,
   disabled = false,
+  disableTranslate = false,
   className,
   ...rest
 }: IconButtonProps) {
-  const buttonClassName = [styles.button, className ?? ''].filter(Boolean).join(' ');
+  const buttonClassName = [
+    styles.button,
+    disableTranslate ? styles.noTranslate : '',
+    className ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const renderedIcon = icon ?? <ArrowLeft aria-hidden="true" />;
 
   return (

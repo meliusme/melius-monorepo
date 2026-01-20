@@ -1,11 +1,13 @@
 import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
-import { DateRangePicker, DateRangeValue } from './dateRangePicker';
+import DateRangePicker from './dateRangePicker';
+import type { DateRangeValue } from '@/lib/types/date';
 
 const messages = {
   en: {
     DateRangePicker: {
+      quickSelect: 'Quick select',
       today: 'Today',
       tomorrow: 'Tomorrow',
       nextWeek: 'Next week',
@@ -16,6 +18,7 @@ const messages = {
   },
   pl: {
     DateRangePicker: {
+      quickSelect: 'Szybki wybór',
       today: 'Dzisiaj',
       tomorrow: 'Jutro',
       nextWeek: 'W przyszłym tygodniu',

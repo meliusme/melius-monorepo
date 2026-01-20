@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import styles from './button.module.scss';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'preset';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
@@ -15,6 +15,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
   icon?: ReactNode;
   rounded?: boolean;
+  selected?: boolean;
+  disableTranslate?: boolean;
 }
 
 export default function Button({
@@ -28,6 +30,8 @@ export default function Button({
   disabled = false,
   icon,
   rounded,
+  selected,
+  disableTranslate = false,
   className,
   ...rest
 }: ButtonProps) {
@@ -35,6 +39,9 @@ export default function Button({
     styles.button,
     variant === 'secondary' ? styles.secondary : '',
     variant === 'tertiary' ? styles.tertiary : '',
+    variant === 'preset' ? styles.preset : '',
+    selected && variant === 'preset' ? styles.presetSelected : '',
+    disableTranslate ? styles.noTranslate : '',
     large ? styles.large : '',
     disabled ? styles.disabled : '',
     fullWidth ? styles.fullWidth : '',
@@ -56,6 +63,7 @@ export default function Button({
       tabIndex={disabled ? -1 : 0}
       style={width ? { width: `${width}px` } : undefined}
       disabled={disabled}
+      aria-pressed={selected ?? undefined}
       {...rest}
     >
       {label}

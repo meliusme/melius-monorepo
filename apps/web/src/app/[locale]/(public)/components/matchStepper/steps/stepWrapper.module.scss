@@ -17,7 +17,7 @@
     object-fit: contain;
   }
 
-  @media (min-width: 768px) {
+  @include min-width-md {
     display: flex;
     flex: 0 0 50%;
     padding: calc($header-height-desktop + 4rem) 4rem 4rem;
@@ -31,7 +31,7 @@
 .quote {
   font-family: $font-display;
   font-style: italic;
-  font-size: 2rem;
+  font-size: $fs-2;
   line-height: 1.5;
   text-align: center;
   color: rgba(26, 26, 26, 0.8);
@@ -54,7 +54,7 @@
   background-color: $canvas-warm;
   overflow: hidden; // Zapobiega scrollowaniu całej sekcji
 
-  @media (min-width: 768px) {
+  @include min-width-md {
     padding: calc($header-height-desktop + 4rem) 4rem 4rem;
     height: 100vh;
   }
@@ -88,7 +88,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: $black-15;
     border-radius: 4px;
 
     &:hover {
@@ -98,13 +98,13 @@
 
   // Firefox scrollbar
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  scrollbar-color: $black-15 transparent;
 }
 
 .headerText {
-  color: #1a1a1a;
+  color: $ink;
   font-family: $font-display;
-  font-size: 3rem;
+  font-size: $fs-3;
   font-weight: 400;
   letter-spacing: 0;
   line-height: 3.3rem;
@@ -120,7 +120,7 @@
 .subheaderText {
   color: #1a1a1a99;
   font-family: $font-sans;
-  font-size: 1.4rem;
+  font-size: $fs-1-4;
   font-weight: 400;
   letter-spacing: 0;
   line-height: 2.2rem;
@@ -133,7 +133,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@include min-width-md {
   .heroSection {
     display: flex; // Zawsze widoczne na desktop
     flex: 1;
@@ -144,7 +144,7 @@
   }
 
   .quote {
-    font-size: 2.4rem;
+    font-size: $fs-2-4;
   }
 
   .headerContainer {
@@ -159,13 +159,13 @@
   }
 
   .headerText {
-    font-size: 6rem;
+    font-size: $fs-6;
     line-height: 6.6rem;
     max-width: 480px;
   }
 
   .subheaderText {
-    font-size: 1.8rem;
+    font-size: $fs-1-8;
     line-height: 2.92rem;
   }
 }
