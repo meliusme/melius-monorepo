@@ -53,7 +53,8 @@
   "DateRangePicker": {
     "today": "Dzisiaj",
     "tomorrow": "Jutro",
-    "nextWeek": "W przyszłym tygodniu",
+    "nextWeek": "Przyszły tydzień",
+    "quickSelect": "Szybki wybór",
     "range": "Zakres",
     "from": "Od",
     "to": "Do"

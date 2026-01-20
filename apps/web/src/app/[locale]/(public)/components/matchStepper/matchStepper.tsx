@@ -125,7 +125,9 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             translations={translations}
             selectedProblemId={problemId}
             onProblemSelect={handleProblemSelect}
+            onBack={() => setCurrentStep(0)}
             onNext={handleNextToDatePicker}
+            backLabel={t('backButton')}
             buttonLabel={t('selectDateButton')}
             image={currentImage}
           />

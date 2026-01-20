@@ -1,6 +1,8 @@
 import type { DateRangeValue } from '@/lib/types/date';
 import DateRangePicker from '../../dateRangePicker/dateRangePicker';
 import Button from '@/components/atoms/button/button';
+import IconButton from '@/components/atoms/iconButton/iconButton';
+import { Search } from 'lucide-react';
 import StepWrapper from './StepWrapper';
 import styles from '../matchStepper.module.scss';
 
@@ -39,13 +41,7 @@ export default function DateSelectionStep({
       <div className={styles.buttonContainer}>
         {error && <p className={styles.error}>{error}</p>}
         <div className={styles.buttonGroup}>
-          <Button
-            label={backLabel}
-            onClick={onBack}
-            variant="secondary"
-            disabled={loading}
-            fullWidth
-          />
+          <IconButton ariaLabel={backLabel} onClick={onBack} disabled={loading} />
           <Button
             label={loading ? searchingLabel : nextLabel}
             onClick={onNext}
@@ -53,6 +49,9 @@ export default function DateSelectionStep({
               dateRange === null || !dateRange.fromISO || !dateRange.toISO || loading
             }
             fullWidth
+            large
+            rounded
+            icon={<Search size={16} />}
           />
         </div>
       </div>

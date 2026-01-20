@@ -57,6 +57,7 @@ declare const messages: {
     "today": "Today",
     "tomorrow": "Tomorrow",
     "nextWeek": "Next week",
+    "quickSelect": "Quick Select",
     "range": "Range",
     "from": "From",
     "to": "To"

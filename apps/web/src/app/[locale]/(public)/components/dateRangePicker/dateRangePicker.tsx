@@ -19,9 +19,10 @@ import {
 } from 'date-fns';
 import { enUS, pl } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './dateRangePicker.module.scss';
-import Item from '@/components/atoms/item/item';
-import { toISODate, parseLocalDate, toAPIDateRange } from '@/lib/utils/date';
+import Label from '@/components/atoms/label/label';
+import { toISODate, parseLocalDate } from '@/lib/utils/date';
 import type { DateRangeValue, RangePreset } from '@/lib/types/date';
 
 type DateRangePickerProps = {
@@ -93,12 +94,6 @@ export default function DateRangePicker({
   });
   const [selectingFrom, setSelectingFrom] = useState<Date | null>(null);
 
-  // Remember last range selection to restore when switching back to 'range'
-  const [lastRangeSelection, setLastRangeSelection] = useState<{
-    fromISO: string;
-    toISO: string;
-  } | null>(preset === 'range' && fromISO && toISO ? { fromISO, toISO } : null);
-
   function emit(nextPreset: RangePreset, nextFrom: string, nextTo: string) {
     const clamped = clampRange(nextFrom, nextTo, maxRangeDays);
     onChange({ preset: nextPreset, fromISO: clamped.fromISO, toISO: clamped.toISO });
@@ -121,32 +116,17 @@ export default function DateRangePicker({
       const sun = endOfWeekFromMonday(mon);
       return emit('nextWeek', toISODate(mon), toISODate(sun));
     }
-
-    // range: restore last range selection if exists, otherwise start fresh
-    setSelectingFrom(null);
-    if (lastRangeSelection && lastRangeSelection.fromISO && lastRangeSelection.toISO) {
-      // Restore previous range selection
-      setDisplayMonth(parseLocalDate(lastRangeSelection.fromISO));
-      return onChange({
-        preset: 'range',
-        fromISO: lastRangeSelection.fromISO,
-        toISO: lastRangeSelection.toISO,
-      });
-    }
-    // No previous selection - start fresh
-    setDisplayMonth(new Date());
-    return onChange({ preset: 'range', fromISO: '', toISO: '' });
   }
 
   function handleDayClick(day: Date) {
     const dayISO = toISODate(day);
 
     if (!selectingFrom) {
-      // First click - start selection
+      // First click - start selection and clear preset
       setSelectingFrom(day);
       emit('range', dayISO, dayISO);
     } else {
-      // Second click - complete selection and save to lastRangeSelection
+      // Second click - complete selection
       const fromDate = selectingFrom;
       const toDate = day;
 
@@ -162,8 +142,6 @@ export default function DateRangePicker({
         finalTo = toISODate(toDate);
       }
 
-      // Save this selection for later restoration
-      setLastRangeSelection({ fromISO: finalFrom, toISO: finalTo });
       emit('range', finalFrom, finalTo);
       setSelectingFrom(null);
     }
@@ -193,25 +171,31 @@ export default function DateRangePicker({
     return startOfMonth(nextMonth) > maxDate;
   }, [displayMonth, maxDate]);
 
-  const dateFormat = locale === 'pl' ? 'd MMM yyyy' : 'MMM d, yyyy';
+  const dateFormat = locale === 'pl' ? 'd MMMM yyyy' : 'MMMM d, yyyy';
   const monthYearFormat = locale === 'pl' ? 'LLLL yyyy' : 'MMMM yyyy';
 
   return (
     <div className={styles.root}>
+      <Label text={t('quickSelect')} />
       <div className={styles.presets}>
-        {(['today', 'tomorrow', 'nextWeek', 'range'] as const).map((p) => (
-          <Item
+        {(['today', 'tomorrow', 'nextWeek'] as const).map((p) => (
+          <button
             key={p}
-            title={t(p)}
-            selected={preset === p}
+            type="button"
+            className={`${styles.presetButton} ${preset === p ? styles.presetButtonSelected : ''}`}
             onClick={() => applyPreset(p)}
-          />
+          >
+            {t(p)}
+          </button>
         ))}
       </div>
 
-      {preset === 'range' ? (
-        <div className={`${styles.calendar} ${selectingFrom ? styles.selecting : ''}`}>
-          <div className={styles.calendarHeader}>
+      <div className={`${styles.calendar} ${selectingFrom ? styles.selecting : ''}`}>
+        <div className={styles.calendarHeader}>
+          <span className={styles.monthYear}>
+            {format(displayMonth, monthYearFormat, { locale: dfLocale })}
+          </span>
+          <div className={styles.navButtons}>
             <button
               type="button"
               className={styles.navButton}
@@ -219,11 +203,8 @@ export default function DateRangePicker({
               disabled={isPrevMonthDisabled}
               aria-label="Previous month"
             >
-              ←
+              <ChevronLeft className={styles.navIcon} aria-hidden="true" />
             </button>
-            <span className={styles.monthYear}>
-              {format(displayMonth, monthYearFormat, { locale: dfLocale })}
-            </span>
             <button
               type="button"
               className={styles.navButton}
@@ -231,73 +212,74 @@ export default function DateRangePicker({
               disabled={isNextMonthDisabled}
               aria-label="Next month"
             >
-              →
+              <ChevronRight className={styles.navIcon} aria-hidden="true" />
             </button>
           </div>
-
-          <div className={styles.weekDays}>
-            {Array.from({ length: 7 }, (_, i) => {
-              const date = addDays(startOfWeek(displayMonth, { weekStartsOn }), i);
-              return (
-                <div key={i} className={styles.weekDay}>
-                  {format(date, 'EEE', { locale: dfLocale })}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className={styles.days}>
-            {calendarDays.map((day, idx) => {
-              const fromDate = fromISO ? parseLocalDate(fromISO) : null;
-              const toDate = toISO ? parseLocalDate(toISO) : null;
-              const isSelected =
-                (fromDate && isSameDay(day, fromDate)) ||
-                (toDate && isSameDay(day, toDate));
-              const isInRange =
-                fromDate &&
-                toDate &&
-                !isSameDay(day, fromDate) &&
-                !isSameDay(day, toDate) &&
-                isWithinInterval(day, { start: fromDate, end: toDate });
-              const isOutsideMonth =
-                day < startOfMonth(displayMonth) || day > endOfMonth(displayMonth);
-              const isToday = isSameDay(day, today);
-              const isDisabled =
-                isOutsideMonth || isBefore(day, today) || isAfter(day, maxDate);
-              const isSelectingStart = selectingFrom && isSameDay(day, selectingFrom);
-
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  className={`${styles.day} ${isSelected ? styles.daySelected : ''} ${isInRange && !isSelected ? styles.dayInRange : ''} ${isDisabled ? styles.dayDisabled : ''} ${isToday ? styles.dayToday : ''} ${isSelectingStart && !isSelected ? styles.daySelecting : ''}`}
-                  onClick={() => handleDayClick(day)}
-                  disabled={isDisabled}
-                >
-                  {format(day, 'd')}
-                </button>
-              );
-            })}
-          </div>
-
-          {(selectingFrom !== null || (fromISO && toISO)) && (
-            <div className={styles.selectedRange}>
-              <span className={styles.rangeLabel}>{t('from')}:</span>
-              <span className={styles.rangeValue}>
-                {format(fromISO ? parseLocalDate(fromISO) : displayMonth, dateFormat, {
-                  locale: dfLocale,
-                })}
-              </span>
-              <span className={styles.rangeLabel}>{t('to')}:</span>
-              <span className={styles.rangeValue}>
-                {format(toISO ? parseLocalDate(toISO) : displayMonth, dateFormat, {
-                  locale: dfLocale,
-                })}
-              </span>
-            </div>
-          )}
         </div>
-      ) : null}
+
+        <div className={styles.weekDays}>
+          {Array.from({ length: 7 }, (_, i) => {
+            const date = addDays(startOfWeek(displayMonth, { weekStartsOn }), i);
+            return (
+              <div key={i} className={styles.weekDay}>
+                {format(date, 'EEEEE', { locale: dfLocale })}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={styles.days}>
+          {calendarDays.map((day, idx) => {
+            const fromDate = fromISO ? parseLocalDate(fromISO) : null;
+            const toDate = toISO ? parseLocalDate(toISO) : null;
+            const isSelected =
+              (fromDate && isSameDay(day, fromDate)) ||
+              (toDate && isSameDay(day, toDate));
+            const isInRange =
+              fromDate &&
+              toDate &&
+              !isSameDay(day, fromDate) &&
+              !isSameDay(day, toDate) &&
+              isWithinInterval(day, { start: fromDate, end: toDate });
+            const isOutsideMonth =
+              day < startOfMonth(displayMonth) || day > endOfMonth(displayMonth);
+            const isToday = isSameDay(day, today);
+            const isDisabled =
+              isOutsideMonth || isBefore(day, today) || isAfter(day, maxDate);
+            const showDisabledStyle = isDisabled;
+            const isSelectingStart = selectingFrom && isSameDay(day, selectingFrom);
+
+            return (
+              <button
+                key={idx}
+                type="button"
+                className={`${styles.day} ${isSelected ? styles.daySelected : ''} ${isInRange && !isSelected ? styles.dayInRange : ''} ${showDisabledStyle ? styles.dayDisabled : ''} ${isToday ? styles.dayToday : ''} ${isSelectingStart && !isSelected ? styles.daySelecting : ''}`}
+                onClick={() => handleDayClick(day)}
+                disabled={isDisabled}
+              >
+                {format(day, 'd')}
+              </button>
+            );
+          })}
+        </div>
+
+        {(selectingFrom !== null || (fromISO && toISO)) && (
+          <div className={styles.selectedRange}>
+            <span className={styles.rangeLabel}>{t('from')}:</span>
+            <span className={styles.rangeValue}>
+              {format(fromISO ? parseLocalDate(fromISO) : displayMonth, dateFormat, {
+                locale: dfLocale,
+              })}
+            </span>
+            <span className={styles.rangeLabel}>{t('to')}:</span>
+            <span className={styles.rangeValue}>
+              {format(toISO ? parseLocalDate(toISO) : displayMonth, dateFormat, {
+                locale: dfLocale,
+              })}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

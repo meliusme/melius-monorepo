@@ -1,21 +1,53 @@
 .root {
   display: flex;
   flex-direction: column;
-  row-gap: 1.2rem;
+  row-gap: 2rem;
 }
 
 // Mobile-first: single column
 .presets {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
-// Tablet and up: 2 columns like problem list
-@media (min-width: 768px) {
-  .presets {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+.presetButton {
+  background-color: #ffffff;
+  border: 0.1rem solid rgba(26, 26, 26, 0.08);
+  border-radius: 1.8rem;
+  padding: 1.2rem 1.6rem;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  font-weight: 500;
+  font-family: var(--font-sans), sans-serif;
+  color: $black;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.4);
+  }
+}
+
+.presetButtonSelected {
+  background-color: $black;
+  border-color: $black;
+  color: #ffffff;
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.15);
+
+  &:hover {
+    background-color: #333333;
   }
 }
 
@@ -23,207 +55,166 @@
 .calendar {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
-  padding: 1.6rem;
-  @include border;
-  background-color: $canvas;
-  transition: box-shadow 0.3s ease;
-}
-
-.selecting {
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+  gap: 2.4rem;
+  padding: 3.2rem 2.4rem;
+  border-radius: 1.8rem;
+  background-color: #ffffff;
+  border: 0.1rem solid rgba(26, 26, 26, 0.08);
 }
 
 .calendarHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0;
+}
+
+.monthYear {
+  font-size: 2rem;
+  font-weight: 400;
+  font-family: var(--font-display), serif;
+  color: $black;
+  text-align: left;
+  flex: 1;
+  order: 1;
+  text-transform: capitalize;
+}
+
+.navButtons {
+  display: flex;
+  gap: 0.8rem;
+  order: 2;
 }
 
 .navButton {
-  @include border;
   background: transparent;
+  border: none;
   color: $black;
-  width: 3.6rem;
-  height: 3.6rem;
-  font-size: 2rem;
+  width: 3.2rem;
+  height: 3.2rem;
   cursor: pointer;
-  transition: background-color 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: $canvas-dark;
-  }
-
-  &:active {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
   }
 
   &:disabled {
-    opacity: 0.3;
+    opacity: 0.2;
     cursor: not-allowed;
     pointer-events: none;
   }
 }
 
-.monthYear {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: $black;
-  text-align: center;
-  flex: 1;
+.navIcon {
+  width: 2rem;
+  height: 2rem;
 }
 
 .weekDays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.4rem;
-  margin-bottom: 0.4rem;
+  padding: 0 0.2rem;
+  margin-bottom: 0.2rem;
 }
 
 .weekDay {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.6);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.35);
   text-align: center;
-  padding: 0.6rem;
+  padding: 0.2rem 0;
+  text-transform: uppercase;
 }
 
 .days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.4rem;
+  padding: 0 0.2rem;
 }
 
 .day {
-  @include border;
-  aspect-ratio: 1;
-  min-height: 4rem;
-  font-size: 1.4rem;
-  font-weight: 500;
+  width: 5.2rem;
+  height: 3.6rem;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
   background: transparent;
   color: $black;
   cursor: pointer;
+  border: none;
+  border-radius: 999px;
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
 
   &:hover:not(:disabled) {
     background-color: rgba(0, 0, 0, 0.05);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.98);
   }
 }
 
 .daySelected {
   background-color: $black;
-  color: $canvas;
-  border-color: $black;
+  color: #ffffff;
+  font-weight: 500;
+  border-radius: 999px;
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.15);
 
   &:hover:not(:disabled) {
-    background-color: $black-opacity !important;
-    color: $canvas !important;
+    background-color: #333333;
+    color: #ffffff;
   }
 }
 
 .dayInRange {
-  background-color: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.2);
+  background-color: #f2efe8;
+  border-radius: 999px;
 }
 
 .dayDisabled {
   color: rgba(0, 0, 0, 0.15);
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: #fff;
+  box-shadow: none;
   cursor: not-allowed;
   pointer-events: none;
-  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .dayToday {
-  font-weight: 700;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3) inset;
+  font-weight: 600;
 }
 
 .daySelecting {
-  position: relative;
-  animation: pulseRing 1.5s ease-in-out infinite;
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border: 2px solid $black;
-    border-radius: 1rem;
-    pointer-events: none;
-  }
-}
-
-@keyframes pulseRing {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 .selectedRange {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.8rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 1.6rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   font-size: 1.4rem;
 }
 
 .rangeLabel {
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.7);
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .rangeValue {
-  font-weight: 600;
+  font-weight: 500;
   color: $black;
   margin-right: 1.2rem;
-}
-
-// Responsive - tablet and up
-@media (min-width: 768px) {
-  .calendar {
-    padding: 2rem;
-  }
-
-  .navButton {
-    width: 4rem;
-    height: 4rem;
-    font-size: 2.4rem;
-  }
-
-  .monthYear {
-    font-size: 1.8rem;
-  }
-
-  .weekDay {
-    font-size: 1.3rem;
-    padding: 0.8rem;
-  }
-
-  .day {
-    min-height: 4.8rem;
-    font-size: 1.5rem;
-  }
-
-  .selectedRange {
-    font-size: 1.5rem;
-  }
 }
 
 // Responsive - desktop
@@ -232,8 +223,13 @@
     padding: 2.4rem;
   }
 
+  .selectedRange {
+    font-size: 1.5rem;
+  }
+
   .day {
-    min-height: 5.2rem;
+    width: 5.6rem;
+    height: 4rem;
     font-size: 1.6rem;
   }
 }

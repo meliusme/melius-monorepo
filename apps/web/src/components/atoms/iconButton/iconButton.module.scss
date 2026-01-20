@@ -1,0 +1,47 @@
+.button {
+  width: 6.4rem;
+  height: 6.4rem;
+  min-width: 6.4rem;
+  min-height: 6.4rem;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 0.1rem solid rgba(26, 26, 26, 0.15);
+  background: $canvas-warm;
+  color: $black;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(26, 26, 26, 0.04);
+    border-color: rgba(26, 26, 26, 0.25);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 2rem;
+    height: 2rem;
+  }
+}
