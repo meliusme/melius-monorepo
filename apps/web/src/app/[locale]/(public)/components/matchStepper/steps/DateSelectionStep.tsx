@@ -1,10 +1,8 @@
 import type { DateRangeValue } from '@/lib/types/date';
 import DateRangePicker from '../../dateRangePicker/dateRangePicker';
-import Button from '@/components/atoms/button/button';
-import IconButton from '@/components/atoms/iconButton/iconButton';
 import { Search } from 'lucide-react';
 import StepWrapper from './StepWrapper';
-import styles from '../matchStepper.module.scss';
+import StepButtonGroup from './StepButtonGroup';
 
 type DateSelectionStepProps = {
   dateRange: DateRangeValue | null;
@@ -32,29 +30,29 @@ export default function DateSelectionStep({
   image,
 }: DateSelectionStepProps) {
   return (
-    <StepWrapper stepNumber={2} image={image}>
+    <StepWrapper
+      stepNumber={2}
+      image={image}
+      footer={
+        <StepButtonGroup
+          backLabel={backLabel}
+          onBack={onBack}
+          backDisabled={loading}
+          primaryLabel={loading ? searchingLabel : nextLabel}
+          onPrimary={onNext}
+          primaryDisabled={
+            dateRange === null || !dateRange.fromISO || !dateRange.toISO || loading
+          }
+          primaryIcon={<Search size={16} />}
+          error={error}
+        />
+      }
+    >
       <DateRangePicker
         value={dateRange || undefined}
         onChange={onDateRangeChange}
         maxRangeDays={30}
       />
-      <div className={styles.buttonContainer}>
-        {error && <p className={styles.error}>{error}</p>}
-        <div className={styles.buttonGroup}>
-          <IconButton ariaLabel={backLabel} onClick={onBack} disabled={loading} />
-          <Button
-            label={loading ? searchingLabel : nextLabel}
-            onClick={onNext}
-            disabled={
-              dateRange === null || !dateRange.fromISO || !dateRange.toISO || loading
-            }
-            fullWidth
-            large
-            rounded
-            icon={<Search size={16} />}
-          />
-        </div>
-      </div>
     </StepWrapper>
   );
 }

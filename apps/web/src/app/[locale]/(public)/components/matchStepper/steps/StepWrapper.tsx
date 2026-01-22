@@ -7,15 +7,19 @@ import styles from './stepWrapper.module.scss';
 type StepWrapperProps = {
   stepNumber: 0 | 1 | 2 | 3;
   children: ReactNode;
+  footer?: ReactNode;
   image?: string;
   variables?: Record<string, string | number>;
+  disableContentScroll?: boolean;
 };
 
 export default function StepWrapper({
   stepNumber,
   children,
+  footer,
   image,
   variables,
+  disableContentScroll = false,
 }: StepWrapperProps) {
   const t = useTranslations('Stepper');
 
@@ -25,7 +29,7 @@ export default function StepWrapper({
   const showHeroOnMobile = stepNumber === 0;
 
   return (
-    <>
+    <div className={styles.stepperContainer}>
       <section
         className={`${styles.heroSection} ${showHeroOnMobile ? styles.showOnMobile : ''}`}
       >
@@ -39,12 +43,14 @@ export default function StepWrapper({
       </section>
       <section className={styles.contentSection}>
         <div className={styles.contentWrapper}>
-          <div className={styles.headerContainer}>
+          <div className={styles.headerZone}>
             <p className={styles.headerText}>
               {t.rich(`${stepKey}.header`, {
                 em: (chunks) => <em>{chunks}</em>,
               })}
             </p>
+          </div>
+          <div className={styles.subheaderZone}>
             <p className={styles.subheaderText}>
               {t.rich(`${stepKey}.subheader`, {
                 em: (chunks) => <em>{chunks}</em>,
@@ -52,9 +58,14 @@ export default function StepWrapper({
               })}
             </p>
           </div>
-          <div className={styles.stepContent}>{children}</div>
+          <div
+            className={`${styles.stepContent} ${disableContentScroll ? styles.noScroll : ''}`}
+          >
+            {children}
+          </div>
+          {footer && <div className={styles.footerZone}>{footer}</div>}
         </div>
       </section>
-    </>
+    </div>
   );
 }

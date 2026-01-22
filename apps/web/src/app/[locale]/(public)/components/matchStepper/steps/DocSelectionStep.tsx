@@ -1,8 +1,12 @@
+'use client';
+
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { CalendarCheck } from 'lucide-react';
 import type { SearchWithSlotsResponse } from '@/lib/types/api';
 import DocCardList from '../../docCardList/docCardList';
-import IconButton from '@/components/atoms/iconButton/iconButton';
 import StepWrapper from './StepWrapper';
-import styles from '../matchStepper.module.scss';
+import StepButtonGroup from './StepButtonGroup';
 
 type DocSelectionStepProps = {
   docs: SearchWithSlotsResponse;
@@ -12,7 +16,7 @@ type DocSelectionStepProps = {
   emptyStateLabel: string;
   prevAriaLabel: string;
   nextAriaLabel: string;
-  getIndicatorAriaLabel: (index: number) => string;
+  getDotAriaLabel: (index: number) => string;
   image: string;
 };
 
@@ -24,24 +28,68 @@ export default function DocSelectionStep({
   emptyStateLabel,
   prevAriaLabel,
   nextAriaLabel,
-  getIndicatorAriaLabel,
+  getDotAriaLabel,
   image,
 }: DocSelectionStepProps) {
+  const t = useTranslations('DocCard');
+  const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handleSlotClick = (slotId: number) => {
+    setSelectedSlotId(slotId);
+  };
+
+  const handleBookSession = () => {
+    if (selectedSlotId) {
+      onSlotSelect(selectedSlotId);
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev === 0 ? docs.length - 1 : prev - 1));
+    setSelectedSlotId(null);
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev === docs.length - 1 ? 0 : prev + 1));
+    setSelectedSlotId(null);
+  };
+
+  const handleDotClick = (index: number) => {
+    setCurrentIndex(index);
+    setSelectedSlotId(null);
+  };
+
   return (
-    <StepWrapper stepNumber={3} image={image} variables={{ count: docs.length }}>
+    <StepWrapper
+      stepNumber={3}
+      image={image}
+      variables={{ count: docs.length }}
+      disableContentScroll
+      footer={
+        <StepButtonGroup
+          backLabel={backLabel}
+          onBack={onBack}
+          primaryLabel={t('bookSession')}
+          onPrimary={handleBookSession}
+          primaryDisabled={selectedSlotId === null}
+          primaryIcon={<CalendarCheck size={16} />}
+        />
+      }
+    >
       <DocCardList
         docs={docs}
-        onSlotSelect={onSlotSelect}
+        selectedSlotId={selectedSlotId}
+        onSlotSelect={handleSlotClick}
         emptyStateLabel={emptyStateLabel}
+        currentIndex={currentIndex}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onDotClick={handleDotClick}
         prevAriaLabel={prevAriaLabel}
         nextAriaLabel={nextAriaLabel}
-        getIndicatorAriaLabel={getIndicatorAriaLabel}
+        getDotAriaLabel={getDotAriaLabel}
       />
-      <div className={styles.buttonContainer}>
-        <div className={styles.buttonGroup}>
-          <IconButton ariaLabel={backLabel} onClick={onBack} />
-        </div>
-      </div>
     </StepWrapper>
   );
 }

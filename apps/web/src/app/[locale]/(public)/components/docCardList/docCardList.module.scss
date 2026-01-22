@@ -1,102 +1,66 @@
 .docCardList {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  height: 100%;
+  gap: 1.6rem;
+  min-height: 0;
 }
 
-.carouselContainer {
+.navigation {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  width: 100%;
+  justify-content: center;
+  gap: 1.6rem;
+  margin-bottom: 1.6rem;
 }
 
 .navButton {
-  flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  border: 2px solid $black;
-  background: $canvas;
-  color: $black;
-  font-size: $fs-1-5;
+  background: none;
+  border: none;
+  padding: 0.8rem;
   cursor: pointer;
+  color: $ink;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  line-height: 1;
-  display: none;
+  transition: opacity 0.2s;
 
   &:hover {
-    background: $black;
-    color: $canvas;
-  }
-
-  &:active {
-    transform: scale(0.95);
+    opacity: 0.7;
   }
 }
 
-.cardWrapper {
-  flex: 1;
-  overflow: hidden;
-  min-width: 0;
-  touch-action: pan-y;
-  user-select: none;
-}
-
-.indicators {
+.dotsContainer {
   display: flex;
-  justify-content: center;
+  gap: 0.8rem;
   align-items: center;
-  gap: 0.5rem;
-  height: 1.5rem;
 }
 
-.indicator {
-  width: 0.75rem;
-  height: 0.75rem;
+.dot {
+  width: 0.8rem;
+  height: 0.8rem;
   border-radius: 50%;
-  border: 2px solid $black;
-  background: $canvas;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background-color: $ink-muted-50;
+  border: none;
   padding: 0;
-  min-width: 0.75rem;
-  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: $ink;
+  }
 }
 
-.indicatorActive {
-  background: $black;
-  width: 1rem;
-  height: 1rem;
-  min-width: 1rem;
-}
-
-.counter {
-  text-align: center;
-  font-size: $fs-1;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.7);
+.dotActive {
+  background-color: $ink;
 }
 
 .emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
   text-align: center;
-  padding: 3rem 1rem;
   color: rgba(0, 0, 0, 0.6);
-  font-size: $fs-1-125;
-}
-
-@include min-width-md {
-  .navButton {
-    display: flex;
-  }
-
-  .cardWrapper {
-    touch-action: auto;
-    user-select: auto;
-  }
+  font-size: $fs-1-6;
 }

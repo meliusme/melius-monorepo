@@ -1,23 +1,9 @@
-.buttonWrapper {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
-  background: linear-gradient(
-    to top,
-    $canvas-warm 60%,
-    rgba(249, 246, 240, 0.95) 80%,
-    rgba(249, 246, 240, 0) 100%
-  );
-  z-index: 101;
-
-  @include min-width-md {
-    position: sticky;
-    padding: 0;
-    margin-top: 2rem;
-    background: linear-gradient(to top, $canvas-warm 60%, rgba(249, 246, 240, 0) 100%);
-  }
+.timeNote {
+  margin: 1.6rem 0;
+  font-family: $font-sans;
+  font-size: $fs-1-1;
+  color: $ink-muted-50;
+  text-align: center;
 }
 
 .featureGrid {
@@ -86,10 +72,26 @@
   }
 }
 
-.timeNote {
-  margin: 0.8rem 0 0;
-  font-family: $font-sans;
-  font-size: $fs-1-1;
-  color: $ink-muted-50;
-  text-align: center;
+.buttonWrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    to top,
+    $canvas-warm 60%,
+    rgba(249, 246, 240, 0.95) 80%,
+    rgba(249, 246, 240, 0) 100%
+  );
+  z-index: 100;
+
+  @include min-width-md {
+    position: static;
+    padding: 0;
+    background: none;
+  }
 }

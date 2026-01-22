@@ -1,10 +1,8 @@
 import type { ProblemsResponse } from '@/lib/types/api';
 import ProblemList from '../../problemList/problemList';
 import { ArrowRight } from 'lucide-react';
-import Button from '@/components/atoms/button/button';
-import IconButton from '@/components/atoms/iconButton/iconButton';
 import StepWrapper from './StepWrapper';
-import styles from '../matchStepper.module.scss';
+import StepButtonGroup from './StepButtonGroup';
 
 type ProblemSelectionStepProps = {
   problems: ProblemsResponse;
@@ -30,27 +28,26 @@ export default function ProblemSelectionStep({
   image,
 }: ProblemSelectionStepProps) {
   return (
-    <StepWrapper stepNumber={1} image={image}>
+    <StepWrapper
+      stepNumber={1}
+      image={image}
+      footer={
+        <StepButtonGroup
+          backLabel={backLabel}
+          onBack={onBack}
+          primaryLabel={buttonLabel}
+          onPrimary={onNext}
+          primaryDisabled={selectedProblemId === null}
+          primaryIcon={<ArrowRight size={16} />}
+        />
+      }
+    >
       <ProblemList
         problems={problems}
         translations={translations}
         selectedProblemId={selectedProblemId}
         onProblemSelect={onProblemSelect}
       />
-      <div className={styles.buttonContainer}>
-        <div className={styles.buttonGroup}>
-          <IconButton ariaLabel={backLabel} onClick={onBack} />
-          <Button
-            label={buttonLabel}
-            onClick={onNext}
-            disabled={selectedProblemId === null}
-            icon={<ArrowRight size={16} />}
-            fullWidth
-            rounded
-            large
-          />
-        </div>
-      </div>
     </StepWrapper>
   );
 }

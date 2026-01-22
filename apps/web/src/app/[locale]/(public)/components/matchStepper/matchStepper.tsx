@@ -16,7 +16,6 @@ import Step0Svg from '@/assets/illustrations/step0.svg';
 import Step1Svg from '@/assets/illustrations/step1.svg';
 import Step2Svg from '@/assets/illustrations/step2.svg';
 import Step3Svg from '@/assets/illustrations/step3.svg';
-import styles from './matchStepper.module.scss';
 
 // Step images mapping
 const STEP_IMAGES: Record<number, string> = {
@@ -161,7 +160,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             emptyStateLabel={t('docEmptyState')}
             prevAriaLabel={t('docPrevAria')}
             nextAriaLabel={t('docNextAria')}
-            getIndicatorAriaLabel={(index) => t('docIndicatorAria', { index: index + 1 })}
+            getDotAriaLabel={(index) => t('docIndicatorAria', { index })}
             image={image}
           />
         );

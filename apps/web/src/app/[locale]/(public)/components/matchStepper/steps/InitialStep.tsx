@@ -28,7 +28,25 @@ export default function InitialStep({ onStart, image }: InitialStepProps) {
   ];
 
   return (
-    <StepWrapper stepNumber={0} image={image}>
+    <StepWrapper
+      stepNumber={0}
+      image={image}
+      footer={
+        <>
+          <div className={styles.buttonWrapper}>
+            <p className={styles.timeNote}>{t('timeNote')}</p>
+            <Button
+              label={t('startMatching')}
+              onClick={onStart}
+              large
+              rounded
+              icon={<ArrowRight size={20} />}
+              fullWidth
+            />
+          </div>
+        </>
+      }
+    >
       <div className={styles.featureGrid}>
         {features.map(({ icon: Icon, title, description }) => (
           <div className={styles.featureCard} key={title}>
@@ -42,17 +60,6 @@ export default function InitialStep({ onStart, image }: InitialStepProps) {
           </div>
         ))}
       </div>
-      <div className={styles.buttonWrapper}>
-        <Button
-          label={t('startMatching')}
-          onClick={onStart}
-          large
-          rounded
-          icon={<ArrowRight size={20} />}
-          fullWidth
-        />
-      </div>
-      <p className={styles.timeNote}>{t('timeNote')}</p>
     </StepWrapper>
   );
 }

@@ -58,6 +58,17 @@ declare const messages: {
     "career_development": "Career",
     "neurobiological_disorders": "Neurology"
   },
+  "DocCard": {
+    "psychologist": "Psychologist",
+    "psychotherapist": "Psychotherapist",
+    "sexologist": "Sexologist",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "bookSession": "Book Session",
+    "availableSlots": "Available slots",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "DateRangePicker": {
     "today": "Today",
     "tomorrow": "Tomorrow",

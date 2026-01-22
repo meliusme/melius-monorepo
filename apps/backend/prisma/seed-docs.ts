@@ -16,8 +16,7 @@ const prisma = new PrismaClient({ adapter });
 const seedPassword = 'test1234';
 const passwordRounds = 10;
 
-const slotHours = [9, 13, 17];
-const slotDurationMinutes = 60;
+const slotDurationMinutes = 50;
 const slotDays = 7;
 
 const docs = [
@@ -28,9 +27,10 @@ const docs = [
     profession: Profession.psychotherapist,
     rate: 4.8,
     ratesLot: 26,
-    unitAmount: 180,
+    unitAmount: 18000,
     currency: 'PLN',
     language: Language.pl,
+    slotHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], // Full day availability
     specializationKeys: [
       'cognitive_behavioral_therapy',
       'mindfulness',
@@ -44,9 +44,10 @@ const docs = [
     profession: Profession.psychotherapist,
     rate: 4.7,
     ratesLot: 19,
-    unitAmount: 160,
+    unitAmount: 16000,
     currency: 'PLN',
     language: Language.pl,
+    slotHours: [9, 10, 11, 14, 15, 16, 17], // Morning and afternoon
     specializationKeys: [
       'systemic_therapy',
       'emotional_focused_therapy',
@@ -60,9 +61,10 @@ const docs = [
     profession: Profession.psychotherapist,
     rate: 4.9,
     ratesLot: 14,
-    unitAmount: 220,
+    unitAmount: 22000,
     currency: 'PLN',
     language: Language.pl,
+    slotHours: [14, 15, 16, 17, 18, 19, 20], // Afternoon and evening
     specializationKeys: [
       'trauma_focused_cognitive_behavioral_therapy',
       'dialectical_behavioral_therapy',
@@ -76,9 +78,10 @@ const docs = [
     profession: Profession.psychotherapist,
     rate: 4.6,
     ratesLot: 11,
-    unitAmount: 150,
+    unitAmount: 15000,
     currency: 'PLN',
     language: Language.pl,
+    slotHours: [8, 9, 10, 11, 12, 13], // Morning only
     specializationKeys: [
       'gestalt_therapy',
       'humanistic_therapy',
@@ -92,9 +95,10 @@ const docs = [
     profession: Profession.psychotherapist,
     rate: 4.5,
     ratesLot: 8,
-    unitAmount: 140,
+    unitAmount: 14000,
     currency: 'PLN',
     language: Language.pl,
+    slotHours: [10, 12, 14, 16, 18], // Scattered throughout the day
     specializationKeys: [
       'behavioral_therapy',
       'occupational_therapy',
@@ -109,7 +113,7 @@ const toDayStart = (date: Date) => {
   return start;
 };
 
-const buildSlots = (docId: number, startDate: Date) => {
+const buildSlots = (docId: number, startDate: Date, slotHours: number[]) => {
   const slots = [];
 
   for (let dayOffset = 0; dayOffset < slotDays; dayOffset += 1) {
@@ -229,7 +233,7 @@ async function seedApprovedDocsWithSlots() {
       where: { docId: profile.id },
     });
 
-    const slots = buildSlots(profile.id, startDate);
+    const slots = buildSlots(profile.id, startDate, doc.slotHours);
 
     await prisma.availabilitySlot.createMany({
       data: slots,

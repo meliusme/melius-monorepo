@@ -72,7 +72,13 @@
   "DocCard": {
     "psychologist": "Psycholog",
     "psychotherapist": "Psychoterapeuta",
-    "sexologist": "Seksuolog"
+    "sexologist": "Seksuolog",
+    "today": "Dzisiaj",
+    "tomorrow": "Jutro",
+    "bookSession": "Rezerwuj sesję",
+    "availableSlots": "Dostępne terminy",
+    "previous": "Poprzedni",
+    "next": "Następny"
   },
   "Errors": {
     "EMAIL_EXISTS": "Adres email już istnieje",
