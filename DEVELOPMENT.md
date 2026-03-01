@@ -2,109 +2,100 @@
 
 ## Quick Start
 
+Preferred commands:
+
 ```bash
 # Start development environment
-docker compose -f docker-compose.dev.yml up -d
+./dev.sh up
 
-# View logs
-docker compose -f docker-compose.dev.yml logs -f
+# View logs (all or selected service)
+./dev.sh logs
+./dev.sh logs backend
 
 # Stop development environment
-docker compose -f docker-compose.dev.yml down
+./dev.sh down
 ```
 
-## What's Different in Dev Mode?
-
-**Development (`docker-compose.dev.yml`):**
-
-- ✅ **Hot Reload**: Code changes are instantly reflected
-- ✅ **Fast**: No container rebuilds needed
-- ✅ **Volume Mounts**: Source code is mounted from your local filesystem
-- ✅ **Dev Servers**: NestJS watch mode + Next.js dev server
-- 🐌 Slower initial startup (installs dependencies on first run)
-
-**Production (`docker-compose.yml`):**
-
-- ✅ **Optimized**: Multi-stage builds, smaller images
-- ✅ **Fast Startup**: Pre-built images start instantly
-- ✅ **Production Ready**: Minified, optimized bundles
-- 🔧 Requires rebuild after code changes
-
-## Making Code Changes
-
-1. **Start dev environment:**
-
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d
-   ```
-
-2. **Edit your code** in `apps/backend/` or `apps/web/`
-
-3. **See changes immediately** - no rebuild needed!
-   - Backend: Changes reload automatically
-   - Frontend: Refresh your browser at http://localhost:3001
-
-4. **Watch logs** to see recompilation:
-   ```bash
-   docker compose -f docker-compose.dev.yml logs -f backend
-   ```
-
-## Testing Hot Reload
-
-Try editing a file to see hot reload in action:
+Direct Docker Compose (equivalent):
 
 ```bash
-# Watch the backend logs
-docker compose -f docker-compose.dev.yml logs -f backend
-
-# In another terminal, edit a file
-echo "// test change" >> apps/backend/src/app.service.ts
-
-# You'll see the backend automatically recompile!
-```
-
-## When to Use Each Mode
-
-**Use Development Mode (`docker-compose.dev.yml`) when:**
-
-- Actively writing code
-- Need fast feedback loops
-- Want to see changes immediately
-
-**Use Production Mode (`docker-compose.yml`) when:**
-
-- Testing production builds
-- Deploying to staging/production
-- Need optimized performance
-- Validating Docker images
-
-## Switching Between Modes
-
-```bash
-# Stop whatever is running
-docker compose down
-docker compose -f docker-compose.dev.yml down
-
-# Start dev mode
 docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml down
+```
 
-# OR start production mode
-docker compose up -d
+## Dev vs Production Compose
+
+Development (`docker-compose.dev.yml`):
+
+- Hot reload for backend and frontend
+- Source mounted from local filesystem
+- Good for coding and debugging
+- Slower first startup because dependencies are installed in containers
+
+Production (`docker-compose.yml`):
+
+- Backend + PostgreSQL only
+- Frontend is not part of production compose (deployed separately on Vercel)
+- Intended for production-like backend runtime checks
+
+## URLs (Dev)
+
+- Backend: http://localhost:3000
+- Frontend: http://localhost:3001
+- pgAdmin: http://localhost:5050
+
+## Typical Development Workflow
+
+1. Start environment:
+
+   ```bash
+   ./dev.sh up
+   ```
+
+2. Edit code in `apps/backend/` or `apps/web/`.
+3. Verify changes:
+   - Backend reloads automatically.
+   - Frontend updates on refresh (`http://localhost:3001`).
+4. Watch recompilation/errors:
+
+   ```bash
+   ./dev.sh logs backend
+   ./dev.sh logs web
+   ```
+
+## Switching Modes
+
+```bash
+# Stop any running stack first
+./dev.sh down
+docker compose down
+
+# Start development mode
+./dev.sh up
+
+# Or start production compose locally
+./prod.sh build
 ```
 
 ## Troubleshooting
 
-**Changes not reflecting?**
+Changes not reflecting:
 
-- Make sure you're running `docker-compose.dev.yml`
-- Check logs: `docker compose -f docker-compose.dev.yml logs -f backend`
-- Restart if needed: `docker compose -f docker-compose.dev.yml restart backend`
+- Verify `docker-compose.dev.yml` is running
+- Check backend logs: `./dev.sh logs backend`
+- Restart services: `./dev.sh restart`
 
-**Slow initial startup?**
+Slow first startup:
 
-- First run downloads and installs all dependencies
-- Subsequent starts are much faster (dependencies are cached in volumes)
+- First run installs dependencies
+- Next runs are faster thanks to Docker volumes
 
-**Port conflicts?**
+Port conflicts:
 
-- Stop the other mode first: `docker compose down`
+- Stop previously running stack (`./dev.sh down` or `docker compose down`)
+
+## In Progress Notes
+
+- Match stepper frontend flow still has a TODO after slot selection (`apps/web/.../matchStepper.tsx`).
+- Event-based booking/cancellation emails are partially wired (listener exists; full event emission is still being finalized).

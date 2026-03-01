@@ -1055,8 +1055,11 @@ MODUŁY BACKENDU:
 10. AdminModule - Panel administratora (weryfikacja terapeutów)
 11. DocModule - Funkcje dla terapeutów (kalendarz)
 12. ImageModule - Upload zdjęć do AWS S3
-13. CleanupModule - Cron job do czyszczenia (wyłączony)
-14. PrismaModule - ORM do bazy PostgreSQL
+13. PrismaModule - ORM do bazy PostgreSQL
+
+UWAGA:
+- CleanupService istnieje w kodzie, ale nie jest aktualnie podłączony jako osobny moduł Nest.
+- Aktywny cleanup cron działa dla refresh tokenów (AuthCleanupService, codziennie 03:00).
 
 LICZBA KONTROLERÓW: 11
 LICZBA MODELI W BAZIE: 14
@@ -1077,19 +1080,20 @@ GŁÓWNE FUNKCJONALNOŚCI:
 ✓ Upload awatarów do S3
 ✓ Zabezpieczenia (guards, throttling, validacja)
 ✓ Obsługa dwóch systemów płatności (Stripe, P24)
+✓ Sesje z refresh tokenami i rotacją
+✓ Dokumenty weryfikacyjne terapeutów (upload + podgląd admina)
 
 STATUS PROJEKTU:
 ----------------
-✅ Backend w pełni funkcjonalny
-✅ Wszystkie główne endpointy zaimplementowane
+🚧 Projekt jest aktywnie rozwijany (IN PROGRESS)
+✅ Kluczowe flow MVP backendu działają end-to-end
+✅ Wszystkie krytyczne endpointy MVP są zaimplementowane
 ✅ System płatności Stripe + P24 działający
 ✅ Cron jobs do automatyzacji
 ✅ System ocen i dopasowywania
 ✅ Panel admina do weryfikacji terapeutów
-✅ Dokumenty weryfikacyjne terapeutów (upload + podgląd admina)
-✅ Sesje z refresh tokenami i rotacją
 ✅ System weryfikacji oparty WYŁĄCZNIE na verificationStatus (bez pola published)
-⚠️  Cleanup cron wyłączony (do rozważenia włączenie)
+⚠️  Część funkcji roadmapy nadal pozostaje do dokończenia
 
 WAŻNE ZALEŻNOŚCI:
 -----------------
@@ -1100,7 +1104,31 @@ WAŻNE ZALEŻNOŚCI:
   - Pojawiać się w wynikach wyszukiwania
 • System NIE używa już pola 'published' - wszystko oparte na verificationStatus
 
-OSTATNIA AKTUALIZACJA DOKUMENTACJI: 8 stycznia 2026
+STATUS TODO (RZECZYWISTY STAN):
+-------------------------------
+DONE:
+✓ Meetings: scope'y dashboardowe dla terapeuty (/meetings/doc: today/upcoming/past/cancelled + paginacja)
+✓ Payments: idempotencja webhooków P24 + sanity checks + blokady statusów + TTL dla pending
+✓ Availability: walidacje czasu i nakładania slotów
+✓ Matches: walidacja zakresu dat (format, from <= to, max 30 dni)
+✓ Weryfikacja terapeutów: dokumenty + workflow draft/submitted/approved/rejected
+✓ Sesje: refresh token rotation + cleanup wygasłych tokenów
+
+IN PROGRESS:
+• Frontend match stepper: finalne przejście po wyborze slotu (TODO w apps/web/.../matchStepper.tsx)
+• Spięcie pełnego event-flow emaili transakcyjnych (listener jest, ale nie wszystkie eventy są emitowane we wszystkich ścieżkach)
+• Uporządkowanie dokumentacji operacyjnej pod finalny rollout
+
+DO ZROBIENIA (TODO LATER):
+• Publiczny endpoint profilu terapeuty: GET /profiles/doc/:id
+• Rozszerzenia email: zmiana emaila, przypomnienia o spotkaniach, mail po akceptacji terapeuty
+• Rating: komentarz wymagany dla oceny <= 3 + moderacja komentarzy
+• Matches: pełny scoring/wagi (zamiast prostego filtrowania + sortowania)
+• Payments/Admin: historia płatności terapeuty, saldo, payouty, statystyki admina
+• Images: miniaturki + cleanup nieużywanych plików
+• Availability: opcjonalne min/max długości slotu
+
+OSTATNIA AKTUALIZACJA DOKUMENTACJI: 1 marca 2026
 
 ===========================================
 KONIEC DOKUMENTACJI

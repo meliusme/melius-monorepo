@@ -1,6 +1,22 @@
 # Melius Monorepo
 
-Monorepo with backend (NestJS) and frontend (Next.js) in pnpm workspace.
+A monorepo with a NestJS backend and a Next.js frontend in a pnpm workspace.
+
+Status: **IN PROGRESS** (actively developed).
+
+## What This App Is
+
+Melius is an online therapy booking platform that connects patients with therapists.
+The core UX is intentionally fast: a light registration flow lets users start quickly and complete details later, in an Uber/Tinder-style onboarding pattern.
+The UI/UX is minimalist and designed with younger users in mind.
+
+Main product flows:
+
+- fast, light registration/login and profile completion
+- therapist profile creation and admin verification
+- therapist matching and slot search
+- session booking and payment (Stripe / Przelewy24)
+- post-session rating and feedback
 
 **Structure:**
 
@@ -8,6 +24,29 @@ Monorepo with backend (NestJS) and frontend (Next.js) in pnpm workspace.
 - `apps/web` – Next.js 16 frontend
 
 **Stack:** NestJS, Prisma, PostgreSQL 17, Next.js, TypeScript, Docker
+
+---
+
+## 📚 Documentation Index
+
+- Product/docs (PL): [docs-pl.md](docs-pl.md)
+- Product/docs (EN): [docs-en.md](docs-en.md)
+- TODO/backlog (PL): [todo-pl.md](todo-pl.md)
+- TODO/backlog (EN): [todo-en.md](todo-en.md)
+
+---
+
+## 🧱 What Is Used and How
+
+- `NestJS` (`apps/backend`) - REST API, auth, roles, modules, cron jobs.
+- `Prisma 7` + `PostgreSQL 17` - data layer, migrations, seed scripts, relational models.
+- `JWT + cookies` - access/refresh session model with token rotation.
+- `Stripe` + `Przelewy24` - payment providers (`/payments/*`).
+- `Resend` - transactional email sending.
+- `AWS S3` + `sharp` - avatar and therapist verification document storage/processing.
+- `Next.js 16` (`apps/web`) - frontend app with i18n and API integration.
+- `pnpm workspace` - monorepo dependency and script management.
+- `Docker Compose` - local dev/prod-like orchestration (`docker-compose.dev.yml`, `docker-compose.yml`).
 
 ---
 
@@ -26,9 +65,35 @@ Monorepo with backend (NestJS) and frontend (Next.js) in pnpm workspace.
 
 **Notes:**
 
-- Hot reload enabled for backend and frontend
-- pgAdmin credentials: admin@admin.com / pgadmin4
-- Husky pre-commit hooks run automatically after `pnpm install`
+- Hot reload is enabled for backend and frontend.
+- pgAdmin credentials: admin@admin.com / pgadmin4.
+- Husky pre-commit hooks run automatically after `pnpm install`.
+
+---
+
+## 📌 Current Status (In Progress)
+
+Done:
+
+- Core MVP backend flows are implemented (auth, profiles, meetings, availability, payments).
+- Therapist verification flow is implemented (`draft -> submitted -> approved/rejected`) with documents.
+- P24 webhook flow includes idempotency and payment sanity/status checks.
+- Therapist meeting dashboard scopes are implemented (`today/upcoming/past/cancelled`).
+- Refresh-token rotation and cleanup cron are implemented.
+
+In progress:
+
+- Frontend booking flow after slot selection (currently marked TODO in `matchStepper.tsx`).
+- Full event-based booking/cancellation email flow wiring.
+- Final production hardening and documentation cleanup.
+
+Planned / later:
+
+- Public therapist profile endpoint (`GET /profiles/doc/:id`).
+- Advanced matching scoring and weights.
+- Rating moderation rules.
+- Admin finance/statistics features (balance/payout/history).
+- Image thumbnail/orphan cleanup improvements.
 
 ---
 
@@ -46,13 +111,13 @@ openssl rand -base64 48  # JWT_REFRESH_SECRET
 openssl rand -base64 48  # JWT_EMAIL_SECRET
 openssl rand -base64 32  # POSTGRES_PASSWORD
 
-# Edit .env.production and fill ALL variables
+# Edit .env.production and fill all variables
 vim .env.production
 ```
 
 **IMPORTANT:**
 
-- `.env.production` is in .gitignore - DO NOT commit!
+- `.env.production` is in `.gitignore` - do not commit it.
 - `CLIENT_URL=https://melius-app.com` (for CORS)
 
 ### 2. Deploy Backend (Railway)
@@ -62,7 +127,7 @@ vim .env.production
 3. Add all environment variables from `.env.production.example`
 4. Add custom domain: `api.melius-app.com`
 
-Railway auto-detects Dockerfile and deploys automatically.
+Railway auto-detects the Dockerfile and deploys automatically.
 
 ### 3. Deploy Frontend (Vercel)
 
@@ -75,7 +140,7 @@ Railway auto-detects Dockerfile and deploys automatically.
    ```
 4. Add custom domain: `melius-app.com`
 
-Vercel auto-detects Next.js and deploys automatically from Git push.
+Vercel auto-detects Next.js and deploys automatically on every Git push.
 
 ---
 
@@ -101,7 +166,7 @@ Backend (api.melius-app.com)
 
 ### 4. Local Production Testing (Optional)
 
-Test production build locally with Docker before Railway deploy:
+Test the production build locally with Docker before deploying to Railway:
 
 ```bash
 # Setup environment
@@ -138,14 +203,23 @@ pnpm install              # Install dependencies
 pnpm build                # Build all apps
 pnpm lint                 # Lint backend and frontend
 pnpm test                 # Run backend tests
-pnpm gen:openapi          # Generate OpenAPI types
+pnpm gen:error-codes      # Generate shared error codes package
+pnpm gen:openapi          # Generate OpenAPI artifacts (web TS types + backend YAML export)
 ```
+
+### API Artifacts (Swagger/OpenAPI + Error Codes)
+
+- Swagger JSON source endpoint: `http://localhost:3000/api-json` (backend must be running).
+- `pnpm gen:openapi` generates web client types at `apps/web/src/generated/openapi.ts`.
+- `pnpm gen:openapi` also runs backend OpenAPI YAML export via `apps/backend/scripts/export-openapi-yaml.mjs`.
+- `pnpm gen:error-codes` generates shared error-code artifacts from `packages/error-codes/generate.js`.
+- Error-code generation also runs automatically on `pnpm install` (via `postinstall`).
 
 ### Prisma (Database)
 
 ```bash
 # Seeding
-pnpm db:seed:all              # Run both seeds (seed + seed2)
+pnpm db:seed:all              # Run all seeds (seed + seed2 + seed-docs)
 
 # Migrations
 pnpm prisma:migrate           # Create and apply migration
@@ -173,7 +247,7 @@ pnpm db:clean                 # Truncate all tables
 
 Set these in Railway dashboard (see `.env.production.example` for all variables):
 
-- `JWT_SECRET` / `JWT_REFRESH_SECRET` / `JWT_EMAIL_SECRET` - min 32 chars each
+- `JWT_SECRET` / `JWT_REFRESH_SECRET` / `JWT_EMAIL_SECRET` - minimum 32 characters each
 - `POSTGRES_PASSWORD` - PostgreSQL password (if using external DB)
 - `AWS_*` - S3 credentials for file uploads
 - `CLIENT_URL` - Frontend URL for CORS (https://melius-app.com)
@@ -183,7 +257,7 @@ Set these in Railway dashboard (see `.env.production.example` for all variables)
 - `STRIPE_*` - Payment keys and webhook secret
 - `P24_*` - Przelewy24 payment gateway (optional)
 
-**Note:** `DATABASE_URL` is auto-injected by Railway PostgreSQL service
+**Note:** `DATABASE_URL` is auto-injected by the Railway PostgreSQL service.
 
 **Frontend (Vercel):**
 
