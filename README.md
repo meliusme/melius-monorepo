@@ -207,6 +207,30 @@ pnpm gen:error-codes      # Generate shared error codes package
 pnpm gen:openapi          # Generate OpenAPI artifacts (web TS types + backend YAML export)
 ```
 
+### Testing
+
+Unit tests live in `apps/backend/src/**/*.spec.ts` and are run with Jest + ts-jest.
+
+```bash
+pnpm test                       # Run all backend unit tests
+pnpm --filter @melius/backend test:watch   # Watch mode
+pnpm --filter @melius/backend test:cov    # With coverage report
+```
+
+Covered services (89 tests total):
+
+| Service | What is tested |
+|---|---|
+| `AuthService` | login, register, setPassword, token rotation, session limits |
+| `ProfilesService` | user/doc/admin profile updates, doc submission flow |
+| `AvailabilityService` | slot creation, listing, deletion with overlap/auth guards |
+| `MeetingsService` | booking, cancellation by user/doc, 24h guard, refund trigger |
+| `RatingService` | rate creation guards, aggregation, paginated listing |
+| `AdminService` | doc approve/reject flows, idempotency, reason validation |
+
+Tests focus on service behavior — return values and thrown errors — not internal Prisma call shapes.
+Prisma is replaced by plain `jest.fn()` mocks; `bcrypt` is mocked via `src/__mocks__/bcrypt.ts`.
+
 ### API Artifacts (Swagger/OpenAPI + Error Codes)
 
 - Swagger JSON source endpoint: `http://localhost:3000/api-json` (backend must be running).
