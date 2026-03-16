@@ -20,7 +20,7 @@ import {
   Briefcase,
   Activity,
 } from 'lucide-react';
-import { ReactNode } from 'react';
+import { ReactNode, useCallback, useEffect, useRef } from 'react';
 
 export type Problem = {
   id: number;
@@ -59,10 +59,18 @@ export default function ProblemList({
   selectedProblemId,
   onProblemSelect,
 }: ProblemListProps) {
-  const handleProblemClick = (problemId: number) => {
-    const newValue = problemId === selectedProblemId ? null : problemId;
-    onProblemSelect(newValue);
-  };
+  const selectedProblemIdRef = useRef(selectedProblemId);
+  useEffect(() => {
+    selectedProblemIdRef.current = selectedProblemId;
+  }, [selectedProblemId]);
+
+  const handleProblemClick = useCallback(
+    (problemId: number) => {
+      const newValue = problemId === selectedProblemIdRef.current ? null : problemId;
+      onProblemSelect(newValue);
+    },
+    [onProblemSelect],
+  );
 
   return (
     <div className={styles.problemList}>
@@ -70,10 +78,11 @@ export default function ProblemList({
         {problems.map((problem) => (
           <Item
             key={problem.id}
+            id={problem.id}
             icon={problemIcons[problem.problemKey] || <Brain size={20} />}
             title={translations[problem.problemKey] || problem.problemKey}
             selected={selectedProblemId === problem.id}
-            onClick={() => handleProblemClick(problem.id)}
+            onClick={handleProblemClick}
           />
         ))}
       </div>

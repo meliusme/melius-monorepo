@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { ProblemsResponse } from '@/lib/types/api';
 import ProblemList from '../../problemList/problemList';
 import { ArrowRight } from 'lucide-react';
@@ -16,7 +17,7 @@ type ProblemSelectionStepProps = {
   image: string;
 };
 
-export default function ProblemSelectionStep({
+const ProblemSelectionStep = memo(function ProblemSelectionStep({
   problems,
   translations,
   selectedProblemId,
@@ -50,4 +51,6 @@ export default function ProblemSelectionStep({
       />
     </StepWrapper>
   );
-}
+});
+
+export default ProblemSelectionStep;
