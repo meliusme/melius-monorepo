@@ -1,23 +1,24 @@
-import { ReactNode } from 'react';
+import { memo, ReactNode } from 'react';
 import styles from './item.module.scss';
 
 interface ItemProps {
+  id: number;
   icon: ReactNode;
   title: string;
   selected: boolean;
-  onClick: () => void;
+  onClick: (id: number) => void;
 }
 
-export default function Item({ icon, title, selected, onClick }: ItemProps) {
+const Item = memo(function Item({ id, icon, title, selected, onClick }: ItemProps) {
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={() => onClick(id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          onClick(id);
         }
       }}
       className={`${styles.item} ${selected ? styles.selected : ''}`}
@@ -34,4 +35,6 @@ export default function Item({ icon, title, selected, onClick }: ItemProps) {
       <div className={styles.select} />
     </div>
   );
-}
+});
+
+export default Item;

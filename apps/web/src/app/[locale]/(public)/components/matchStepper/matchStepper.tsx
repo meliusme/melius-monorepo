@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { searchWithSlotsAction } from '../../actions/search-with-slots.action';
 import { toAPIDateRange } from '@/lib/utils/date';
@@ -41,7 +41,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
 
   const { problemId, dateRange } = state;
 
-  const handleProblemSelect = (problemId: number | null) => {
+  const handleProblemSelect = useCallback((problemId: number | null) => {
     // Clear dependent data when problem changes
     setState((prev) => ({
       ...prev,
@@ -51,7 +51,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
     }));
     setDocs([]);
     setError(null);
-  };
+  }, []);
 
   const handleDateRangeChange = (value: DateRangeValue) => {
     // Clear dependent data when date range changes
@@ -69,11 +69,13 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
     // TODO: Navigate to booking confirmation or next step
   };
 
-  const handleNextToDatePicker = () => {
+  const handleNextToDatePicker = useCallback(() => {
     if (problemId !== null) {
       setCurrentStep(2);
     }
-  };
+  }, [problemId]);
+
+  const handleBackToStep0 = useCallback(() => setCurrentStep(0), []);
 
   const handleBackToProblemList = () => {
     setCurrentStep(1);
@@ -126,7 +128,7 @@ export default function MatchStepper({ problems, translations }: MatchStepperPro
             translations={translations}
             selectedProblemId={problemId}
             onProblemSelect={handleProblemSelect}
-            onBack={() => setCurrentStep(0)}
+            onBack={handleBackToStep0}
             onNext={handleNextToDatePicker}
             backLabel={t('backButton')}
             buttonLabel={t('selectDateButton')}
