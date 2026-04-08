@@ -10,6 +10,9 @@ pnpm-debug.log
 /coverage
 /pgdata
 
+# Claude Code local settings (personal overrides, not for team)
+.claude/settings.local.json
+
 # Environment files (NEVER commit these!)
 .env
 .env.local
