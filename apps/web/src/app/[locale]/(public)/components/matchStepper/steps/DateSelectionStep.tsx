@@ -1,5 +1,5 @@
 import type { DateRangeValue } from '@/lib/types/date';
-import DateRangePicker from '../../dateRangePicker/dateRangePicker';
+import DateRangePicker from '@/components/molecules/dateRangePicker/dateRangePicker';
 import { Search } from 'lucide-react';
 import StepWrapper from './StepWrapper';
 import StepButtonGroup from './StepButtonGroup';
