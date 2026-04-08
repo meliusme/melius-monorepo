@@ -12,6 +12,7 @@ The component file to work with comes from $ARGUMENTS. If no argument is provide
 ### 1. Read the component
 
 Read the component file. Identify:
+
 - All exported props / interface (look for `interface *Props` or `type *Props`)
 - All prop variants (e.g. `variant` union, boolean flags, optional fields)
 - The component's default export name
@@ -26,6 +27,7 @@ Check whether the story file already exists.
 ### 3. Decide: update or create
 
 **If the story file exists:**
+
 - Read it.
 - Compare its stories against the current prop surface:
   - Stories for props/variants that no longer exist → remove them.
@@ -34,34 +36,16 @@ Check whether the story file already exists.
 - Keep valid, unchanged stories as-is.
 
 **If the story file does not exist:**
+
 - Create it from scratch covering every meaningful prop combination.
 
 ### 4. Story conventions (always follow these)
 
-```tsx
-import type { Story } from '@ladle/react';
-// import { useState } from 'react' only when the component needs controlled state
-import ComponentName from './componentName';
-
-export const StoryName: Story = () => (
-  <ComponentName propA="value" propB={true} />
-);
-```
-
-Rules:
-- Import from `@ladle/react` — never `@storybook/react`.
-- One named export per story, PascalCase name.
-- For required callbacks (`onClick`, `onChange`), use `() => {}` or `() => console.log('clicked')`.
-- For controlled inputs, use `useState`.
-- Wrap in `<div style={{ padding: '2rem' }}>` when the component needs visual breathing room.
-- Cover at minimum:
-  - Default / happy-path state
-  - Each distinct `variant` value
-  - Important boolean flags (`disabled`, `large`, `rounded`, …)
-  - Error / edge-case states when the component supports them
+Follow the conventions in [shared/ladle-story-conventions.md](../shared/ladle-story-conventions.md).
 
 ### 5. Summary
 
 After editing the story file, print a short summary listing:
+
 - Stories added, removed, or updated
 - Any props intentionally left without a story (and why)
