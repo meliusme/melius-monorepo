@@ -11,6 +11,7 @@ type StepWrapperProps = {
   image?: string;
   variables?: Record<string, string | number>;
   disableContentScroll?: boolean;
+  centerContent?: boolean;
 };
 
 export default function StepWrapper({
@@ -20,6 +21,7 @@ export default function StepWrapper({
   image,
   variables,
   disableContentScroll = false,
+  centerContent = false,
 }: StepWrapperProps) {
   const t = useTranslations('Stepper');
 
@@ -42,7 +44,9 @@ export default function StepWrapper({
         )}
       </section>
       <section className={styles.contentSection}>
-        <div className={styles.contentWrapper}>
+        <div
+          className={`${styles.contentWrapper} ${centerContent ? styles.centerContent : ''}`}
+        >
           <div className={styles.headerZone}>
             <p className={styles.headerText}>
               {t.rich(`${stepKey}.header`, {

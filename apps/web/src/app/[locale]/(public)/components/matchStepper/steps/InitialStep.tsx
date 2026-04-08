@@ -31,6 +31,7 @@ export default function InitialStep({ onStart, image }: InitialStepProps) {
     <StepWrapper
       stepNumber={0}
       image={image}
+      centerContent
       footer={
         <>
           <div className={styles.buttonWrapper}>
@@ -41,7 +42,6 @@ export default function InitialStep({ onStart, image }: InitialStepProps) {
               large
               rounded
               icon={<ArrowRight size={20} />}
-              fullWidth
             />
           </div>
         </>
