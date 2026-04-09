@@ -6,7 +6,7 @@ import { differenceInMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { enUS, pl } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
-import { Clock, Tag, ChevronRight } from 'lucide-react';
+import { Clock, Tag, ChevronRight, CalendarCheck } from 'lucide-react';
 import type { components } from '@/generated/openapi';
 import Button from '@/components/atoms/button/button';
 import Avatar from '@/components/atoms/avatar/avatar';
@@ -21,9 +21,10 @@ type DocCardProps = {
   doc: SearchMatchResult;
   selectedSlotId: number | null;
   onSlotSelect: (slotId: number) => void;
+  hideAvatar?: boolean;
 };
 
-function formatDate(
+export function formatDate(
   isoString: string,
   dfLocale: Locale,
   timeZone: string,
@@ -34,7 +35,6 @@ function formatDate(
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  // Compare dates (ignoring time)
   const slotDateOnly = formatInTimeZone(slotDate, timeZone, 'yyyy-MM-dd', {
     locale: dfLocale,
   });
@@ -52,13 +52,12 @@ function formatDate(
     return t('tomorrow');
   }
 
-  // Full day name with date
   return formatInTimeZone(slotDate, timeZone, 'EEEE, dd.MM', {
     locale: dfLocale,
   });
 }
 
-function formatShortDate(
+export function formatShortDate(
   isoString: string,
   dfLocale: Locale,
   timeZone: string,
@@ -69,7 +68,6 @@ function formatShortDate(
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  // Compare dates (ignoring time)
   const slotDateOnly = formatInTimeZone(slotDate, timeZone, 'yyyy-MM-dd', {
     locale: dfLocale,
   });
@@ -93,33 +91,40 @@ function formatShortDate(
     };
   }
 
-  // Short day name with date
   return {
     dayName: formatInTimeZone(slotDate, timeZone, 'EEE', { locale: dfLocale }),
     date: formatInTimeZone(slotDate, timeZone, 'dd.MM', { locale: dfLocale }),
   };
 }
 
-function formatTime(isoString: string, dfLocale: Locale, timeZone: string): string {
+export function formatTime(
+  isoString: string,
+  dfLocale: Locale,
+  timeZone: string,
+): string {
   return formatInTimeZone(new Date(isoString), timeZone, 'HH:mm', { locale: dfLocale });
 }
 
-function calculateSessionDuration(startTime: string, endTime: string): number {
+export function calculateSessionDuration(startTime: string, endTime: string): number {
   return differenceInMinutes(new Date(endTime), new Date(startTime));
 }
 
-function formatPrice(amount: number, currency: string): string {
+export function formatPrice(amount: number, currency: string): string {
   return `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}`;
 }
 
-export function DocCard({ doc, selectedSlotId, onSlotSelect }: DocCardProps) {
+export function DocCard({
+  doc,
+  selectedSlotId,
+  onSlotSelect,
+  hideAvatar = false,
+}: DocCardProps) {
   const t = useTranslations('DocCard');
   const locale = useLocale();
   const dfLocale = locale === 'pl' ? pl : enUS;
   const dayScrollRef = useRef<HTMLDivElement>(null);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Auto-detect user's timezone
   const timeZone = useMemo(() => {
     if (typeof window !== 'undefined') {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -134,7 +139,6 @@ export function DocCard({ doc, selectedSlotId, onSlotSelect }: DocCardProps) {
     return 50;
   }, [doc.slots]);
 
-  // Group slots by date with date key
   const slotsByDate = useMemo(() => {
     const grouped = new Map<
       string,
@@ -165,11 +169,23 @@ export function DocCard({ doc, selectedSlotId, onSlotSelect }: DocCardProps) {
     return dayData?.slots || [];
   }, [slotsByDate, selectedDateKey]);
 
+  // Find the selected slot for the booking confirmation strip
+  const selectedSlot = useMemo(() => {
+    if (selectedSlotId === null) return null;
+    return doc.slots.find((s) => s.id === selectedSlotId) || null;
+  }, [doc.slots, selectedSlotId]);
+
+  const confirmLabel = useMemo(() => {
+    if (!selectedSlot) return null;
+    const date = formatDate(selectedSlot.startTime, dfLocale, timeZone, t);
+    const time = formatTime(selectedSlot.startTime, dfLocale, timeZone);
+    return t('confirmSlot', { date, time });
+  }, [selectedSlot, dfLocale, timeZone, t]);
+
   const professionLabel = doc.profession ? t(doc.profession) : '';
   const fullName = `${doc.firstName || ''} ${doc.lastName || ''}`.trim();
   const hasRating = doc.rate !== null && doc.ratesLot !== null && doc.ratesLot > 0;
 
-  // Check if can scroll
   useEffect(() => {
     const checkScroll = () => {
       if (dayScrollRef.current) {
@@ -191,8 +207,10 @@ export function DocCard({ doc, selectedSlotId, onSlotSelect }: DocCardProps) {
   return (
     <div className={styles.root}>
       <div className={styles.infoSection}>
-        <div className={styles.infoRow}>
-          <Avatar avatarUrl={doc.avatar?.url} name={fullName} sizeRem={6} />
+        <div className={`${styles.infoRow} ${hideAvatar ? styles.infoRowNoAvatar : ''}`}>
+          {!hideAvatar && (
+            <Avatar avatarUrl={doc.avatar?.url} name={fullName} sizeRem={6} />
+          )}
           <div className={styles.infoDetails}>
             <h3 className={styles.name}>{fullName}</h3>
             <p className={styles.profession}>{professionLabel}</p>
@@ -243,6 +261,14 @@ export function DocCard({ doc, selectedSlotId, onSlotSelect }: DocCardProps) {
             />
           ))}
         </div>
+      </div>
+
+      {/* Mobile booking confirmation strip */}
+      <div
+        className={`${styles.bookingStrip} ${selectedSlot ? styles.bookingStripVisible : ''}`}
+      >
+        <CalendarCheck size={16} className={styles.bookingStripIcon} />
+        <span className={styles.bookingStripLabel}>{confirmLabel}</span>
       </div>
     </div>
   );

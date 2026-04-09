@@ -67,7 +67,10 @@ declare const messages: {
     "bookSession": "Book Session",
     "availableSlots": "Available slots",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "bestMatch": "Best match",
+    "therapistCount": "{current} / {total}",
+    "confirmSlot": "{date} · {time}"
   },
   "DateRangePicker": {
     "today": "Today",

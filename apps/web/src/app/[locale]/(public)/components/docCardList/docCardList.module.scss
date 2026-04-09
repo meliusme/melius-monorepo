@@ -1,59 +1,121 @@
-.docCardList {
+// ─── Mobile layout ──────────────────────────────────────────────────────────
+
+.mobileLayout {
   display: flex;
   flex-direction: column;
+  gap: 1.2rem;
   height: 100%;
-  gap: 1.6rem;
-  min-height: 0;
+
+  @include min-width-md {
+    display: none;
+  }
 }
 
-.navigation {
+.mobileNav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.6rem;
-  margin-bottom: 1.6rem;
+  gap: 1.2rem;
+}
+
+.counter {
+  font-size: $fs-1-4;
+  font-weight: 600;
+  color: $ink;
+  min-width: 5rem;
+  text-align: center;
+  letter-spacing: 0.05em;
 }
 
 .navButton {
-  background: none;
-  border: none;
-  padding: 0.8rem;
-  cursor: pointer;
-  color: $ink;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
-
-  &:hover {
-    opacity: 0.7;
-  }
-}
-
-.dotsContainer {
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-}
-
-.dot {
-  width: 0.8rem;
-  height: 0.8rem;
+  width: 3.2rem;
+  height: 3.2rem;
+  border: 0.1rem solid $border-subtle;
   border-radius: 50%;
-  background-color: $ink-muted-50;
-  border: none;
-  padding: 0;
+  background: $white;
   cursor: pointer;
-  transition: background-color 0.2s;
+  color: $ink;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 
   &:hover {
-    background-color: $ink;
+    border-color: rgba(0, 0, 0, 0.25);
+    background-color: rgba(0, 0, 0, 0.03);
   }
 }
 
-.dotActive {
-  background-color: $ink;
+.swipeArea {
+  flex: 1;
+  min-height: 0;
+  touch-action: pan-y;
 }
+
+// ─── Desktop layout ──────────────────────────────────────────────────────────
+
+.desktopLayout {
+  display: none;
+  flex-direction: column;
+  gap: 1.6rem;
+
+  @include min-width-md {
+    display: flex;
+  }
+}
+
+.chipsRow {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex: 1;
+}
+
+.chipAvatar {
+  pointer-events: none;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  opacity: 0.4;
+  transition: opacity 0.18s ease;
+
+  .chip:hover &,
+  .chipActive & {
+    opacity: 1;
+  }
+}
+
+.chipName {
+  font-size: $fs-1-3;
+  font-weight: 500;
+  color: $ink-muted-50;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+
+  .chipActive & {
+    color: $ink;
+    font-weight: 700;
+  }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
 
 .emptyState {
   display: flex;
