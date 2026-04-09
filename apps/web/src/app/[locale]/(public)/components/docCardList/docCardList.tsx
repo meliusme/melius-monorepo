@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -40,6 +40,7 @@ export default function DocCardList({
 }: DocCardListProps) {
   const t = useTranslations('DocCard');
   const touchStartX = useRef<number>(0);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -116,6 +117,14 @@ export default function DocCardList({
                   <span
                     className={styles.chipAvatar}
                     style={{ width: 76.8, height: 76.8 }}
+                    onClick={
+                      index === currentIndex && doc.avatar?.url
+                        ? (e) => {
+                            e.stopPropagation();
+                            setLightboxSrc(doc.avatar!.url ?? null);
+                          }
+                        : undefined
+                    }
                   >
                     {doc.avatar?.url ? (
                       <Image
@@ -142,6 +151,21 @@ export default function DocCardList({
           hideAvatar
         />
       </div>
+
+      {lightboxSrc && (
+        <div className={styles.lightboxOverlay} onClick={() => setLightboxSrc(null)}>
+          <div className={styles.lightboxDialog} onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={lightboxSrc}
+              alt=""
+              width={512}
+              height={512}
+              className={styles.lightboxImage}
+              sizes="(max-width: 768px) 90vw, 512px"
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
