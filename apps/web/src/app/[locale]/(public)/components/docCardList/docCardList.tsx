@@ -1,10 +1,12 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { DocCard } from '../docCard/docCard';
-import Avatar from '@/components/atoms/avatar/avatar';
+import Icon from '@/components/atoms/icon/icon';
+import NoAvatarIcon from '@/assets/illustrations/no-avatar.svg';
 import type { components } from '@/generated/openapi';
 import styles from './docCardList.module.scss';
 
@@ -111,8 +113,21 @@ export default function DocCardList({
                   className={`${styles.chip} ${index === currentIndex ? styles.chipActive : ''}`}
                   onClick={() => onDotClick(index)}
                 >
-                  <span className={styles.chipAvatar}>
-                    <Avatar avatarUrl={doc.avatar?.url} name={fullName} sizeRem={4.8} />
+                  <span
+                    className={styles.chipAvatar}
+                    style={{ width: 76.8, height: 76.8 }}
+                  >
+                    {doc.avatar?.url ? (
+                      <Image
+                        src={doc.avatar.url}
+                        alt={fullName}
+                        width={76.8}
+                        height={76.8}
+                        className={styles.chipAvatarImage}
+                      />
+                    ) : (
+                      <Icon src={NoAvatarIcon} className={styles.chipAvatarPlaceholder} />
+                    )}
                   </span>
                   <span className={styles.chipName}>{firstName}</span>
                 </button>

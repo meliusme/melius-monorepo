@@ -102,6 +102,19 @@
   }
 }
 
+.chipAvatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.chipAvatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  color: $black;
+}
+
 .chipName {
   font-size: $fs-1-3;
   font-weight: 500;
