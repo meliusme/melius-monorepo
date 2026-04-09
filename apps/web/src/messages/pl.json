@@ -78,7 +78,10 @@
     "bookSession": "Rezerwuj sesję",
     "availableSlots": "Dostępne terminy",
     "previous": "Poprzedni",
-    "next": "Następny"
+    "next": "Następny",
+    "bestMatch": "Najlepsze dopasowanie",
+    "therapistCount": "{current} / {total}",
+    "confirmSlot": "{date} · {time}"
   },
   "Errors": {
     "EMAIL_EXISTS": "Adres email już istnieje",

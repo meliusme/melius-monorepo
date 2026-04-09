@@ -65,7 +65,6 @@ export default function DocSelectionStep({
       stepNumber={3}
       image={image}
       variables={{ count: docs.length }}
-      disableContentScroll
       footer={
         <StepButtonGroup
           backLabel={backLabel}
